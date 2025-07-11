@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draw</title>
+  <script>
+    window.name = "Draw";
+    window.EXCALIDRAW_ASSET_PATH = "https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/prod/";
+  </script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    .excalidraw__canvas {
+      cursor: default !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import * as ExcalidrawLib from "@excalidraw/excalidraw";
+    window.ExcalidrawLib = ExcalidrawLib;
+  </script>
+  <script type="module">
+    import * as main from "/src/main.tsx";
+    window.addEventListener("load", () => {
+      const handler = main.renderExcalidraw({
+        height: window.innerHeight,
+        elementId: "root",
+        isDarkMode: true
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,147 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<LangVersion>preview</LangVersion>
+		<Nullable>enable</Nullable>
+		<TrimMode>partial</TrimMode>
+		<IsTrimmable>false</IsTrimmable>
+		<TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<IncludeAllContentForSelfExtract>false</IncludeAllContentForSelfExtract>
+		<JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+		<NoWarn>57</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<TrimmerRootAssembly Include="FSharp.Data.Adaptive" />
+		<TrimmerRootAssembly Include="ModelContextProtocol" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="Options\Constants.fs" />
+		<Compile Include="Options\JsonOptions.fs" />
+		<Compile Include="Options\AppOptions.fs" />
+		<Compile Include="View\JsInterop.fs" />
+		<Compile Include="View\Stores.fs" />
+		<Compile Include="View\Hooks.fs" />
+		<Compile Include="View\Styles.fs" />
+		<Compile Include="View\Dialog.fs" />
+		<Compile Include="View\Notification.fs" />
+		<Compile Include="View\Form.fs" />
+		<Compile Include="View\Markdown.fs" />
+		<None Include="Db\Scripts\*.sql" CopyToOutputDirectory="PreserveNewest" />
+		<Compile Include="Db\Model.fs" />
+		<Compile Include="Db\Agent.fs" />
+		<Compile Include="Db\Function.fs" />
+		<Compile Include="Db\Loop.fs" />
+		<Compile Include="Db\Notification.fs" />
+		<Compile Include="Db\Settings.fs" />
+		<Compile Include="Db\DbService.fs" />
+		<Compile Include="Handler\Share.fs" />
+		<Compile Include="Model\Types.fs" />
+		<Compile Include="Model\ModelService.fs" />
+		<Compile Include="Model\ModelSelector.fs" />
+		<Compile Include="Model\ModelCard.fs" />
+		<Compile Include="Model\ModelsPage.fs" />
+		<Compile Include="Memory\Types.fs" />
+		<Compile Include="Memory\Utils.fs" />
+		<Compile Include="Memory\DocumentService.fs" />
+		<Compile Include="Memory\MemoryService.fs" />
+		<Compile Include="Memory\Apis.fs" />
+		<Compile Include="Memory\DIExtensions.fs" />
+		<Compile Include="Function\Types.fs" />
+		<Compile Include="Function\Utils.fs" />
+		<Compile Include="Function\Mcp.fs" />
+		<Compile Include="Function\SystemScheduledTask.fs" />
+		<Compile Include="Function\SystemFunction.fs" />
+		<Compile Include="Function\FunctionService.fs" />
+		<Compile Include="Function\FunctionMcpSelector.fs" />
+		<Compile Include="Function\FunctionCard.fs" />
+		<Compile Include="Function\FunctionsPage.fs" />
+		<Compile Include="Function\DIExtensions.fs" />
+		<Compile Include="Agent\Types.fs" />
+		<Compile Include="Agent\Prompts.fs" />
+		<Compile Include="Agent\AgentService.fs" />
+		<Compile Include="Agent\Hooks.fs" />
+		<Compile Include="Agent\AgentSelector.fs" />
+		<Compile Include="Agent\AgentCard.fs" />
+		<Compile Include="Agent\AgentsPage.fs" />
+		<Compile Include="Loop\Types.fs" />
+		<Compile Include="Loop\Stores.fs" />
+		<Compile Include="Loop\GetTextFromImageHandler.fs" />
+		<Compile Include="Loop\RebuildMemoryHandler.fs" />
+		<Compile Include="Loop\LoopContentService.fs" />
+		<Compile Include="Loop\LoopService.fs" />
+		<Compile Include="Loop\Hooks.fs" />
+		<Compile Include="Loop\LoopContentEditor.fs" />
+		<Compile Include="Loop\LoopContentView.fs" />
+		<Compile Include="Loop\LoopUserInput.fs" />
+		<Compile Include="Loop\LoopSearcher.fs" />
+		<Compile Include="Loop\LoopView.fs" />
+		<Compile Include="Loop\LoopsView.fs" />
+		<Compile Include="Loop\LoopsPage.fs" />
+		<Compile Include="Notification\Stores.fs" />
+		<Compile Include="Notification\AddNotificationHandler.fs" />
+		<Compile Include="Notification\NotificationView.fs" />
+		<Compile Include="Settings\SettingsService.fs" />
+		<Compile Include="Settings\SettingsPage.fs" />
+		<Compile Include="Entry\NavMenu.fs" />
+		<Compile Include="Entry\MainLayout.fs" />
+		<Compile Include="Entry\Routes.fs" />
+		<Compile Include="Entry\Index.fs" />
+		<Compile Include="Startup.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+		<PackageReference Include="CliWrap" Version="3.9.0" />
+		<PackageReference Include="FreeSql.DbContext" Version="3.5.209" />
+		<PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.209" />
+		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.209" />
+		<PackageReference Include="FreeSql.Provider.SqlServer" Version="3.5.209" />
+		<PackageReference Include="FSharp.Control.FusionTasks" Version="2.6.0" />
+		<PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
+		<PackageReference Include="FSharp.Data.Adaptive" Version="1.2.24" />
+		<PackageReference Include="Fun.Blazor" Version="4.1.*" />
+		<PackageReference Include="Fun.Blazor.BlazorMonaco" Version="3.3.0" />
+		<PackageReference Include="Fun.Blazor.Reactive" Version="4.1.0" />
+		<PackageReference Include="Fun.Blazor.Server" Version="4.1.*" />
+		<PackageReference Include="Fun.Blazor.Microsoft.Web" Version="9.0.5" />
+		<PackageReference Include="Fun.Blazor.Microsoft.Authorization" Version="9.0.5" />
+		<PackageReference Include="Fun.Blazor.MudBlazor" Version="8.7.0" />
+		<PackageReference Include="IcedTasks" Version="0.11.8" />
+		<PackageReference Include="Markdig" Version="0.41.3" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="9.6.0" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.59.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.59.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.59.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.59.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.59.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.59.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Milvus" Version="1.59.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Chroma" Version="1.59.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.59.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.59.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.59.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.59.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.59.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.59.0-alpha" />
+		<PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.2" />
+		<PackageReference Include="OllamaSharp" Version="5.2.3" />
+		<PackageReference Include="PdfPig" Version="0.1.10" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
+		<PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
+		<PackageReference Include="ReverseMarkdown" Version="4.7.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+		<PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
+		<PackageReference Include="SharpToken" Version="2.0.3" />
+		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta5.25306.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Brainloop.ServiceDefaults\Brainloop.ServiceDefaults.csproj" />
+	</ItemGroup>
+
+</Project>

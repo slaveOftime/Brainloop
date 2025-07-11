@@ -1,0 +1,11 @@
+.vs
+bin
+obj
+node_modules
+dist
+Brainloop/documents
+documents
+qdrant
+runtimes
+publish
+*.db

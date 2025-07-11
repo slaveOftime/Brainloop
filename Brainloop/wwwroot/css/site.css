@@ -1,0 +1,259 @@
+﻿html, body * {
+    scrollbar-color: #c4c4c426 transparent !important;
+}
+
+    html:hover, body *:hover {
+        scrollbar-color: #c4c4c4a3 transparent !important;
+    }
+
+html {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+@property --flow-border-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+:root {
+    --flow-border-clr-1: #776be7;
+    --flow-border-clr-2: #9576ff;
+    --flow-border-clr-3: #a776ff;
+    --flow-border-clr-4: #cb76ff;
+    --flow-border-clr-5: #ef76ff;
+}
+
+.flowing-border::before,
+.flowing-borde::after,
+.flow-border[data-flowing]::before,
+.flow-border[data-flowing]::after,
+.flow-border:has([data-flowing])::before,
+.flow-border:has([data-flowing])::after {
+    content: "";
+    position: absolute;
+    inset: -0.01rem;
+    z-index: -1;
+    background: conic-gradient(from var(--flow-border-angle), var(--flow-border-clr-3), var(--flow-border-clr-4), var(--flow-border-clr-5), var(--flow-border-clr-4), var(--flow-border-clr-3));
+    border-radius: inherit;
+    animation: flow-border-animation 1s linear infinite;
+    filter: blur(0.5rem);
+    opacity: 0.4;
+}
+
+@keyframes flow-border-animation {
+    0% {
+        --flow-border-angle: 0deg;
+    }
+
+    100% {
+        --flow-border-angle: 360deg;
+    }
+}
+
+.pulse {
+    animation: pulse-animation 1s ease infinite;
+}
+
+@keyframes pulse-animation {
+    0% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+
+.loading-shimmer {
+    /* Create a gradient background for the shimmer effect */
+    background: linear-gradient(90deg, var(--mud-palette-primary) 25%, #edeef1 50%, #f6f7f8 75%);
+    background-size: 200% auto;
+    /* Use background-clip to apply the gradient to the text */
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent; /* Hide the original text color */
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% center;
+    }
+
+    100% {
+        background-position: -200% center;
+    }
+}
+
+.loop-container {
+    border: 1px dashed #7e7e7e85;
+    position: relative;
+    background-color: var(--mud-palette-surface);
+    border-radius: var(--mud-default-borderradius);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+    .loop-container:hover {
+        border: 1px solid var(--mud-palette-primary);
+    }
+
+@media (width <= 960px) {
+    .loop-container {
+        border: 1px solid transparent !important;
+    }
+}
+
+.loop-contents-container {
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    padding: 8px 12px;
+}
+
+@media (width <= 400px) {
+    .loop-contents-container {
+        padding: 0px 12px;
+    }
+}
+
+.inactive-loop .loop-contents-container {
+    overflow: hidden !important;
+}
+
+.loop-content-body {
+    padding: 0.5rem 0;
+}
+
+
+.focus-border {
+    border: 1px solid transparent;
+}
+
+.focus-border:focus {
+    border: 1px solid var(--mud-palette-primary) !important;
+}
+
+
+.task-list-item:has(input:checked) {
+    text-decoration: line-through;
+    opacity: 0.75;
+}
+
+.markdown-body ul, .markdown-body ol {
+    padding-left: 1em !important;
+}
+
+
+.markdown-body>div>p:last-child {
+    margin-bottom: 4px;
+}
+
+
+.border-hover-primary:hover {
+    border-color: var(--mud-palette-primary) !important;
+}
+
+.mud-list {
+    border: 1px solid var(--mud-palette-primary);
+    border-radius: var(--mud-default-borderradius);
+}
+
+.mud-card:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
+.mud-expand-panel {
+    border: 1px solid var(--mud-palette-action-default-hover) !important;
+}
+
+.mud-alert-message {
+    word-break: break-word;
+}
+
+.mud-checkbox > p,
+.mud-switch > p {
+    margin: 0 !important;
+}
+
+.mud-checkbox,
+.mud-switch {
+    margin-left: -12px;
+}
+
+.mud-dialog {
+    border: 1px solid var(--mud-palette-primary);
+    border-radius: var(--mud-default-borderradius);
+    overflow: hidden;
+}
+.mud-dialog-fullscreen {
+    background-color: transparent;
+}
+
+pre[class*="language-"] {
+    max-height: 500px !important;
+    min-width: 250px !important;
+}
+
+.loop-content-text-streaming pre[class*="language-"] {
+    max-height: unset !important;
+}
+
+.markdown-body {
+    font-size: 1rem !important;
+    background-color: transparent;
+}
+
+.markdown-body li>p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.markdown-body > div > div > div:last-child > p:last-child {
+    margin-bottom: 0;
+}
+
+
+.highlight-fst-menu-item .mud-menu-item:first-child {
+    background-color: var(--mud-palette-action-default-hover);
+}
+
+.monaco-editor {
+    outline-style: unset;
+    --vscode-editorGutter-background: transparent;
+    --vscode-editor-background: transparent;
+}
+
+#excalidraw-close-button {
+    background-color: transparent;
+    border-radius: var(--mud-default-borderradius);
+    color: var(--mud-palette-action-default);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 20px;
+    margin: 0 -10px;
+    font-family: var(--mud-typography-button-family);
+    font-size: var(--mud-typography-button-size);
+    border-radius: 0.5rem;
+}
+    #excalidraw-close-button svg {
+        color: var(--mud-palette-action-default);
+        fill: currentColor;
+    }
+
+    #excalidraw-close-button:hover {
+        background-color: var(--mud-palette-surface);
+        color: var(--mud-palette-warning);
+    }
+    #excalidraw-close-button:hover svg {
+        color: var(--mud-palette-warning);
+    }
+
+.excalidraw__canvas {
+    cursor: default !important;
+}

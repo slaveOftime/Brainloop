@@ -1,0 +1,31 @@
+services:  
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    volumes:
+      - .\qdrant:/qdrant/storage
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: brainloop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${pg_password}
+
+  brainloop:
+    build:
+      context: ./
+      dockerfile: dockerfile
+    ports:
+      - "6066:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - AppOptions__DataDbProvider=PostgreSQL
+      - AppOptions__DataDbConnectionString="Host=postgres; Database=brainloop; Username=postgres; Password=${pg_password};"
+      - AppOptions__VectorDbProvider=Qdrant
+      - AppOptions__VectorDbConnectionString=http://qdrant:6333
+    depends_on:
+      - qdrant
+      - postgres
+    volumes:
+      - .\documents:/App/documents
