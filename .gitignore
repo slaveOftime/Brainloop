@@ -6,6 +6,5 @@ dist
 Brainloop/documents
 documents
 qdrant
-runtimes
 publish
 *.db
