@@ -228,7 +228,7 @@ type SystemFunctionService
                         let! kernel = modelService.GetKernel(config.ModelId)
 
                         let sourceLoopContentId =
-                            match args.TryGetValue(Constants.ToolCallSourceId) with
+                            match args.TryGetValue(Constants.ToolCallLoopContentId) with
                             | true, (:? int64 as x) -> Some x
                             | _ -> None
 
@@ -316,7 +316,7 @@ type SystemFunctionService
                     | _ -> false
 
                 let sourceLoopContentId =
-                    match args.TryGetValue(Constants.ToolCallSourceId) with
+                    match args.TryGetValue(Constants.ToolCallLoopContentId) with
                     | true, (:? int64 as x) -> x
                     | _ -> sourceLoopContentId
 

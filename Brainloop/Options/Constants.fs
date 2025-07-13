@@ -12,7 +12,7 @@ let ToolCallAgentId = "tool_call_agent_id"
 let ToolCallLoopId = "tool_call_loop_id"
 
 [<Literal>]
-let ToolCallSourceId = "tool_call_source_id"
+let ToolCallLoopContentId = "tool_call_source_id"
 
 [<Literal>]
 let AgentPluginName = "agents"

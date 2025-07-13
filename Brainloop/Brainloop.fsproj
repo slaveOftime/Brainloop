@@ -70,6 +70,8 @@
 		<Compile Include="Loop\Types.fs" />
 		<Compile Include="Loop\Stores.fs" />
 		<Compile Include="Loop\GetTextFromImageHandler.fs" />
+		<Compile Include="Loop\ChatCompletionHandler.fs" />
+		<Compile Include="Loop\BuildTitleHandler.fs" />
 		<Compile Include="Loop\RebuildMemoryHandler.fs" />
 		<Compile Include="Loop\LoopContentService.fs" />
 		<Compile Include="Loop\LoopService.fs" />

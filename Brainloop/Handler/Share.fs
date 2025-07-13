@@ -1,7 +1,9 @@
 ﻿namespace Brainloop.Handler
 
+open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
+open Microsoft.SemanticKernel
 open Brainloop.Db
 
 
@@ -22,6 +24,10 @@ type IStartChatLoopHandler =
 
 type IGetTextFromImageHandler =
     abstract member Handle: imageFile: string * ?cancellationToken: CancellationToken -> ValueTask<string>
+
+
+type IBuildTitleHandler =
+    abstract member Handle: agentId: int * chatMessages: IList<ChatMessageContent> * ?cancellationToken: CancellationToken -> ValueTask<string>
 
 
 type IRebuildMemoryHandler =

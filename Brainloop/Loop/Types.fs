@@ -347,3 +347,12 @@ type ILoopService =
     abstract member BuildTitle: loopId: int64 * ?title: string -> ValueTask<unit>
 
     abstract member IsStreaming: loopId: int64 -> aval<bool>
+
+type IChatCompletionHandler =
+    abstract member Handle:
+        agentId: int *
+        chatMessages: IList<ChatMessageContent> *
+        targetContent: LoopContentWrapper *
+        ?modelId: int *
+        ?cancellationToken: CancellationToken ->
+            ValueTask<unit>
