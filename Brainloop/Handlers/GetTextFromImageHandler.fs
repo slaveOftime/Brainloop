@@ -7,7 +7,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.ChatCompletion
 open Brainloop.Db
-open Brainloop.Handler
+open Brainloop.Share
 open Brainloop.Model
 open Brainloop.Agent
 

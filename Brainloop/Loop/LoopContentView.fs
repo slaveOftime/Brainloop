@@ -13,8 +13,8 @@ open BlazorMonaco.Editor
 open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
+open Brainloop.Share
 open Brainloop.Function
-open Brainloop.Memory
 open Brainloop.Agent
 
 
@@ -27,7 +27,7 @@ type LoopContentView =
             gap 8
             marginBottom 4
         }
-        class' "loading-shimmer"
+        class' "loading-shimmer pulse"
         MudIcon'' {
             Icon Icons.Material.Outlined.Lightbulb
             Color Color.Primary
@@ -228,8 +228,8 @@ type LoopContentView =
                                         .FirstAsync(fun (x: LoopContent) -> x.Id)
                                 do!
                                     JS.ScrollToElementTop(
-                                        LoopUtils.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                                        LoopUtils.GetLoopContentContainerDomId(followingContentId),
+                                        Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                                        Strings.GetLoopContentContainerDomId(followingContentId),
                                         smooth = true
                                     )
                             })
@@ -238,7 +238,7 @@ type LoopContentView =
 
                 let argumentsView = region {
                     if toolCall.Arguments.Count > 0 then
-                        let codeId = $"{Constants.ToolCallPrefix}args-{contentWrapper.Id}-{index}"
+                        let codeId = $"{Strings.ToolCallPrefix}args-{contentWrapper.Id}-{index}"
                         p {
                             style { marginBottom "0.5rem" }
                             "arguments:"
@@ -339,7 +339,7 @@ type LoopContentView =
                     match toolCall.Result with
                     | ValueNone -> ()
                     | ValueSome result ->
-                        let codeId = $"{Constants.ToolCallPrefix}result-{contentWrapper.Id}-{index}"
+                        let codeId = $"{Strings.ToolCallPrefix}result-{contentWrapper.Id}-{index}"
                         if SystemFunction.isRenderInIframe toolCall.FunctionName then
                             let htmlDoc = string result
                             div {
@@ -610,8 +610,8 @@ type LoopContentView =
                         | _ -> false
                     if count > 0 && (not isUserScrolled || isLastItemToolCall ()) then
                         JS.ScrollToElementBottom(
-                            LoopUtils.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                            LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id),
+                            Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                            Strings.GetLoopContentContainerDomId(contentWrapper.Id),
                             smooth = true
                         )
                         |> ignore

@@ -32,6 +32,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
         do! JS.ScrollToElementTop("agents-container", "agent-new-form", smooth = true)
     }
 
+
     [<Parameter; SupplyParameterFromQuery(Name = "query")>]
     member _.Filter
         with get () = query.Value
@@ -56,7 +57,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
     member _.Header = fragment {
         PageTitle'' { "Agents" }
         SectionContent'' {
-            SectionName Constants.NavActionsSectionName
+            SectionName Strings.NavActionsSectionName
             MudSpacer''
         }
         MudText'' {

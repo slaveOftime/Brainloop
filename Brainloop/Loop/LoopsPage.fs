@@ -47,16 +47,16 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
     override _.Render() = fragment {
         PageTitle'' { "Brain Loops" }
         SectionContent'' {
-            SectionName Constants.NavActionsSectionName
+            SectionName Strings.NavActionsSectionName
             LoopSearcher.Create()
             MudSpacer''
         }
         SectionContent'' {
-            SectionName Constants.NavActionsRightSectionName
+            SectionName Strings.NavActionsRightSectionName
             createBtn
         }
         SectionContent'' {
-            SectionName Constants.NavQuickActionsSectionName
+            SectionName Strings.NavQuickActionsSectionName
             LoopSearcher.Create(iconOnly = true)
             MudTooltip'' {
                 Arrow

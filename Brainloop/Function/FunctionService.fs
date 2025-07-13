@@ -11,6 +11,7 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Caching.Memory
+open Microsoft.Extensions.DependencyInjection
 open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.Data
 open Microsoft.SemanticKernel.Plugins.OpenApi
@@ -19,15 +20,16 @@ open FSharp.Control
 open Fun.Result
 open Brainloop.Db
 open Brainloop.Memory
+open Brainloop.Function.SystemFunctions
 
 
 type FunctionService
     (
         dbService: IDbService,
         documentService: IDocumentService,
+        serviceProvider: IServiceProvider,
         textSearch: ITextSearch,
         memoryCache: IMemoryCache,
-        systemFunctionService: SystemFunctionService,
         loggerFactory: ILoggerFactory
     ) as this =
 
@@ -125,7 +127,8 @@ type FunctionService
                             description = fn.Name + " " + fn.Description,
                             loggerFactory = loggerFactory
                         )
-                | FunctionType.SystemSendHttp config -> systemFunctions[fn.Id] <- systemFunctionService.CreateSendHttpFunc(fn, config)
+                | FunctionType.SystemSendHttp config ->
+                    systemFunctions[fn.Id] <- serviceProvider.GetRequiredService<SystemSendHttpFunc>().Create(fn, config)
                 | FunctionType.SystemSearchMemory config ->
                     systemFunctions[fn.Id] <-
                         KernelFunctionFactory.CreateFromMethod(
@@ -153,12 +156,16 @@ type FunctionService
                             loggerFactory = loggerFactory
                         )
                 | FunctionType.SystemExecuteCommand config ->
-                    systemFunctions[fn.Id] <- systemFunctionService.CreateExecuteCommandFunc(fn, config, ?cancellationToken = cancellationToken)
+                    systemFunctions[fn.Id] <-
+                        serviceProvider.GetRequiredService<SystemExecuteCommandFunc>().Create(fn, config, ?cancellationToken = cancellationToken)
                 | FunctionType.SystemGenerateImage config ->
-                    systemFunctions[fn.Id] <- systemFunctionService.CreateGenerateImageFunc(fn, config, ?cancellationToken = cancellationToken)
-                | FunctionType.SystemCreateTaskForAgent -> systemFunctions[fn.Id] <- systemFunctionService.CreateCreateTaskForAgentFunc(fn)
+                    systemFunctions[fn.Id] <-
+                        serviceProvider.GetRequiredService<SystemGenerateImageFunc>().Create(fn, config, ?cancellationToken = cancellationToken)
+                | FunctionType.SystemCreateTaskForAgent ->
+                    systemFunctions[fn.Id] <- serviceProvider.GetRequiredService<SystemCreateTaskForAgentFunc>().Create(fn)
                 | FunctionType.SystemCreateScheduledTaskForAgent ->
-                    systemFunctions[fn.Id] <- systemFunctionService.CreateCreateScheduledTaskForAgentFunc(fn, ?cancellationToken = cancellationToken)
+                    systemFunctions[fn.Id] <-
+                        serviceProvider.GetRequiredService<SystemCreateScheduledTaskForAgentFunc>().Create(fn, ?cancellationToken = cancellationToken)
 
 
         return {| Plugins = plugins; SystemFunctions = systemFunctions |}
@@ -212,4 +219,4 @@ type FunctionService
         }
 
         member _.CreateInvokeAgentFunc(author, agentId, loopId, sourceLoopContentId) =
-            systemFunctionService.CreateInvokeAgentFunc(author, agentId, loopId, sourceLoopContentId)
+            serviceProvider.GetRequiredService<SystemInvokeAgentFunc>().Create(author, agentId, loopId, sourceLoopContentId)

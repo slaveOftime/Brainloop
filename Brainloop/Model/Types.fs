@@ -34,7 +34,7 @@ and IEmbeddingService = IEmbeddingGenerator<string, Embedding<float32>>
 and ModelDescription = { Model: string; DisplayName: string }
 
 
-type ModelDescriptionFromGoogle = {
+type private ModelDescriptionFromGoogle = {
     models:
         {|
             name: string
@@ -44,7 +44,7 @@ type ModelDescriptionFromGoogle = {
         |} list
 }
 
-type ModelDescriptionFromHuggingface = {
+type private ModelDescriptionFromHuggingface = {
     modelId: string
     downloads: int
     ``private``: bool

@@ -8,6 +8,7 @@ open Microsoft.Extensions.DependencyInjection
 open Quartz
 open Brainloop.Options
 open Brainloop.Function
+open Brainloop.Function.SystemFunctions
 
 
 [<Extension>]
@@ -20,21 +21,21 @@ type FunctionDIExtensions =
                 use connection = new Microsoft.Data.SqlClient.SqlConnection(appOptions.DataDbConnectionString)
                 connection.Open()
                 use command = connection.CreateCommand()
-                command.CommandText <- File.ReadAllText("Db/Scripts/tables_sqlServer.sql")
+                command.CommandText <- File.ReadAllText("Function/Quartz/tables_sqlServer.sql")
                 command.ExecuteNonQuery() |> ignore
 
             | "SqlLite" ->
                 use connection = new Microsoft.Data.Sqlite.SqliteConnection(appOptions.DataDbConnectionString)
                 connection.Open()
                 use command = connection.CreateCommand()
-                command.CommandText <- File.ReadAllText("Db/Scripts/tables_sqlite.sql")
+                command.CommandText <- File.ReadAllText("Function/Quartz/tables_sqlite.sql")
                 command.ExecuteNonQuery() |> ignore
 
             | "PostgreSQL" ->
                 use connection = new Npgsql.NpgsqlConnection(appOptions.DataDbConnectionString)
                 connection.Open()
                 use command = connection.CreateCommand()
-                command.CommandText <- File.ReadAllText("Db/Scripts/tables_postgres.sql")
+                command.CommandText <- File.ReadAllText("Function/Quartz/tables_postgres.sql")
                 command.ExecuteNonQuery() |> ignore
 
             | x -> failwith $"Unsupported database provider {x}"
@@ -60,4 +61,9 @@ type FunctionDIExtensions =
 
         services.AddScoped<IFunctionService, FunctionService>()
 
-        services.AddScoped<SystemFunctionService>()
+        services.AddScoped<SystemSendHttpFunc>()
+        services.AddScoped<SystemGenerateImageFunc>()
+        services.AddScoped<SystemInvokeAgentFunc>()
+        services.AddScoped<SystemExecuteCommandFunc>()
+        services.AddScoped<SystemCreateTaskForAgentFunc>()
+        services.AddScoped<SystemCreateScheduledTaskForAgentFunc>()

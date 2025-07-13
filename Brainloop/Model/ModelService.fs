@@ -1,7 +1,6 @@
 ﻿namespace Brainloop.Model
 
 open System
-open System.Net
 open System.Net.Http
 open System.Net.Http.Json
 open System.Net.Http.Headers
@@ -15,6 +14,7 @@ open IcedTasks
 open OllamaSharp
 open Fun.Result
 open Brainloop.Db
+open Brainloop.Share
 
 
 type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
@@ -23,19 +23,12 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
 
 
     member _.CreateBaseHttpClient(model: Model, ?timeoutMs: int) =
-        let httpClientHandler = new HttpClientHandler()
-
-        match model.Proxy with
-        | SafeString proxy ->
-            let webProxy = WebProxy(Uri(proxy))
-            httpClientHandler.UseProxy <- true
-            httpClientHandler.Proxy <- webProxy
-        | _ -> ()
-
-        let httpClient = new HttpClient(httpClientHandler)
-        httpClient.BaseAddress <- Uri(if model.Api.EndsWith "/" then model.Api else model.Api + "/")
-        httpClient.Timeout <- TimeSpan.FromMilliseconds(int64 (defaultArg timeoutMs 600_000))
-        httpClient
+        HttpClient.Create(
+            ?headers = (model.ApiProps |> ValueOption.map _.Headers |> ValueOption.toOption),
+            baseUrl = model.Api,
+            proxy = model.Proxy,
+            ?timeoutMs = timeoutMs
+        )
 
     member _.CreateHttpClient(model: Model, ?timeoutMs: int) =
         let httpClient = this.CreateBaseHttpClient(model, ?timeoutMs = timeoutMs)
@@ -43,12 +36,6 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
         match model.ApiKey with
         | SafeString key -> httpClient.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue key
         | _ -> ()
-
-        match model.ApiProps with
-        | ValueNone -> ()
-        | ValueSome props ->
-            for KeyValue(k, v) in props.Headers do
-                httpClient.DefaultRequestHeaders.Add(k, v)
 
         httpClient
 
@@ -129,7 +116,7 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
         }
 
         member _.GetModelsWithCache() =
-            memoryCache.GetOrCreateAsync(Constants.ModelsMemoryCacheKey, (fun entry -> task { return! (this :> IModelService).GetModels() }))
+            memoryCache.GetOrCreateAsync(Strings.ModelsMemoryCacheKey, (fun entry -> task { return! (this :> IModelService).GetModels() }))
             |> ValueTask.ofTask
             |> ValueTask.map (
                 function
@@ -139,8 +126,8 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
 
 
         member _.UpsertModel(model) = valueTask {
-            memoryCache.Remove(Constants.ModelsMemoryCacheKey)
-            memoryCache.Remove(Constants.AgentsMemoryCacheKey)
+            memoryCache.Remove(Strings.ModelsMemoryCacheKey)
+            memoryCache.Remove(Strings.AgentsMemoryCacheKey)
 
             let! model = dbService.ModelRepo.InsertOrUpdateAsync(model)
 
@@ -163,8 +150,8 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
         }
 
         member _.DeleteModel(id) = valueTask {
-            memoryCache.Remove(Constants.ModelsMemoryCacheKey)
-            memoryCache.Remove(Constants.AgentsMemoryCacheKey)
+            memoryCache.Remove(Strings.ModelsMemoryCacheKey)
+            memoryCache.Remove(Strings.AgentsMemoryCacheKey)
 
             let db = dbService.DbContext
             db.Transaction(fun () ->

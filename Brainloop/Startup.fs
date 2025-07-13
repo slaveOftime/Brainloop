@@ -11,7 +11,7 @@ open Blazored.LocalStorage
 open MudBlazor.Services
 open Brainloop.Options
 open Brainloop.Db
-open Brainloop.Handler
+open Brainloop.Share
 open Brainloop.Model
 open Brainloop.Memory
 open Brainloop.Agent

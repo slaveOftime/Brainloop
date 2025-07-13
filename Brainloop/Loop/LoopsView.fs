@@ -94,24 +94,24 @@ type LoopsView =
                                   }
                             }
                         }
-                        //html.inject (fun () -> adapt {
-                        //    let! isLoading =
-                        //        globalStore.LoopTitles
-                        //        |> AMap.tryFind activeLoop.Id
-                        //        |> AVal.map (Option.defaultValue LoadingState.NotStartYet >> (fun x -> x.IsLoadingNow))
-                        //    MudIconButton'' {
-                        //        class' (if isLoading then "pulse" else "")
-                        //        Disabled isLoading
-                        //        Size Size.Small
-                        //        Icon Icons.Material.Filled.Refresh
-                        //        OnClick(fun _ -> task {
-                        //            try
-                        //                do! loopService.BuildTitle(activeLoop.Id)
-                        //            with ex ->
-                        //                snackbar.ShowMessage(ex, logger)
-                        //        })
-                        //    }
-                        //})
+                        html.inject (fun () -> adapt {
+                            let! isLoading =
+                                globalStore.LoopTitles
+                                |> AMap.tryFind activeLoop.Id
+                                |> AVal.map (Option.defaultValue LoadingState.NotStartYet >> (fun x -> x.IsLoadingNow))
+                            MudIconButton'' {
+                                class' (if isLoading then "pulse" else "")
+                                Disabled isLoading
+                                Size Size.Small
+                                Icon Icons.Material.Filled.Refresh
+                                OnClick(fun _ -> task {
+                                    try
+                                        do! loopService.BuildTitle(activeLoop.Id)
+                                    with ex ->
+                                        snackbar.ShowMessage(ex, logger)
+                                })
+                            }
+                        })
                         MudTooltip'' {
                             Arrow
                             Placement Placement.Top

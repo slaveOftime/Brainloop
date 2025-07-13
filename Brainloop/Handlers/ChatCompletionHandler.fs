@@ -20,6 +20,7 @@ open Brainloop.Db
 open Brainloop.Model
 open Brainloop.Function
 open Brainloop.Agent
+open Brainloop.Share
 
 
 type ChatCompletionHandler
@@ -103,9 +104,9 @@ type ChatCompletionHandler
                     functionWatch.Start()
 
                     logger.LogInformation("Function {functionName} is invoking", functionName)
-                    context.Arguments.Add(Constants.ToolCallAgentId, agent.Id)
-                    context.Arguments.Add(Constants.ToolCallLoopId, targetContent.LoopId)
-                    context.Arguments.Add(Constants.ToolCallLoopContentId, targetContent.Id)
+                    context.Arguments.Add(Strings.ToolCallAgentId, agent.Id)
+                    context.Arguments.Add(Strings.ToolCallLoopId, targetContent.LoopId)
+                    context.Arguments.Add(Strings.ToolCallLoopContentId, targetContent.Id)
 
                     onFunctionStarted ()
                     targetContent.StreammingCount.Publish((+) 1)
@@ -279,7 +280,7 @@ type ChatCompletionHandler
                                 Seq.empty
 
                         kernel.Plugins.AddFromFunctions(
-                            Constants.AgentPluginName,
+                            Strings.AgentPluginName,
                             functions =
                                 (agents
                                  |> Seq.map (fun ag ->

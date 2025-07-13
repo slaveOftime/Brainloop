@@ -19,7 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Compile Include="Options\Constants.fs" />
+		<Compile Include="Options\Strings.fs" />
 		<Compile Include="Options\JsonOptions.fs" />
 		<Compile Include="Options\AppOptions.fs" />
 		<Compile Include="View\JsInterop.fs" />
@@ -30,7 +30,6 @@
 		<Compile Include="View\Notification.fs" />
 		<Compile Include="View\Form.fs" />
 		<Compile Include="View\Markdown.fs" />
-		<None Include="Db\Scripts\*.sql" CopyToOutputDirectory="PreserveNewest" />
 		<Compile Include="Db\Model.fs" />
 		<Compile Include="Db\Agent.fs" />
 		<Compile Include="Db\Function.fs" />
@@ -38,23 +37,29 @@
 		<Compile Include="Db\Notification.fs" />
 		<Compile Include="Db\Settings.fs" />
 		<Compile Include="Db\DbService.fs" />
-		<Compile Include="Handler\Share.fs" />
+		<Compile Include="Share\LoopContentWrapper.fs" />
+		<Compile Include="Share\Handlers.fs" />
+		<Compile Include="Share\HttpClient.fs" />
 		<Compile Include="Model\Types.fs" />
 		<Compile Include="Model\ModelService.fs" />
 		<Compile Include="Model\ModelSelector.fs" />
 		<Compile Include="Model\ModelCard.fs" />
 		<Compile Include="Model\ModelsPage.fs" />
 		<Compile Include="Memory\Types.fs" />
-		<Compile Include="Memory\Utils.fs" />
 		<Compile Include="Memory\DocumentService.fs" />
 		<Compile Include="Memory\MemoryService.fs" />
 		<Compile Include="Memory\Apis.fs" />
 		<Compile Include="Memory\DIExtensions.fs" />
+		<None Include="Function\Quartz\*.sql" CopyToOutputDirectory="PreserveNewest" />
 		<Compile Include="Function\Types.fs" />
 		<Compile Include="Function\Utils.fs" />
 		<Compile Include="Function\Mcp.fs" />
-		<Compile Include="Function\SystemScheduledTask.fs" />
-		<Compile Include="Function\SystemFunction.fs" />
+		<Compile Include="Function\SystemFunctions\SystemSendHttpFunc.fs" />
+		<Compile Include="Function\SystemFunctions\SystemGenerateImageFunc.fs" />
+		<Compile Include="Function\SystemFunctions\SystemInvokeAgentFunc.fs" />
+		<Compile Include="Function\SystemFunctions\SystemExecuteCommandFunc.fs" />
+		<Compile Include="Function\SystemFunctions\SystemCreateTaskForAgentFunc.fs" />
+		<Compile Include="Function\SystemFunctions\SystemCreateScheduledTaskForAgentFunc.fs" />
 		<Compile Include="Function\FunctionService.fs" />
 		<Compile Include="Function\FunctionMcpSelector.fs" />
 		<Compile Include="Function\FunctionCard.fs" />
@@ -69,10 +74,6 @@
 		<Compile Include="Agent\AgentsPage.fs" />
 		<Compile Include="Loop\Types.fs" />
 		<Compile Include="Loop\Stores.fs" />
-		<Compile Include="Loop\GetTextFromImageHandler.fs" />
-		<Compile Include="Loop\ChatCompletionHandler.fs" />
-		<Compile Include="Loop\BuildTitleHandler.fs" />
-		<Compile Include="Loop\RebuildMemoryHandler.fs" />
 		<Compile Include="Loop\LoopContentService.fs" />
 		<Compile Include="Loop\LoopService.fs" />
 		<Compile Include="Loop\Hooks.fs" />
@@ -88,6 +89,10 @@
 		<Compile Include="Notification\NotificationView.fs" />
 		<Compile Include="Settings\SettingsService.fs" />
 		<Compile Include="Settings\SettingsPage.fs" />
+		<Compile Include="Handlers\GetTextFromImageHandler.fs" />
+		<Compile Include="Handlers\ChatCompletionHandler.fs" />
+		<Compile Include="Handlers\BuildTitleHandler.fs" />
+		<Compile Include="Handlers\RebuildMemoryHandler.fs" />
 		<Compile Include="Entry\NavMenu.fs" />
 		<Compile Include="Entry\MainLayout.fs" />
 		<Compile Include="Entry\Routes.fs" />

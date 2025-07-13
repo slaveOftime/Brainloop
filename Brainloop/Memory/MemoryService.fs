@@ -23,7 +23,7 @@ open Fun.Result
 open Brainloop.Options
 open Brainloop.Db
 open Brainloop.Model
-open Brainloop.Handler
+open Brainloop.Share
 
 
 type private MemoryCollection = VectorStoreCollection<obj, Dictionary<string, obj | null>>

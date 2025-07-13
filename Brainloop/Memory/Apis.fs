@@ -19,7 +19,7 @@ type DocumentFileApis =
 
         endpoint.MapGet(
             "/api/memory/document/{fileName}",
-            Func<string, IDocumentService, ValueTask<IResult>>(fun fileName documentService -> valueTask {
+            Func<string, HttpContext, IDocumentService, ValueTask<IResult>>(fun fileName httpContext documentService -> valueTask {
                 let file = Path.Combine(documentService.RootDir, fileName)
                 if File.Exists file then
                     let contentType =
@@ -34,6 +34,8 @@ type DocumentFileApis =
                         | SafeStringEndWithCi ".wav" -> "audio/wav"
                         | SafeStringEndWithCi ".mp4" -> "video/mp4"
                         | _ -> "application/octet-stream"
+
+                    httpContext.Response.Headers.CacheControl <- "public,max-age=2592000"
 
                     return
                         match file with

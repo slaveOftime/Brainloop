@@ -22,7 +22,7 @@ type AgentService(dbService: IDbService, memoryCache: IMemoryCache) as this =
         }
 
         member _.GetAgentsWithCache() = valueTask {
-            return! memoryCache.GetOrCreateAsync(Constants.AgentsMemoryCacheKey, fun _ -> (this :> IAgentService).GetAgents().AsTask())
+            return! memoryCache.GetOrCreateAsync(Strings.AgentsMemoryCacheKey, fun _ -> (this :> IAgentService).GetAgents().AsTask())
         }
 
         member _.TryGetAgentWithCache(id) =
@@ -39,7 +39,7 @@ type AgentService(dbService: IDbService, memoryCache: IMemoryCache) as this =
 
 
         member _.UpsertAgent(agent) = valueTask {
-            memoryCache.Remove(Constants.AgentsMemoryCacheKey)
+            memoryCache.Remove(Strings.AgentsMemoryCacheKey)
 
             let db = dbService.DbContext
 
@@ -65,7 +65,7 @@ type AgentService(dbService: IDbService, memoryCache: IMemoryCache) as this =
         }
 
         member _.DeleteAgent(id) = valueTask {
-            memoryCache.Remove(Constants.AgentsMemoryCacheKey)
+            memoryCache.Remove(Strings.AgentsMemoryCacheKey)
             let db = dbService.DbContext
             db.Transaction(fun () ->
                 db.Delete<Agent>().Where(fun (x: Agent) -> x.Id = id).ExecuteAffrows() |> ignore

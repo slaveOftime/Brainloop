@@ -18,6 +18,24 @@ type FunctionType =
     | OpenApi of OpenApiConfig
     | OpenApiUrl of OpenApiUriConfig
 
+[<AutoOpen>]
+module FunctionType =
+    let (|SYSTEM_FUNCTION|_|) (ty: FunctionType) =
+        match ty with
+        | FunctionType.SystemGetCurrentTime
+        | FunctionType.SystemRenderInIframe
+        | FunctionType.SystemSendHttp _
+        | FunctionType.SystemSearchMemory _
+        | FunctionType.SystemReadDocumentAsText
+        | FunctionType.SystemExecuteCommand _
+        | FunctionType.SystemGenerateImage _
+        | FunctionType.SystemCreateTaskForAgent
+        | FunctionType.SystemCreateScheduledTaskForAgent -> true
+        | FunctionType.Mcp _
+        | FunctionType.OpenApi _
+        | FunctionType.OpenApiUrl _ -> false
+
+
 [<CLIMutable>]
 type Function = {
     Id: int

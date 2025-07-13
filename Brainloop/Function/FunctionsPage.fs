@@ -57,7 +57,7 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
     member _.Header = fragment {
         PageTitle'' { "Tools" }
         SectionContent'' {
-            SectionName Constants.NavActionsSectionName
+            SectionName Strings.NavActionsSectionName
             MudSpacer''
         }
         MudText'' {

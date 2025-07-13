@@ -13,7 +13,7 @@ open Fun.Blazor
 open Fun.Blazor.Validators
 open Brainloop.Db
 open Brainloop.Loop
-open Brainloop.Handler
+open Brainloop.Share
 
 
 [<Route "/settings">]
@@ -23,7 +23,7 @@ type SettingsPage(settingsService: ISettingsService, shareStore: IShareStore) as
     member _.Header = fragment {
         PageTitle'' { "Settings" }
         SectionContent'' {
-            SectionName Constants.NavActionsSectionName
+            SectionName Strings.NavActionsSectionName
             MudSpacer''
         }
         MudText'' {

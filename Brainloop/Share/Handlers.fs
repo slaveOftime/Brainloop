@@ -1,4 +1,4 @@
-﻿namespace Brainloop.Handler
+﻿namespace Brainloop.Share
 
 open System.Collections.Generic
 open System.Threading
@@ -36,3 +36,13 @@ type IRebuildMemoryHandler =
 
 type IAddNotificationHandler =
     abstract member Handle: source: NotificationSource * message: string -> ValueTask<unit>
+
+
+type IChatCompletionHandler =
+    abstract member Handle:
+        agentId: int *
+        chatMessages: IList<ChatMessageContent> *
+        targetContent: LoopContentWrapper *
+        ?modelId: int *
+        ?cancellationToken: CancellationToken ->
+            ValueTask<unit>

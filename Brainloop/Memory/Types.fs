@@ -9,6 +9,34 @@ open Microsoft.Extensions.VectorData
 open Brainloop.Db
 
 
+type IDocumentService =
+    abstract member RootDir: string
+    // Return a file name with extension
+    abstract member SaveFile:
+        name: string * content: Stream * ?loopContentId: int64 * ?makeUnique: bool * ?cancellationToken: CancellationToken -> ValueTask<string>
+    abstract member DeleteFile: fileName: string -> ValueTask<unit>
+    abstract member ReadAsText: fileName: string -> ValueTask<string>
+
+
+type IMemoryService =
+    abstract member VectorizeFile: fileName: string * ?loopContentId: int64 -> ValueTask<unit>
+    abstract member VectorizeLoop: id: int64 * summary: string -> ValueTask<unit>
+    abstract member VectorizeLoopContent: id: int64 * content: string -> ValueTask<unit>
+    abstract member DeleteFile: fileName: string -> ValueTask<unit>
+    abstract member DeleteLoop: id: int64 -> ValueTask<unit>
+    abstract member DeleteLoopContent: id: int64 -> ValueTask<unit>
+
+    abstract member VectorSearch:
+        query: string *
+        ?top: int *
+        ?options: VectorSearchOptions<Dictionary<string, obj | null>> *
+        ?distinguishBySource: bool *
+        ?cancellationToken: CancellationToken ->
+            IAsyncEnumerable<MemorySearchResultItem>
+
+    abstract member Clear: unit -> ValueTask<unit>
+
+
 type MemoryEmbedding = {
     Source: MemoryEmbeddingSource
     // Like File path etc.
@@ -105,34 +133,6 @@ type MemoryEmbeddingSource =
 
 [<RequireQualifiedAccess>]
 type MemoryEmbeddingReference = LoopContent of int64
-
-
-type IDocumentService =
-    abstract member RootDir: string
-    // Return a file name with extension
-    abstract member SaveFile:
-        name: string * content: Stream * ?loopContentId: int64 * ?makeUnique: bool * ?cancellationToken: CancellationToken -> ValueTask<string>
-    abstract member DeleteFile: fileName: string -> ValueTask<unit>
-    abstract member ReadAsText: fileName: string -> ValueTask<string>
-
-
-type IMemoryService =
-    abstract member VectorizeFile: fileName: string * ?loopContentId: int64 -> ValueTask<unit>
-    abstract member VectorizeLoop: id: int64 * summary: string -> ValueTask<unit>
-    abstract member VectorizeLoopContent: id: int64 * content: string -> ValueTask<unit>
-    abstract member DeleteFile: fileName: string -> ValueTask<unit>
-    abstract member DeleteLoop: id: int64 -> ValueTask<unit>
-    abstract member DeleteLoopContent: id: int64 -> ValueTask<unit>
-
-    abstract member VectorSearch:
-        query: string *
-        ?top: int *
-        ?options: VectorSearchOptions<Dictionary<string, obj | null>> *
-        ?distinguishBySource: bool *
-        ?cancellationToken: CancellationToken ->
-            IAsyncEnumerable<MemorySearchResultItem>
-
-    abstract member Clear: unit -> ValueTask<unit>
 
 
 type MemorySearchResultItem = { Score: float; Text: string; Result: MemorySearchResult }

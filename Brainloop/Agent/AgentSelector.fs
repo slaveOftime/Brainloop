@@ -34,16 +34,7 @@ type AgentSelector =
                 }
 
                 let openAgentsSelector () = task {
-                    let! results =
-                        agentService.GetAgentsWithCache()
-                        |> ValueTask.map (
-                            Seq.filter (fun x ->
-                                match x.Type with
-                                | AgentType.TitleBuilder -> false
-                                | AgentType.General -> true
-                            )
-                        )
-                        |> ValueTask.toTask
+                    let! results = agentService.GetAgentsWithCache()
                     transact (fun _ ->
                         agents.Clear()
                         agents.AddRange results

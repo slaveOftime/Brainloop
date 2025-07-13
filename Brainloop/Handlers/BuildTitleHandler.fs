@@ -10,7 +10,7 @@ open IcedTasks
 open Brainloop.Db
 open Brainloop.Model
 open Brainloop.Agent
-open Brainloop.Handler
+open Brainloop.Share
 
 
 type BuildTitleHandler(modelService: IModelService, agentService: IAgentService, logger: ILogger<ChatCompletionHandler>) as this =

@@ -16,6 +16,7 @@ open BlazorMonaco.Editor
 open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
+open Brainloop.Share
 open Brainloop.Memory
 open Brainloop.Agent
 
@@ -74,7 +75,7 @@ type LoopUserInput =
                     | inputRef ->
                         do! inputRef.SetValue("")
                         do! Async.Sleep 200
-                        do! JS.ScrollToBottom(LoopUtils.GetLoopContentsContainerDomId(loopId), smooth = true)
+                        do! JS.ScrollToBottom(Strings.GetLoopContentsContainerDomId(loopId), smooth = true)
 
                     isInProgress.Publish false
                 }

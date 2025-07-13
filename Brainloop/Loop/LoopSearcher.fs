@@ -13,6 +13,7 @@ open MudBlazor
 open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
+open Brainloop.Share
 open Brainloop.Memory
 
 

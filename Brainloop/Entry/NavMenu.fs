@@ -66,10 +66,10 @@ type NavMenu =
                 Height 40
             }
         }
-        SectionOutlet'' { SectionName Constants.NavActionsSectionName }
+        SectionOutlet'' { SectionName Strings.NavActionsSectionName }
         NavMenu.MoreMenus()
         NotificationView.Indicator()
-        SectionOutlet'' { SectionName Constants.NavActionsRightSectionName }
+        SectionOutlet'' { SectionName Strings.NavActionsRightSectionName }
     }
 
     static member private DesktopNav =
@@ -125,7 +125,7 @@ type NavMenu =
                             //    )
                             //    OnClick(fun _ -> toggleToolbar (not showToolbar))
                             //}
-                            SectionOutlet'' { SectionName Constants.NavActionsSectionName }
+                            SectionOutlet'' { SectionName Strings.NavActionsSectionName }
                             MudNavMenu'' {
                                 style {
                                     displayFlex
@@ -158,9 +158,9 @@ type NavMenu =
                                 }
                                 NotificationView.Indicator()
                             }
-                            SectionOutlet'' { SectionName Constants.NavActionsRightSectionName }
+                            SectionOutlet'' { SectionName Strings.NavActionsRightSectionName }
                         else
-                            SectionOutlet'' { SectionName Constants.NavQuickActionsSectionName }
+                            SectionOutlet'' { SectionName Strings.NavQuickActionsSectionName }
                             MudSpacer''
                             MudTooltip'' {
                                 Arrow

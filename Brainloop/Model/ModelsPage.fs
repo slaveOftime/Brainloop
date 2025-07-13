@@ -8,7 +8,6 @@ open Microsoft.AspNetCore.Components.Web
 open Microsoft.JSInterop
 open IcedTasks
 open MudBlazor
-open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
 
@@ -34,13 +33,7 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
         do! JS.ScrollToElementTop("models-container", "model-new-form", smooth = true)
     }
 
-    [<Parameter; SupplyParameterFromQuery(Name = "query")>]
-    member _.Filter
-        with get () = query.Value
-        and set (x: string) = query.Publish x
-
-
-    member _.UpsertModel(value: Model, isForCreating) = task {
+    let upsertModel (value: Model) (isForCreating: bool) = task {
         isSaving.Publish true
 
         try
@@ -56,10 +49,15 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
     }
 
 
+    [<Parameter; SupplyParameterFromQuery(Name = "query")>]
+    member _.Filter
+        with get () = query.Value
+        and set (x: string) = query.Publish x
+
     member _.Header = fragment {
         PageTitle'' { "Models" }
         SectionContent'' {
-            SectionName Constants.NavActionsSectionName
+            SectionName Strings.NavActionsSectionName
             MudSpacer''
         }
         MudText'' {
@@ -145,7 +143,7 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
                         MudButton'' {
                             Variant Variant.Filled
                             Color Color.Primary
-                            OnClick(fun _ -> this.UpsertModel(form.GetValue(), isForCreating))
+                            OnClick(fun _ -> upsertModel (form.GetValue()) isForCreating)
                             Disabled(isSaving' || errors.Length > 0)
                             "Save"
                         }
@@ -215,15 +213,14 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
                                         Size Size.Small
                                         Icon Icons.Material.Outlined.CopyAll
                                         OnClick(fun _ ->
-                                            this.UpsertModel(
+                                            upsertModel
                                                 {
                                                     model with
                                                         Id = 0
                                                         Name = model.Name + " (Copy)"
                                                         CreatedAt = DateTime.Now
-                                                },
+                                                }
                                                 false
-                                            )
                                         )
                                     }
                             }

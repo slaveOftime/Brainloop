@@ -13,6 +13,7 @@ open MudBlazor
 open Fun.Blazor
 open BlazorMonaco
 open BlazorMonaco.Editor
+open Brainloop.Share
 open Brainloop.Memory
 
 
@@ -43,8 +44,8 @@ type LoopContentEditor =
                     do! Async.Sleep 100
                     do!
                         JS.ScrollToElementBottom(
-                            LoopUtils.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                            LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id),
+                            Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                            Strings.GetLoopContentContainerDomId(contentWrapper.Id),
                             smooth = true
                         )
                 }
@@ -72,8 +73,8 @@ type LoopContentEditor =
                         do! Async.Sleep 100
                         do!
                             JS.ScrollToElementBottom(
-                                LoopUtils.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                                LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id),
+                                Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                                Strings.GetLoopContentContainerDomId(contentWrapper.Id),
                                 smooth = true
                             )
                     with ex ->
@@ -321,8 +322,8 @@ type LoopContentEditor =
 
                 do!
                     JS.ScrollToElementBottom(
-                        LoopUtils.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                        LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id),
+                        Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                        Strings.GetLoopContentContainerDomId(contentWrapper.Id),
                         smooth = true
                     )
             }

@@ -1,7 +1,6 @@
 namespace Brainloop.Loop
 
 open System
-open System.Threading.Tasks
 open FSharp.Control.Reactive
 open FSharp.Data.Adaptive
 open Microsoft.JSInterop
@@ -13,6 +12,7 @@ open MudBlazor
 open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
+open Brainloop.Share
 open Brainloop.Memory
 open Brainloop.Agent
 open Brainloop.Model
@@ -28,24 +28,24 @@ type LoopView =
                 let loopContentService = hook.ServiceProvider.GetRequiredService<ILoopContentService>()
                 let logger = hook.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("LoopView")
 
-                let containerId = LoopUtils.GetLoopContentsContainerDomId(currentLoop.Id)
+                let containerId = Strings.GetLoopContentsContainerDomId(currentLoop.Id)
                 let contents = cval ValueOption<LoopContentWrapper clist>.None
                 let isLoadingMore = cval false
                 let touchStartY = cval 0.
                 let userScrolledEvent = Event<bool>()
 
 
-                let loadAndScrollToContent (contents: LoopContentWrapper clist) (forLatest: bool) (scrollToContent: int64) = valueTask {
+                let loadAndScrollToContent (contents: LoopContentWrapper clist) (forLatest: bool) (scrollToContentId: int64) = valueTask {
                     isLoadingMore.Publish(true)
                     try
                         let getCheckId () = if forLatest then contents[contents.Count - 1].Id else contents[0].Id
-                        let isContentLoaded () = contents |> AList.force |> Seq.exists (fun x -> x.Id = scrollToContent)
+                        let isContentLoaded () = contents |> AList.force |> Seq.exists (fun x -> x.Id = scrollToContentId)
 
                         let mutable lastCheckedId = ValueNone
                         while contents.Count > 0 && lastCheckedId <> ValueSome(getCheckId ()) && not (isContentLoaded ()) do
                             let contentId = getCheckId ()
                             lastCheckedId <- ValueSome contentId
-                            let! isInView = JS.IsInView(LoopUtils.GetLoopContentContainerDomId(scrollToContent))
+                            let! isInView = JS.IsInView(Strings.GetLoopContentContainerDomId(scrollToContentId))
                             if not isInView then
                                 if forLatest then
                                     do! loopContentService.LoadMoreLatestContentsIntoCache(currentLoop.Id)
@@ -53,7 +53,7 @@ type LoopView =
                                     do! loopContentService.LoadMoreContentsIntoCache(currentLoop.Id)
 
                         if isContentLoaded () then
-                            do! JS.ScrollToElementTop(containerId, LoopUtils.GetLoopContentContainerDomId(scrollToContent), smooth = true)
+                            do! JS.ScrollToElementTop(containerId, Strings.GetLoopContentContainerDomId(scrollToContentId), smooth = true)
 
                     with ex ->
                         snackbar.ShowMessage(ex, logger)
@@ -67,7 +67,7 @@ type LoopView =
                     match bottomId with
                     | ValueNone -> ()
                     | ValueSome bottomId ->
-                        let! isInView = JS.IsInView(LoopUtils.GetLoopContentContainerDomId(bottomId))
+                        let! isInView = JS.IsInView(Strings.GetLoopContentContainerDomId(bottomId))
                         if isInView then
                             do! loopContentService.LoadMoreLatestContentsIntoCache(currentLoop.Id)
 
@@ -81,7 +81,7 @@ type LoopView =
                     match topId with
                     | ValueNone -> ()
                     | ValueSome topId ->
-                        let! isInView = JS.IsInView(LoopUtils.GetLoopContentContainerDomId(topId))
+                        let! isInView = JS.IsInView(Strings.GetLoopContentContainerDomId(topId))
                         if isInView then
                             do! loopContentService.LoadMoreContentsIntoCache(currentLoop.Id)
 
@@ -131,7 +131,7 @@ type LoopView =
                             transact (fun _ -> shareStore.LoopContentsFocusing.Remove currentLoop.Id |> ignore)
                             valueTask {
                                 if contents |> Seq.exists (fun x -> x.Id = contentId) then
-                                    do! JS.ScrollToElementBottom(containerId, LoopUtils.GetLoopContentContainerDomId(contentId))
+                                    do! JS.ScrollToElementBottom(containerId, Strings.GetLoopContentContainerDomId(contentId))
                                 else if contents.Count > 0 && contents[0].Id > contentId then
                                     do! loadAndScrollToContent contents false contentId
                                 else if contents.Count > 0 && contents[contents.Count - 1].Id < contentId then
@@ -238,7 +238,7 @@ type LoopView =
         html.inject (
             contentWrapper.Id,
             fun () ->
-                let contentId = LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id)
+                let contentId = Strings.GetLoopContentContainerDomId(contentWrapper.Id)
                 let sourceContent = sourceContent |> Option.defaultWith (fun _ -> AVal.constant ValueNone)
 
                 let viewRaw = cval false
@@ -492,8 +492,8 @@ type LoopView =
                         do! Async.Sleep 100
                         do!
                             JS.ScrollToElementBottom(
-                                LoopUtils.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                                LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id),
+                                Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                                Strings.GetLoopContentContainerDomId(contentWrapper.Id),
                                 smooth = true
                             )
                     })
@@ -533,8 +533,8 @@ type LoopView =
                     do! loopService.Resend(contentWrapper.LoopId, contentWrapper.Id, ?modelId = modelId)
                     do!
                         JS.ScrollToElementBottom(
-                            LoopUtils.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                            LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id)
+                            Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                            Strings.GetLoopContentContainerDomId(contentWrapper.Id)
                         )
                 with ex ->
                     snackbar.ShowMessage(ex, logger)
@@ -623,7 +623,7 @@ type LoopView =
                     OnClick(fun _ -> task {
                         let! closeFn = dialog.ShowLoading(message = MudText'' { "Copy as image ..." })
                         try
-                            do! JS.CopyElementAsImage(LoopUtils.GetLoopContentContainerDomId(contentWrapper.Id))
+                            do! JS.CopyElementAsImage(Strings.GetLoopContentContainerDomId(contentWrapper.Id))
                             snackbar.ShowMessage("Copied successfully", severity = Severity.Success)
                         with ex ->
                             snackbar.ShowMessage(ex, logger)
