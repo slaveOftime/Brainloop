@@ -33,7 +33,7 @@ type AgentService(dbService: IDbService, memoryCache: IMemoryCache) as this =
                 .Queryable<Agent>()
                 .IncludeMany((fun x -> x.AgentModels), ``then`` = (fun x -> x.Include(fun x -> x.Model) |> ignore))
                 .IncludeMany((fun x -> x.AgentFunctions))
-                .Where(fun (x: Agent) -> x.Type = AgentType.TitleBuilder)
+                .Where(fun (x: Agent) -> x.Type = AgentType.CreateTitle)
                 .FirstAsync<Agent | null>()
             |> ValueTask.ofTask
 

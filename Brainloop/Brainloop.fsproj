@@ -94,6 +94,7 @@
 		<Compile Include="Handlers\BuildTitleHandler.fs" />
 		<Compile Include="Handlers\RebuildMemoryHandler.fs" />
 		<Compile Include="Entry\NavMenu.fs" />
+		<Compile Include="Entry\WelcomeView.fs" />
 		<Compile Include="Entry\MainLayout.fs" />
 		<Compile Include="Entry\Routes.fs" />
 		<Compile Include="Entry\Index.fs" />

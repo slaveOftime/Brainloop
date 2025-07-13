@@ -158,7 +158,8 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
             let! agents = agentService.GetAgents().AsTask() |> Task.map (Seq.sortBy (fun x -> x.Name)) |> AVal.ofTask Seq.empty
             let! query = query
 
-            let hasTitleBuilder = agents |> Seq.exists (fun x -> x.Type = AgentType.TitleBuilder)
+            let hasTitleBuilder = agents |> Seq.exists (fun x -> x.Type = AgentType.CreateTitle)
+            let hasImageToTextBuilder = agents |> Seq.exists (fun x -> x.Type = AgentType.GetTextFromImage)
 
             let filteredAgents =
                 agents
@@ -168,6 +169,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                     || x.Description.Contains(query, StringComparison.OrdinalIgnoreCase)
                 )
 
+
             region {
                 if not hasTitleBuilder && Seq.length agents > 0 then
                     MudExpansionPanel'' {
@@ -175,14 +177,34 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                         TitleContent(
                             MudText'' {
                                 Color Color.Warning
-                                "For automatically build title for every loop"
+                                "For automatically create title for your loop"
                             }
                         )
                         this.AgentForm(
                             {
                                 Agent.Default with
-                                    Name = "Title builder"
-                                    Type = AgentType.TitleBuilder
+                                    Name = "Create Title"
+                                    Type = AgentType.CreateTitle
+                            },
+                            false
+                        )
+                    }
+            }
+            region {
+                if not hasImageToTextBuilder && Seq.length agents > 0 then
+                    MudExpansionPanel'' {
+                        Expanded true
+                        TitleContent(
+                            MudText'' {
+                                Color Color.Warning
+                                "For automatically get text from image"
+                            }
+                        )
+                        this.AgentForm(
+                            {
+                                Agent.Default with
+                                    Name = "Get text from image"
+                                    Type = AgentType.GetTextFromImage
                             },
                             false
                         )
@@ -205,7 +227,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                                 MudChipSet'' {
                                     Size Size.Small
                                     MudChip'' {
-                                        Color(if agent.Type = AgentType.TitleBuilder then Color.Primary else Color.Default)
+                                        Color(if agent.Type = AgentType.CreateTitle then Color.Primary else Color.Default)
                                         string agent.Type
                                     }
                                     if agent.EnableTools then

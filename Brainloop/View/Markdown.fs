@@ -110,11 +110,15 @@ type BlazorMarkdownRenderer() as this =
             | null -> sequence
             | attrs ->
                 let mutable sequence = sequence
-                if attrs.Classes <> null then
-                    builder.AddAttribute(sequence, "class", String.concat " " attrs.Classes)
+                match attrs.Classes with
+                | null -> ()
+                | classes ->
+                    builder.AddAttribute(sequence, "class", String.concat " " classes)
                     sequence <- sequence + 1
-                if attrs.Properties <> null then
-                    for KeyValue(k, v) in attrs.Properties do
+                match attrs.Properties with
+                | null -> ()
+                | properties ->
+                    for KeyValue(k, v) in properties do
                         builder.AddAttribute(sequence, k, v)
                         sequence <- sequence + 1
                 sequence

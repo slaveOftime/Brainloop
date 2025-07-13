@@ -14,7 +14,7 @@ open Brainloop.Db
 open Brainloop.Share
 
 
-type private InvokeAgentArgs() =
+type InvokeAgentArgs() =
     member val Prompt: string = "" with get, set
     [<Description "If you want to get notification after the agent finish its task">]
     member val CallbackAfterFinish: bool = false with get, set

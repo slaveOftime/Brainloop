@@ -432,11 +432,13 @@ type LoopContentView =
                     }
         )
 
-    static member private Text(index, contentWrapper: LoopContentWrapper, loopContentText: LoopContentText) =
+    static member private Text(index, contentWrapper: LoopContentWrapper, loopContentText: LoopContentText, ?ignoreReason: bool) =
         let isLastOne = index = contentWrapper.Items.Count - 1
         html.inject (
             struct (loopContentText, isLastOne),
             fun () ->
+                let ignoreReason = defaultArg ignoreReason false
+
                 let markdownView (isStreaming) =
                     let blocks = loopContentText.Blocks
                     div {
@@ -444,34 +446,36 @@ type LoopContentView =
                             div {
                                 match block with
                                 // If think content is not the last content then put it into MudExpansionPanel
-                                | LoopContentTextBlock.Think thinkMarkdown when not isLastOne || not isStreaming || index < blocks.Length - 1 -> MudExpansionPanel'' {
-                                    Dense
-                                    Expanded(isLastOne && index = blocks.Length - 1)
-                                    TitleContent(
-                                        div {
-                                            style {
-                                                displayFlex
-                                                alignItemsCenter
-                                                gap 4
-                                            }
-                                            MudIcon'' {
-                                                Size Size.Small
-                                                Icon Icons.Material.Outlined.Lightbulb
-                                            }
-                                            "Reason content"
-                                            adapt {
-                                                match! contentWrapper.ThinkDurationMs with
-                                                | x when x > 0 -> MudChip'' {
-                                                    Size Size.Small
-                                                    Math.Round(TimeSpan.FromMilliseconds(x).TotalSeconds, 1)
-                                                    "s"
-                                                  }
-                                                | _ -> ()
-                                            }
+                                | LoopContentTextBlock.Think thinkMarkdown when not isLastOne || not isStreaming || index < blocks.Length - 1 ->
+                                    if not ignoreReason then
+                                        MudExpansionPanel'' {
+                                            Dense
+                                            Expanded(isLastOne && index = blocks.Length - 1)
+                                            TitleContent(
+                                                div {
+                                                    style {
+                                                        displayFlex
+                                                        alignItemsCenter
+                                                        gap 4
+                                                    }
+                                                    MudIcon'' {
+                                                        Size Size.Small
+                                                        Icon Icons.Material.Outlined.Lightbulb
+                                                    }
+                                                    "Reason content"
+                                                    adapt {
+                                                        match! contentWrapper.ThinkDurationMs with
+                                                        | x when x > 0 -> MudChip'' {
+                                                            Size Size.Small
+                                                            Math.Round(TimeSpan.FromMilliseconds(x).TotalSeconds, 1)
+                                                            "s"
+                                                          }
+                                                        | _ -> ()
+                                                    }
+                                                }
+                                            )
+                                            MarkdownView.Create(thinkMarkdown)
                                         }
-                                    )
-                                    MarkdownView.Create(thinkMarkdown)
-                                  }
                                 | LoopContentTextBlock.Think markdown ->
                                     LoopContentView.ReasoningBubble
                                     MarkdownView.Create(markdown)
@@ -583,11 +587,14 @@ type LoopContentView =
         )
 
 
-    static member Create(contentWrapper: LoopContentWrapper, ?showRaw: bool aval, ?userScrolledEvent: IEvent<bool>, ?ignoreToolCall) =
+    static member Create
+        (contentWrapper: LoopContentWrapper, ?showRaw: bool aval, ?userScrolledEvent: IEvent<bool>, ?ignoreToolCall: bool, ?ignoreReason: bool)
+        =
         html.inject (
             contentWrapper,
             fun (hook: IComponentHook, JS: IJSRuntime) ->
                 let ignoreToolCall = defaultArg ignoreToolCall false
+
                 let mutable isUserScrolled = false
 
                 match userScrolledEvent with
@@ -623,7 +630,7 @@ type LoopContentView =
                     let! items = contentWrapper.Items
                     for index, item in Seq.indexed items do
                         match item with
-                        | LoopContentItem.Text x -> LoopContentView.Text(index, contentWrapper, x)
+                        | LoopContentItem.Text x -> LoopContentView.Text(index, contentWrapper, x, ?ignoreReason = ignoreReason)
                         | LoopContentItem.ToolCall x -> if not ignoreToolCall then LoopContentView.ToolCall(contentWrapper, x, index)
                         | LoopContentItem.File x -> LoopContentView.File(x)
                         | LoopContentItem.Excalidraw x -> LoopContentView.Excalidraw(contentWrapper, x)

@@ -6,8 +6,8 @@ open System.Collections.Generic
 
 [<RequireQualifiedAccess>]
 type AgentType =
-    | TitleBuilder
-    | ImageToText
+    | CreateTitle
+    | GetTextFromImage
     | General
 
 [<CLIMutable>]

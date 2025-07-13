@@ -17,14 +17,14 @@ open Brainloop.Share
 open Brainloop.Function
 
 
-type private ScheduleTaskForAgentArgs() =
+type ScheduleTaskForAgentArgs() =
     member val Id: string = "" with get, set
     member val AgentId: int = 0 with get, set
     member val Prompt: string = "" with get, set
     [<Description "CRON expression for the scheduler. Support for specifying both a day-of-week and a day-of-month value is not complete (you must currently use the ? character in one of these fields).">]
     member val CronExpression: string = "" with get, set
 
-type private SystemScheduledTaskToCallAgentData = {
+type SystemScheduledTaskToCallAgentData = {
     Identity: string
     Author: string
     AgentId: int

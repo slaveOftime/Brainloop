@@ -88,15 +88,13 @@ type MemoryService
     }
 
     member _.GetMemoryCollectionFromCache(model: Model) = valueTask {
-        let! cachedDimensions =
-            memoryCache.GetOrCreateAsync($"memory-collection-{model.Id}-dimensions", fun _ -> Task.fromResult model.EmbeddingDimensions)
-
-        let memoryCollectionCacheKey = $"memory-collection-{model.Id}"
-        if cachedDimensions <> model.EmbeddingDimensions then
-            memoryCache.Remove(memoryCollectionCacheKey)
-
+        let memoryCollectionCacheKey = $"memory-collection-{model.Id}-{model.EmbeddingDimensions}"
         return!
-            memoryCache.GetOrCreateAsync(memoryCollectionCacheKey, fun _ -> this.GetMemoryCollection(model.EmbeddingDimensions).AsTask())
+            memoryCache.GetOrCreateAsync(
+                memoryCollectionCacheKey,
+                (fun _ -> this.GetMemoryCollection(model.EmbeddingDimensions).AsTask()),
+                MemoryCacheEntryOptions(SlidingExpiration = TimeSpan.FromMinutes 10L)
+            )
             |> Task.map (
                 function
                 | null -> failwith "Memory collection is not set"

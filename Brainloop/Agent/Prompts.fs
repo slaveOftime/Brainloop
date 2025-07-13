@@ -1,12 +1,12 @@
 module Brainloop.Agent.Prompts
 
 [<Literal>]
-let BUILD_TITLE =
+let CREATE_TITLE =
     "Generate a concise, linguistically consistent title for the provided content that mirrors its tone, style, and terminology. Ensure the title is under 100 words, accurately reflects the core message, and aligns with the source material's language conventions for clarity and engagement."
 
 
 [<Literal>]
-let IMAGE_TO_TEXT =
+let GET_TEXT_FROM_IMAGE =
     """Analyze the provided image in detail. Include:
 
 - Key visual elements (objects, scenery, characters)

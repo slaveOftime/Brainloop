@@ -46,10 +46,13 @@ type AgentCard =
                 MudSelect'' {
                     Value'(v, setV)
                     Label "Agent Type"
-                    for option in [ AgentType.TitleBuilder; AgentType.ImageToText; AgentType.General ] do
+                    for option in [ AgentType.CreateTitle; AgentType.GetTextFromImage; AgentType.General ] do
                         MudSelectItem'' {
                             Value option
-                            string option
+                            match option with
+                            | AgentType.CreateTitle -> "Create Title"
+                            | AgentType.GetTextFromImage -> "Get Text From Image"
+                            | AgentType.General -> "General Assistant"
                         }
                 }
             }
@@ -125,11 +128,11 @@ type AgentCard =
 
                     let agentPrompt =
                         match agentType, hasPrompts with
-                        | AgentType.TitleBuilder, false -> Prompts.BUILD_TITLE
-                        | AgentType.ImageToText, false -> Prompts.IMAGE_TO_TEXT
+                        | AgentType.CreateTitle, false -> Prompts.CREATE_TITLE
+                        | AgentType.GetTextFromImage, false -> Prompts.GET_TEXT_FROM_IMAGE
                         | AgentType.General, false -> Prompts.GENERAL_ASSISTANT
-                        | AgentType.TitleBuilder, _
-                        | AgentType.ImageToText, _
+                        | AgentType.CreateTitle, _
+                        | AgentType.GetTextFromImage, _
                         | AgentType.General, _ -> agentPrompt
 
                     return agentPrompt, setPrompt
@@ -272,8 +275,8 @@ type AgentCard =
             adapt {
                 let! agentType = agentForm.UseFieldValue(fun x -> x.Type)
                 match agentType with
-                | AgentType.TitleBuilder
-                | AgentType.ImageToText -> ()
+                | AgentType.CreateTitle
+                | AgentType.GetTextFromImage -> ()
                 | AgentType.General ->
                     let! v, setV = agentForm.UseField(fun x -> x.EnableTools)
                     MudCheckBox'' {

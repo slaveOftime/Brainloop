@@ -8,9 +8,8 @@ open MudBlazor
 open Blazored.LocalStorage
 open Fun.Result
 open Fun.Blazor
+open Brainloop.Db
 open Brainloop.Loop
-open Brainloop.Model
-open Brainloop.Agent
 
 
 type MainLayout(shareStore: IShareStore, globalStore: IGlobalStore, localStorageService: ILocalStorageService) as this =
@@ -22,65 +21,6 @@ type MainLayout(shareStore: IShareStore, globalStore: IGlobalStore, localStorage
     let mutable isThemeTypeLoaded = false
     let mutable themeProviderRef: MudThemeProvider | null = null
 
-
-    let welcomeWarningWithLink link (msg: NodeRenderFragment) = div {
-        style {
-            displayFlex
-            flexDirectionColumn
-            justifyContentCenter
-            alignContentCenter
-            gap 20
-            backgroundColor "var(--mud-palette-background)"
-            positionAbsolute
-            top 0
-            left 0
-            right 0
-            height "100%"
-        }
-        MudText'' {
-            Color Color.Primary
-            Typo Typo.h5
-            Align Align.Center
-            "Welcome to Brainloop!"
-        }
-        MudLink'' {
-            Href link
-            Underline Underline.Always
-            MudText'' {
-                Color Color.Primary
-                Typo Typo.h6
-                Align Align.Center
-                msg
-            }
-        }
-        MudLink'' {
-            Href "/"
-            Underline Underline.Always
-            MudText'' {
-                Color Color.Primary
-                Align Align.Center
-                "Refresh if you already setup"
-            }
-        }
-    }
-
-    let welcomeContents =
-        html.inject (fun (modelService: IModelService, agentService: IAgentService) -> task {
-            if isModelAndAgentsReady then
-                return html.none
-            else
-                let! models = modelService.GetModelsWithCache()
-                if models.IsEmpty then
-                    return welcomeWarningWithLink "/models" (span { "Please create some models then define an agent to use it." })
-                else
-                    let! agents = agentService.GetAgentsWithCache()
-                    if agents.IsEmpty then
-                        return welcomeWarningWithLink "/agents" (span { "Please create some agents to use your models." })
-                    else
-                        isModelAndAgentsReady <- true
-                        // Put the loops under the bottom always, so it will not be rendered on navigation
-                        return html.none
-        })
 
     let themeContents = adaptiview (key = "theme-scripts") {
         let! theme = globalStore.Theme
@@ -203,7 +143,7 @@ type MainLayout(shareStore: IShareStore, globalStore: IGlobalStore, localStorage
                 }
                 Brainloop.Loop.LoopsView.Create()
             }
-            welcomeContents
+            WelcomeView.Create(isModelAndAgentsReady, fun x -> isModelAndAgentsReady <- x)
             match this.Body with
             | null -> ()
             | x -> x
@@ -221,11 +161,11 @@ type MainLayout(shareStore: IShareStore, globalStore: IGlobalStore, localStorage
             flexDirectionColumn
             overflowHidden
         }
-        
+
         MudPopoverProvider''
         MudSnackbarProvider''
         MudDialogProvider''
-    
+
         initialState
 
         region {

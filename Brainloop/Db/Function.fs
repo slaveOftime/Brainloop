@@ -103,7 +103,7 @@ type SystemSendHttpConfig = {
     ConvertHtmlToMarkdown: bool
 } with
 
-    static member Default = { ConvertHtmlToMarkdown = false }
+    static member Default = { ConvertHtmlToMarkdown = true }
 
 type SystemSearchMemoryConfig = {
     Top: int

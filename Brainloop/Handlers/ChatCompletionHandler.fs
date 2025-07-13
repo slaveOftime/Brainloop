@@ -170,8 +170,8 @@ type ChatCompletionHandler
                 |> ValueTask.map (
                     List.filter (fun x ->
                         match x.Type with
-                        | AgentType.TitleBuilder
-                        | AgentType.ImageToText -> false
+                        | AgentType.CreateTitle
+                        | AgentType.GetTextFromImage -> false
                         | AgentType.General -> true
                     )
                 )

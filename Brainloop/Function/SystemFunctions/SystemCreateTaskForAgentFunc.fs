@@ -9,7 +9,7 @@ open Brainloop.Db
 open Brainloop.Function
 
 
-type private TaskForAgentArgs() =
+type TaskForAgentArgs() =
     member val AgentId: int = 0 with get, set
     member val Prompt: string = "" with get, set
 

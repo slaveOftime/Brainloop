@@ -23,13 +23,13 @@ type GetTextFromImageHandler(agentService: IAgentService, modelService: IModelSe
                 |> ValueTask.map (
                     Seq.tryFind (
                         function
-                        | { Type = AgentType.ImageToText } -> true
+                        | { Type = AgentType.GetTextFromImage } -> true
                         | _ -> false
                     )
                 )
                 |> ValueTask.map (
                     function
-                    | None -> failwith $"There is no agent defined as {AgentType.ImageToText}"
+                    | None -> failwith $"There is no agent defined as {AgentType.GetTextFromImage}"
                     | Some x -> x
                 )
 

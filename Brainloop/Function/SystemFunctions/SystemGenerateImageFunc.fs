@@ -17,7 +17,7 @@ open Brainloop.Memory
 open Brainloop.Share
 
 
-type private GenerateImageArgs() =
+type GenerateImageArgs() =
     [<Description "Prompt for generate the image">]
     member val Prompt: string = "" with get, set
 

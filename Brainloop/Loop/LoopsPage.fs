@@ -60,7 +60,7 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
             LoopSearcher.Create(iconOnly = true)
             MudTooltip'' {
                 Arrow
-                Placement Placement.Top
+                Placement Placement.Right
                 TooltipContent "Create loop"
                 createBtn
             }

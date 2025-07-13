@@ -99,11 +99,11 @@ type NavMenu =
                     }
                     a {
                         href "/"
-                        style { padding 4 }
+                        style { padding 10 }
                         MudImage'' {
                             Src "favicon.png"
-                            Width 40
-                            Height 40
+                            Width 30
+                            Height 30
                         }
                     }
                     region {
@@ -164,7 +164,7 @@ type NavMenu =
                             MudSpacer''
                             MudTooltip'' {
                                 Arrow
-                                Placement Placement.Top
+                                Placement Placement.Right
                                 TooltipContent "Agents"
                                 MudIconButton'' {
                                     Href "/agents"
@@ -173,7 +173,7 @@ type NavMenu =
                             }
                             MudTooltip'' {
                                 Arrow
-                                Placement Placement.Top
+                                Placement Placement.Right
                                 TooltipContent "Tools"
                                 MudIconButton'' {
                                     Icon Icons.Material.Outlined.Construction
@@ -182,7 +182,7 @@ type NavMenu =
                             }
                             MudTooltip'' {
                                 Arrow
-                                Placement Placement.Top
+                                Placement Placement.Right
                                 TooltipContent "Models"
                                 MudIconButton'' {
                                     Href "/models"
