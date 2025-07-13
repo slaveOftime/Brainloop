@@ -19,7 +19,7 @@ type IModelService =
     abstract member UpsertModel: model: Model -> ValueTask<unit>
     abstract member DeleteModel: id: int -> ValueTask<unit>
     abstract member UpdateUsedTime: id: int -> ValueTask<unit>
-    abstract member IncreaseOutputTokens: modelId: int * delta: int64 -> ValueTask<unit>
+    abstract member IncreaseTokensUsage: modelId: int * inputDelta: uint64 * outputDelta: uint64 -> ValueTask<unit>
 
     abstract member GetModelsFromSource: model: Model * ?cancellationToken: CancellationToken -> ValueTask<ModelDescription list>
     abstract member GetModelsFromSourceWithCache: model: Model * ?cancellationToken: CancellationToken -> ValueTask<ModelDescription list>

@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.IO.Compression
 open Fun.Result
 open Fun.Build
 
@@ -13,6 +14,7 @@ let options = {|
     platform = CmdArg.Create(longName = "--platform", values = [ "win-x64"; "linux-x64"; "linux-arm64"; "osx-x64"; "osx-arm64" ])
     run = CmdArg.Create(longName = "--run", shortName = "-r")
     docker = CmdArg.Create(longName = "--docker")
+    zip = CmdArg.Create(longName = "--zip")
 |}
 
 
@@ -44,6 +46,14 @@ pipeline "dev" {
 
 pipeline "publish" {
     description "Publish single executable"
+    whenAny {
+        cmdArg options.platform
+        cmdArg options.docker
+    }
+    whenAny {
+        when' true
+        cmdArg options.zip
+    }
     stage_checkEnvs
     stage "bundle" {
         workingDir "Brainloop"
@@ -73,15 +83,35 @@ pipeline "publish" {
             else
                 do!
                     ctx.RunCommand
-                        $"""dotnet publish -c Release -r {platform} /p:PublishSingleFile=true /p:PublishReadyToRun=true /p:PublishTrimmed=true -o {publishDir}"""
+                        $"""dotnet publish -c Release -r {platform} /p:PublishSingleFile=true /p:PublishReadyToRun=false /p:PublishTrimmed=true -o {publishDir}"""
 
             for file in Directory.GetFiles(nativesDir) do
                 File.Copy(file, publishDir </> Path.GetFileName(file), true)
 
             Directory.Delete(publishDir </> "wwwroot" </> "_content" </> "BlazorMonaco" </> "lib" </> "monaco-editor" </> "min-maps", true)
+
+            if ctx.TryGetCmdArg options.zip |> Option.isSome then
+                let changelog = Changelog.GetLastVersion(__SOURCE_DIRECTORY__ </> "Brainloop")
+                ZipFile.CreateFromDirectory(
+                    publishDir,
+                    publishDir </> ".." </> "brainloop-" + Path.GetFileName publishDir + "-" + changelog.Value.Version + ".zip"
+                )
         })
     }
     runIfOnlySpecified
 }
+
+pipeline "publish-all" {
+    description "Publish all platforms"
+    stage "bundles" {
+        run "dotnet fsi ./build.fsx -- -p publish --platform win-x64 --zip"
+        run "dotnet fsi ./build.fsx -- -p publish --platform linux-x64 --zip"
+        run "dotnet fsi ./build.fsx -- -p publish --platform linux-arm64 --zip"
+        run "dotnet fsi ./build.fsx -- -p publish --platform osx-x64 --zip"
+        run "dotnet fsi ./build.fsx -- -p publish --platform osx-arm64 --zip"
+    }
+    runIfOnlySpecified
+}
+
 
 tryPrintPipelineCommandHelp ()

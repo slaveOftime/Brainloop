@@ -5,6 +5,7 @@ open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel
+open System.ComponentModel.DataAnnotations
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.SemanticKernel
@@ -12,9 +13,12 @@ open IcedTasks
 open FSharp.Control
 open Brainloop.Db
 open Brainloop.Share
+open Brainloop.Function
 
 
 type InvokeAgentArgs() =
+    [<Required>]
+    [<Description "Complete context for an agent to finish its task">]
     member val Prompt: string = "" with get, set
     [<Description "If you want to get notification after the agent finish its task">]
     member val CallbackAfterFinish: bool = false with get, set
@@ -30,10 +34,7 @@ type SystemInvokeAgentFunc
             Func<InvokeAgentArgs, KernelArguments, CancellationToken, Task<unit>>(fun args kernelArgs ct -> task {
                 logger.LogInformation("Call {agent} for help", agent.Name)
 
-                let sourceLoopContentId =
-                    match kernelArgs.TryGetValue(Strings.ToolCallLoopContentId) with
-                    | true, (:? int64 as x) -> x
-                    | _ -> sourceLoopContentId
+                let sourceLoopContentId = kernelArgs.LoopContentId |> ValueOption.defaultValue sourceLoopContentId
 
                 let handler = serviceProvider.GetRequiredService<IStartChatLoopHandler>()
 
@@ -71,5 +72,5 @@ type SystemInvokeAgentFunc
             JsonSerializerOptions.createDefault (),
             loggerFactory = loggerFactory,
             functionName = name,
-            description = $"@{agent.Name} for help. AgentId={agent.Id}, AgentDescription={agent.Description}."
+            description = $"@{agent.Name} for help. AgentId={agent.Id}, AgentDescription={agent.Description}. The task will be created immediately and return nothing."
         )

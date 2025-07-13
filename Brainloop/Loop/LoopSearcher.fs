@@ -179,8 +179,8 @@ type LoopSearcher =
                             }
                             adapt {
                                 let! results = shareStore.SearchResults
-                                for result in results do
-                                    LoopSearcher.SearchResultCard(result, onClose = onClose)
+                                for i, result in Seq.indexed results do
+                                    LoopSearcher.SearchResultCard(result, onClose = onClose, index = i)
                             }
                         }
                     }
@@ -188,9 +188,9 @@ type LoopSearcher =
             }
         )
 
-    static member private SearchResultCard(result: MemorySearchResultItem, ?onClose: unit -> unit) : NodeRenderFragment =
+    static member private SearchResultCard(result: MemorySearchResultItem, ?onClose: unit -> unit, ?index: int) : NodeRenderFragment =
         html.inject (
-            result,
+            struct (index, result),
             fun (hook: IComponentHook, shareStore: IShareStore, serviceProvider: IServiceProvider) ->
                 let dbService = serviceProvider.GetRequiredService<IDbService>()
                 let loopService = serviceProvider.GetRequiredService<ILoopService>()
@@ -229,7 +229,7 @@ type LoopSearcher =
                                     }
                                 }
                                 loopStreamingIndicator loopContent.LoopId
-                                LoopContentView.Create(contentWrapper, ignoreToolCall = true)
+                                LoopContentView.Create(contentWrapper, ignoreToolCall = true, ignoreReason = true)
                             }
                     )
 

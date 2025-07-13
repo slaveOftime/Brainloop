@@ -5,6 +5,7 @@ open System.Text.Json
 open System.Threading.Tasks
 open Microsoft.JSInterop
 open Microsoft.Extensions.Logging
+open Microsoft.AspNetCore.Components.Web
 open FSharp.Data.Adaptive
 open IcedTasks
 open MudBlazor
@@ -75,58 +76,60 @@ type LoopContentView =
             fun (agentService: IAgentService, loopService: ILoopService, shareStore: IShareStore, snackbar: ISnackbar) ->
                 let args =
                     try
-                        match string toolCall.Arguments["agentId"], string toolCall.Arguments["prompt"] with
-                        | INT32 agentId, prompt -> Ok(agentId, prompt)
-                        | agentId, _ -> Error $"Failed parse arguments for creating task for agent: invalid agent id {agentId}"
+                        match SystemFunctions.SystemCreateTaskForAgentFunc.GetArgs(toolCall) with
+                        | ValueSome x -> Ok x
+                        | _ -> Error "Failed parse arguments for creating task for agent"
                     with ex ->
                         Error $"Failed parse arguments for creating task for agent: {ex.Message}"
                 match args with
-                | Ok(agentId, prompt) -> adapt {
+                | Ok args -> adapt {
                     let mutable inputRef: StandaloneCodeEditor | null = null
                     let! isDarkMode = shareStore.IsDarkMode
-                    let! agent =
-                        agentService.GetAgentsWithCache()
-                        |> ValueTask.map (Seq.tryFind (fun x -> x.Id = agentId))
-                        |> ValueTask.toTask
-                        |> AVal.ofTask None
-                    let! prompt, setPrompt = cval(prompt).WithSetter()
+                    let! agent = agentService.TryGetAgentWithCache(args.AgentId) |> AVal.ofValueTask ValueNone
+                    let! prompt, setPrompt = cval(args.Prompt).WithSetter()
                     let! isSending, setIsSending = cval(false).WithSetter()
                     MudField'' {
                         Variant Variant.Outlined
                         Label(
                             match agent with
-                            | None -> $"Call agent #{agentId} for the task"
-                            | Some agent -> $"Call agent \"{agent.Name}\""
+                            | ValueNone -> $"Call agent #{args.AgentId} for the task"
+                            | ValueSome agent -> $"Call agent \"{agent.Name}\""
                         )
                         div {
                             class' "create-task-for-agent-editor"
-                            StandaloneCodeEditor'' {
-                                ConstructionOptions(fun _ ->
-                                    StandaloneEditorConstructionOptions(
-                                        Value = prompt,
-                                        FontSize = 16,
-                                        Language = "markdown",
-                                        AutomaticLayout = true,
-                                        GlyphMargin = false,
-                                        Folding = false,
-                                        LineDecorationsWidth = 0,
-                                        LineNumbers = "off",
-                                        WordWrap = "on",
-                                        ReadOnly = isSending,
-                                        Minimap = EditorMinimapOptions(Enabled = false),
-                                        AcceptSuggestionOnEnter = "on",
-                                        FixedOverflowWidgets = true,
-                                        Theme = if isDarkMode then "vs-dark" else "vs-light"
-                                    )
-                                )
-                                OnDidBlurEditorText(fun _ -> task {
-                                    match inputRef with
-                                    | null -> ()
-                                    | inputRef ->
-                                        let! value = inputRef.GetValue()
-                                        setPrompt value
+                            ErrorBoundary'' {
+                                ErrorContent(fun error -> MudAlert'' {
+                                    Severity Severity.Error
+                                    error.ToString()
                                 })
-                                ref (fun x -> inputRef <- x)
+                                StandaloneCodeEditor'' {
+                                    ConstructionOptions(fun _ ->
+                                        StandaloneEditorConstructionOptions(
+                                            Value = prompt,
+                                            FontSize = 16,
+                                            Language = "markdown",
+                                            AutomaticLayout = true,
+                                            GlyphMargin = false,
+                                            Folding = false,
+                                            LineDecorationsWidth = 0,
+                                            LineNumbers = "off",
+                                            WordWrap = "on",
+                                            ReadOnly = isSending,
+                                            Minimap = EditorMinimapOptions(Enabled = false),
+                                            AcceptSuggestionOnEnter = "on",
+                                            FixedOverflowWidgets = true,
+                                            Theme = if isDarkMode then "vs-dark" else "vs-light"
+                                        )
+                                    )
+                                    OnDidBlurEditorText(fun _ -> task {
+                                        match inputRef with
+                                        | null -> ()
+                                        | inputRef ->
+                                            let! value = inputRef.GetValue()
+                                            setPrompt value
+                                    })
+                                    ref (fun x -> inputRef <- x)
+                                }
                             }
                         }
                         styleElt { ruleset ".create-task-for-agent-editor .monaco-editor-container" { height "120px" } }
@@ -145,14 +148,14 @@ type LoopContentView =
                                 setIsSending true
                                 try
                                     let! agents = agentService.GetAgentsWithCache()
-                                    match agents |> Seq.tryFind (fun x -> x.Id = agentId) with
-                                    | None -> snackbar.ShowMessage($"Agent #{agentId} not found", severity = Severity.Error)
+                                    match agents |> Seq.tryFind (fun x -> x.Id = args.AgentId) with
+                                    | None -> snackbar.ShowMessage($"Agent #{args.AgentId} not found", severity = Severity.Error)
                                     | Some agent ->
                                         do!
                                             loopService.Send(
                                                 contentWrapper.LoopId,
                                                 prompt,
-                                                agentId = agentId,
+                                                agentId = args.AgentId,
                                                 sourceLoopContentId = contentWrapper.Id,
                                                 ignoreInput = true,
                                                 author = agent.Name,

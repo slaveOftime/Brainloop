@@ -1,27 +1,8 @@
-﻿namespace Brainloop.Function
+﻿[<AutoOpen>]
+module Brainloop.Function.Utils
 
 open System
-open System.IO
-open System.Linq
-open System.Net
-open System.Net.Http
-open System.Text
-open System.Text.Json
-open System.Threading
-open System.Threading.Tasks
-open System.ComponentModel
-open System.Collections.Generic
-open Microsoft.Extensions.Logging
-open Microsoft.Extensions.DependencyInjection
 open Microsoft.SemanticKernel
-open Quartz
-open IcedTasks
-open FSharp.Control
-open Fun.Result
-open Brainloop.Db
-open Brainloop.Model
-open Brainloop.Memory
-open Brainloop.Share
 
 
 [<RequireQualifiedAccess>]
@@ -65,3 +46,21 @@ module SystemFunction =
 
     let isRenderInIframe (name: string) = isFunction RenderInIframe name
     let isCreateTaskForAgent (name: string) = isFunction CreateTaskForAgent name
+
+
+type KernelArguments with
+
+    member this.AgentId =
+        match this.TryGetValue(Strings.ToolCallAgentId) with
+        | true, (:? int32 as x) -> ValueSome x
+        | _ -> ValueNone
+
+    member this.LoopId =
+        match this.TryGetValue(Strings.ToolCallLoopId) with
+        | true, (:? int64 as x) -> ValueSome x
+        | _ -> ValueNone
+
+    member this.LoopContentId =
+        match this.TryGetValue(Strings.ToolCallLoopContentId) with
+        | true, (:? int64 as x) -> ValueSome x
+        | _ -> ValueNone

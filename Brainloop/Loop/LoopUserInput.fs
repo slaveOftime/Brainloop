@@ -7,6 +7,7 @@ open System.Collections.Generic
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.JSInterop
+open Microsoft.AspNetCore.Components.Web
 open Microsoft.AspNetCore.Components.Forms
 open FSharp.Data.Adaptive
 open IcedTasks
@@ -279,7 +280,13 @@ type LoopUserInput =
                             gap 4
                             padding 8
                         }
-                        userInput
+                        ErrorBoundary'' {
+                            ErrorContent(fun error -> MudAlert'' {
+                                Severity Severity.Error
+                                error.ToString()
+                            })
+                            userInput
+                        }
                         userActions
                       }
                 }

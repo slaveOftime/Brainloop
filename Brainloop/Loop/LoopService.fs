@@ -30,7 +30,7 @@ type LoopService
         globalStore: IGlobalStore,
         logger: ILogger<LoopService>
     ) as this =
-    
+
     member private _.ToChatMessageContent(content: LoopContentWrapper) = valueTask {
         let items = ChatMessageContentItemCollection()
 
@@ -70,6 +70,7 @@ type LoopService
 
         return ChatMessageContent(content.AuthorRole.ToSemanticKernelRole(), items, AuthorName = content.Author.KeepLetterAndDigits())
     }
+
 
     interface ILoopService with
         member _.Send(loopId, message, ?agentId, ?modelId, ?author, ?role, ?includeHistory, ?ignoreInput, ?sourceLoopContentId, ?cancellationToken) = valueTask {
@@ -130,14 +131,6 @@ type LoopService
 
                 match agent.Type with
                 | AgentType.General ->
-                    chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, agent.Prompt))
-                    chatMessages.Insert(
-                        0,
-                        ChatMessageContent(
-                            AuthorRole.System,
-                            $"Your name is '{agent.Name}', when user ask with @'{agent.Name}', you should response it accordingly."
-                        )
-                    )
                     do!
                         chatCompletionHandler.Handle(
                             agent.Id,
@@ -170,9 +163,6 @@ type LoopService
                         do! loopContentService.DeleteLoopContentsOfSource(loopId, loopContentId)
 
                         let chatMessages = List<ChatMessageContent>()
-
-                        chatMessages.Add(ChatMessageContent(AuthorRole.System, agent.Prompt))
-
                         for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) do
                             let! content = this.ToChatMessageContent(item)
                             chatMessages.Add(content)

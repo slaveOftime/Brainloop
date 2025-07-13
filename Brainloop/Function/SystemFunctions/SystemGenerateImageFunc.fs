@@ -15,20 +15,17 @@ open Brainloop.Db
 open Brainloop.Model
 open Brainloop.Memory
 open Brainloop.Share
+open Brainloop.Function
 
 
 type GenerateImageArgs() =
-    [<Description "Prompt for generate the image">]
+    [<Description "Complete context for generating the image">]
     member val Prompt: string = "" with get, set
 
 
 type SystemGenerateImageFunc
-    (
-        documentService: IDocumentService,
-        modelService: IModelService,
-        logger: ILogger<SystemGenerateImageFunc>,
-        loggerFactory: ILoggerFactory
-    ) as this =
+    (documentService: IDocumentService, modelService: IModelService, logger: ILogger<SystemGenerateImageFunc>, loggerFactory: ILoggerFactory) as this
+    =
 
     member private _.DownloadImageAsync(url: string, ?proxy) = valueTask {
         use httpClient = HttpClient.Create(?proxy = proxy)
@@ -46,10 +43,7 @@ type SystemGenerateImageFunc
                         let! model = modelService.GetModelFromCache(config.ModelId)
                         let! kernel = modelService.GetKernel(config.ModelId)
 
-                        let sourceLoopContentId =
-                            match kernelArgs.TryGetValue(Strings.ToolCallLoopContentId) with
-                            | true, (:? int64 as x) -> Some x
-                            | _ -> None
+                        let sourceLoopContentId = kernelArgs.LoopContentId
 
                         let textToImageService = kernel.GetRequiredService<TextToImage.ITextToImageService>()
                         let input = TextContent(args.Prompt)
@@ -69,7 +63,12 @@ type SystemGenerateImageFunc
                             let date = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")
                             let name = $"tool-generated-{date}.png"
                             let! id =
-                                documentService.SaveFile(name, stream, ?loopContentId = sourceLoopContentId, ?cancellationToken = cancellationToken)
+                                documentService.SaveFile(
+                                    name,
+                                    stream,
+                                    ?loopContentId = ValueOption.toOption sourceLoopContentId,
+                                    ?cancellationToken = cancellationToken
+                                )
                             imageString.Append("![").Append(name).Append("](/api/memory/document/").Append(id).AppendLine("/image)") |> ignore
                             if String.IsNullOrWhiteSpace(notes) |> not then
                                 imageString.AppendLine().AppendLine(notes) |> ignore

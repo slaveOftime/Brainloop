@@ -3,6 +3,7 @@
 open System
 open System.Linq
 open Microsoft.Extensions.Logging
+open Microsoft.AspNetCore.Components.Web
 open FSharp.Data.Adaptive
 open IcedTasks
 open MudBlazor
@@ -119,25 +120,31 @@ type AgentCard =
         }
         MudItem'' {
             xs 12
-            AgentCard.PromptEditor(
-                adaptive {
-                    let! agentType = agentForm.UseFieldValue(fun x -> x.Type)
-                    let! agentPrompt, setPrompt = agentForm.UseField(fun x -> x.Prompt)
+            ErrorBoundary'' {
+                ErrorContent(fun error -> MudAlert'' {
+                    Severity Severity.Error
+                    error.ToString()
+                })
+                AgentCard.PromptEditor(
+                    adaptive {
+                        let! agentType = agentForm.UseFieldValue(fun x -> x.Type)
+                        let! agentPrompt, setPrompt = agentForm.UseField(fun x -> x.Prompt)
 
-                    let hasPrompts = String.IsNullOrWhiteSpace agentPrompt |> not
+                        let hasPrompts = String.IsNullOrWhiteSpace agentPrompt |> not
 
-                    let agentPrompt =
-                        match agentType, hasPrompts with
-                        | AgentType.CreateTitle, false -> Prompts.CREATE_TITLE
-                        | AgentType.GetTextFromImage, false -> Prompts.GET_TEXT_FROM_IMAGE
-                        | AgentType.General, false -> Prompts.GENERAL_ASSISTANT
-                        | AgentType.CreateTitle, _
-                        | AgentType.GetTextFromImage, _
-                        | AgentType.General, _ -> agentPrompt
+                        let agentPrompt =
+                            match agentType, hasPrompts with
+                            | AgentType.CreateTitle, false -> Prompts.CREATE_TITLE
+                            | AgentType.GetTextFromImage, false -> Prompts.GET_TEXT_FROM_IMAGE
+                            | AgentType.General, false -> Prompts.GENERAL_ASSISTANT
+                            | AgentType.CreateTitle, _
+                            | AgentType.GetTextFromImage, _
+                            | AgentType.General, _ -> agentPrompt
 
-                    return agentPrompt, setPrompt
-                }
-            )
+                        return agentPrompt, setPrompt
+                    }
+                )
+            }
         }
         MudItem'' {
             xs 12

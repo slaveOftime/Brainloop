@@ -163,6 +163,18 @@ type ChatCompletionHandler
         | ModelProvider.MistralAI -> MistralAI.MistralAIPromptExecutionSettings(Temperature = agent.Temperature, TopP = agent.TopP)
 
 
+    member private _.SetSystemPromptsForAgent(agent: Agent, chatMessages: System.Collections.Generic.IList<ChatMessageContent>) =
+        chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, agent.Prompt))
+        chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, $"Current time is {DateTime.Now.ToString()}. But it is not very precise."))
+        chatMessages.Insert(
+            0,
+            ChatMessageContent(
+                AuthorRole.System,
+                $"Your name is '{agent.Name}', when user ask with @'{agent.Name}', you should response it accordingly."
+            )
+        )
+
+
     interface IChatCompletionHandler with
         member _.Handle(agentId, chatMessages, targetContent, ?modelId, ?cancellationToken) = valueTask {
             let! agents =
@@ -213,12 +225,6 @@ type ChatCompletionHandler
                     | None -> wrapperCancellationTokenSource
                     | Some token -> CancellationTokenSource.CreateLinkedTokenSource(wrapperCancellationTokenSource.Token, token)
 
-                let appendTextToStreamAndIncreaseCount (text) = valueTask {
-                    let! count = modelService.CountTokens(text)
-                    stream.Append(text) |> ignore
-                    targetContent.OutputTokens.Publish((+) (int64 count))
-                }
-
                 transact (fun _ ->
                     targetContent.Items.Clear()
                     targetContent.Items.Add(LoopContentItem.Text stream) |> ignore
@@ -229,6 +235,7 @@ type ChatCompletionHandler
                     targetContent.ModelName.Value <- model.Name
                     targetContent.ThinkDurationMs.Value <- 0
                     targetContent.TotalDurationMs.Value <- 0
+                    targetContent.InputTokens.Value <- 0
                     targetContent.OutputTokens.Value <- 0
                     targetContent.ProgressMessage.Value <- "Started"
                     targetContent.UpdatedAt.Value <- DateTime.Now
@@ -331,6 +338,8 @@ type ChatCompletionHandler
 
                     targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {chatMessages.Count} messages"
 
+                    this.SetSystemPromptsForAgent(agent, chatMessages)
+
                     if agent.EnableStreaming then
                         let mutable hasReasoningContent = true
                         let mutable lastUpdate = chatWatch.ElapsedMilliseconds
@@ -342,20 +351,38 @@ type ChatCompletionHandler
                                 cancellationToken = cancellationTokenSource.Token
                             ) do
 
-                            let normalProcess () = valueTask {
-                                for content in result.Items do
-                                    match content with
-                                    | :? StreamingTextContent as x ->
-                                        match x.Text with
-                                        | null -> ()
-                                        | text -> do! appendTextToStreamAndIncreaseCount text
-                                    | :? StreamingFunctionCallUpdateContent -> ()
-                                    | _ ->
-                                        let text = string content
-                                        do! appendTextToStreamAndIncreaseCount text
-                            }
-
                             if result <> null then
+                                let appendTextToStreamAndIncreaseCount (text) = valueTask {
+                                    let! inputTokens, outputTokens = valueTask {
+                                        match result.InnerContent with
+                                        | :? OpenAI.Chat.StreamingChatCompletionUpdate as x when x.Usage <> null ->
+                                            return x.Usage.InputTokenCount, x.Usage.OutputTokenCount
+                                        | :? Google.GeminiStreamingChatMessageContent as x when x.Metadata <> null ->
+                                            return x.Metadata.PromptTokenCount, x.Metadata.CandidatesTokenCount
+                                        | _ ->
+                                            let! count = modelService.CountTokens(text)
+                                            return 0, count
+                                    }
+                                    stream.Append(text) |> ignore
+                                    transact (fun _ ->
+                                        if targetContent.InputTokens.Value <> 0 then
+                                            targetContent.InputTokens.Value <- targetContent.InputTokens.Value + int64 inputTokens
+                                        targetContent.OutputTokens.Value <- targetContent.OutputTokens.Value + int64 outputTokens
+                                    )
+                                }
+
+                                let normalProcess () = valueTask {
+                                    for content in result.Items do
+                                        match content with
+                                        | :? StreamingTextContent as x ->
+                                            match x.Text with
+                                            | null -> ()
+                                            | text -> do! appendTextToStreamAndIncreaseCount text
+                                        | :? StreamingFunctionCallUpdateContent -> ()
+                                        | _ ->
+                                            let text = string content
+                                            do! appendTextToStreamAndIncreaseCount text
+                                }
                                 do! Task.Delay 1 // So UI can have chance to accept events
                                 // Try parse reasoning data first
                                 if hasReasoningContent then
@@ -396,7 +423,25 @@ type ChatCompletionHandler
                                 executionSettings = chatOptions,
                                 cancellationToken = cancellationTokenSource.Token
                             )
+
                         for contents in result do
+                            let appendTextToStreamAndIncreaseCount (text) = valueTask {
+                                let! inputTokens, outputTokens = valueTask {
+                                    match contents.InnerContent with
+                                    | :? OpenAI.Chat.ChatCompletion as x when x.Usage <> null ->
+                                        return x.Usage.InputTokenCount, x.Usage.OutputTokenCount
+                                    | :? Google.GeminiChatMessageContent as x when x.Metadata <> null ->
+                                        return x.Metadata.PromptTokenCount, x.Metadata.CandidatesTokenCount
+                                    | _ ->
+                                        let! count = modelService.CountTokens(text)
+                                        return 0, count
+                                }
+                                stream.Append(text) |> ignore
+                                transact (fun _ ->
+                                    targetContent.InputTokens.Value <- targetContent.InputTokens.Value + int64 inputTokens
+                                    targetContent.OutputTokens.Value <- targetContent.OutputTokens.Value + int64 outputTokens
+                                )
+                            }
                             for content in contents.Items do
                                 match content with
                                 | :? TextContent as x ->
@@ -454,7 +499,8 @@ type ChatCompletionHandler
                 do! agentService.UpdateUsedTime(agent.Id)
                 match targetContent.ModelId.Value with
                 | ValueNone -> ()
-                | ValueSome modelId -> do! modelService.IncreaseOutputTokens(modelId, targetContent.OutputTokens.Value)
+                | ValueSome modelId ->
+                    do! modelService.IncreaseTokensUsage(modelId, uint64 targetContent.InputTokens.Value, uint64 targetContent.OutputTokens.Value)
             with ex ->
                 logger.LogError(ex, "Update used time failed for {agent}", agent.Name)
         }

@@ -417,7 +417,7 @@ type LoopView =
                 }
         })
         LoopView.StopBtn(contentWrapper)
-        LoopView.OutputTokens(contentWrapper)
+        LoopView.TokenUsage(contentWrapper)
         adapt {
             match! contentWrapper.TotalDurationMs with
             | x when x > 0 -> MudChip'' {
@@ -513,7 +513,7 @@ type LoopView =
               }
         }
         LoopView.StopBtn(contentWrapper)
-        LoopView.OutputTokens(contentWrapper)
+        LoopView.TokenUsage(contentWrapper)
     }
 
     static member private RetryBtn(contentWrapper: LoopContentWrapper) : NodeRenderFragment =
@@ -660,12 +660,19 @@ type LoopView =
             }
         )
 
-    static member private OutputTokens(contentWrapper: LoopContentWrapper) : NodeRenderFragment = adapt {
-        let! count = contentWrapper.OutputTokens
-        if count > 0 then
+    static member private TokenUsage(contentWrapper: LoopContentWrapper) : NodeRenderFragment = adapt {
+        let! inputTokens = contentWrapper.InputTokens
+        let! outputTokens = contentWrapper.OutputTokens
+        if inputTokens > 0 || outputTokens > 0 then
             MudChip'' {
                 Size Size.Small
-                int count
+                if inputTokens > 0 then
+                    "↑"
+                    int inputTokens
+                    " "
+                if outputTokens > 0 then
+                    "↓"
+                    int outputTokens
                 " tokens"
             }
     }

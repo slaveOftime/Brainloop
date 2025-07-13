@@ -31,6 +31,7 @@ type LoopContentWrapper = {
     TotalDurationMs: int cval
     StreammingCount: int cval
     CancellationTokenSource: CancellationTokenSource voption cval
+    InputTokens: int64 cval
     OutputTokens: int64 cval
     ProgressMessage: string cval
 } with
@@ -52,6 +53,7 @@ type LoopContentWrapper = {
         TotalDurationMs = cval 0
         StreammingCount = cval -1
         CancellationTokenSource = cval ValueNone
+        InputTokens = cval 0L
         OutputTokens = cval 0L
         ProgressMessage = cval ""
     }
@@ -80,6 +82,7 @@ type LoopContentWrapper = {
         ErrorMessage = cval content.ErrorMessage
         ThinkDurationMs = cval content.ThinkDurationMs
         TotalDurationMs = cval content.TotalDurationMs
+        InputTokens = cval (content.InputTokens |> ValueOption.ofNullable |> ValueOption.defaultValue 0L)
         OutputTokens = cval (content.OutputTokens |> ValueOption.ofNullable |> ValueOption.defaultValue 0L)
         ProgressMessage = cval ""
     }
@@ -102,6 +105,7 @@ type LoopContentWrapper = {
         UpdatedAt = this.UpdatedAt.Value
         ThinkDurationMs = this.ThinkDurationMs.Value
         TotalDurationMs = this.TotalDurationMs.Value
+        InputTokens = this.InputTokens.Value |> Nullable
         OutputTokens = this.OutputTokens.Value |> Nullable
     }
 

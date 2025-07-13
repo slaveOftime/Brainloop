@@ -129,11 +129,18 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
             memoryCache.Remove(Strings.ModelsMemoryCacheKey)
             memoryCache.Remove(Strings.AgentsMemoryCacheKey)
 
-            let! model = dbService.ModelRepo.InsertOrUpdateAsync(model)
+            let db = dbService.DbContext
+
+            let! modelId = valueTask {
+                if model.Id <> 0 then
+                    do! db.Update<Model>().SetSource(model).ExecuteAffrowsAsync() |> Task.map ignore
+                    return model.Id
+                else
+                    return! db.Insert<Model>(model).ExecuteIdentityAsync() |> Task.map int
+            }
 
             // If this is a embedding model and the app settings is not set for memory, then use this automatically
             if model.CanHandleEmbedding then
-                let db = dbService.DbContext
                 let! hasMemorySettings = db.Select<AppSettings>().AnyAsync(fun (x: AppSettings) -> x.TypeName = nameof AppSettingsType.MemorySettings)
                 if not hasMemorySettings then
                     do!
@@ -142,7 +149,7 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
                             .SetSource(
                                 {
                                     AppSettings.Default with
-                                        Type = AppSettingsType.MemorySettings { MemorySettings.Default with EmbeddingModelId = model.Id }
+                                        Type = AppSettingsType.MemorySettings { MemorySettings.Default with EmbeddingModelId = modelId }
                                 }
                             )
                             .ExecuteAffrowsAsync()
@@ -167,16 +174,21 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
             | _ -> failwith "Failed to update model"
         }
 
-        member _.IncreaseOutputTokens(modelId, delta) = valueTask {
+        member _.IncreaseTokensUsage(modelId, inputDelta, outputDelta) = valueTask {
             let db = dbService.DbContext
             let! model = db.Select<Model>().Where(fun (x: Model) -> x.Id = modelId).FirstAsync<Model | null>()
             match model with
             | null -> ()
             | model ->
-                let oldCount = if model.OutputTokens.HasValue then model.OutputTokens.Value else 0
-                match! db.Update<Model>(modelId).Set((fun (x: Model) -> x.OutputTokens), Nullable(oldCount + delta)).ExecuteAffrowsAsync() with
-                | 1 -> ()
-                | _ -> failwith "Failed to update consumed tokens for model"
+                let oldInputCount = if model.InputTokens.HasValue then model.InputTokens.Value else 0
+                let oldOutputCount = if model.OutputTokens.HasValue then model.OutputTokens.Value else 0
+                do!
+                    db
+                        .Update<Model>(modelId)
+                        .Set((fun (x: Model) -> x.InputTokens), Nullable(oldInputCount + int64 inputDelta))
+                        .Set((fun (x: Model) -> x.OutputTokens), Nullable(oldOutputCount + int64 outputDelta))
+                        .ExecuteAffrowsAsync()
+                    |> Task.map ignore
         }
 
 

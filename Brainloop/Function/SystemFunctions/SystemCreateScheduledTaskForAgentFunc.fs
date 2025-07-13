@@ -5,6 +5,7 @@ open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel
+open System.ComponentModel.DataAnnotations
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.SemanticKernel
@@ -17,21 +18,33 @@ open Brainloop.Share
 open Brainloop.Function
 
 
-type ScheduleTaskForAgentArgs() =
-    member val Id: string = "" with get, set
+type CreateScheduleTaskForAgentArgs() =
+    [<Required>]
+    [<Description "Scheduler identity name">]
+    member val Identity: string = "" with get, set
+    [<Required>]
+    [<Description "Agent Id">]
     member val AgentId: int = 0 with get, set
+    [<Required>]
+    [<Description "Complete context for an agent to finish its task">]
     member val Prompt: string = "" with get, set
-    [<Description "CRON expression for the scheduler. Support for specifying both a day-of-week and a day-of-month value is not complete (you must currently use the ? character in one of these fields).">]
-    member val CronExpression: string = "" with get, set
+    [<Description "Give a specific time like: 2025/7/13 12:28:38">]
+    member val SpecificTime: DateTime Nullable = Nullable() with get, set
+    [<Description "CRON expression for the scheduler. Support for specifying both a day-of-week and a day-of-month value is not complete (you must currently use the ? character in one of these fields). For example, at 08:00 AM everyday should be: 0 0 8 * * ?">]
+    member val CronExpression: string | null = null with get, set
 
 type SystemScheduledTaskToCallAgentData = {
     Identity: string
     Author: string
     AgentId: int
     LoopId: int64
-    CronExpression: string
+    Trigger: ScheduleTrigger
     Prompt: string
 }
+
+and [<RequireQualifiedAccess>] ScheduleTrigger =
+    | CRON of string
+    | DATIME of DateTime
 
 
 type SystemScheduledTaskToCallAgentJob
@@ -84,41 +97,45 @@ type SystemCreateScheduledTaskForAgentFunc
 
     member _.Create(fn: Function, ?cancellationToken: CancellationToken) =
         KernelFunctionFactory.CreateFromMethod(
-            Func<ScheduleTaskForAgentArgs, KernelArguments, ValueTask<unit>>(fun args kernelArgs -> valueTask {
+            Func<CreateScheduleTaskForAgentArgs, KernelArguments, ValueTask<unit>>(fun args kernelArgs -> valueTask {
                 try
                     match kernelArgs.TryGetValue(Strings.ToolCallLoopId) with
                     | true, (:? int64 as loopId) ->
                         let! scheduler = schedulerFactory.GetScheduler()
 
-                        let sourceAgentId =
-                            match kernelArgs.TryGetValue(Strings.ToolCallAgentId) with
-                            | true, (:? int as x) -> x
-                            | _ -> args.AgentId
+                        let sourceAgentId = kernelArgs.AgentId |> ValueOption.defaultValue args.AgentId
 
                         let agentName =
                             dbService.DbContext.Queryable<Agent>().Where(fun (x: Agent) -> x.Id = sourceAgentId).First(fun (x: Agent) -> x.Name)
 
                         let data = {
-                            Identity = args.Id
+                            Identity = args.Identity
                             Author = agentName
                             AgentId = args.AgentId
                             LoopId = loopId
-                            CronExpression = args.CronExpression
+                            Trigger =
+                                match args.CronExpression, args.SpecificTime.HasValue with
+                                | null, true -> ScheduleTrigger.DATIME args.SpecificTime.Value
+                                | SafeString x, _ -> ScheduleTrigger.CRON x
+                                | _ ->
+                                    failwith
+                                        $"Condition is not valid {nameof args.CronExpression}: {args.CronExpression} or {nameof args.SpecificTime}: {args.SpecificTime}"
                             Prompt = args.Prompt
                         }
 
-                        let trigger =
-                            TriggerBuilder
-                                .Create()
-                                .WithIdentity(args.Id, Strings.SchedulerGroupForAgent)
-                                .WithCronSchedule(data.CronExpression)
-                                .StartNow()
-                                .Build()
+                        let triggerBuilder = TriggerBuilder.Create().WithIdentity(args.Identity, Strings.SchedulerGroupForAgent)
+
+                        let triggerBuilder =
+                            match data.Trigger with
+                            | ScheduleTrigger.CRON x -> triggerBuilder.WithCronSchedule(x)
+                            | ScheduleTrigger.DATIME x -> triggerBuilder.StartAt(x)
+
+                        let trigger = triggerBuilder.Build()
 
                         let job =
                             JobBuilder
                                 .Create<SystemScheduledTaskToCallAgentJob>()
-                                .WithIdentity(args.Id, Strings.SchedulerGroupForAgent)
+                                .WithIdentity(args.Identity, Strings.SchedulerGroupForAgent)
                                 .UsingJobData("data", JsonSerializer.Serialize(data, JsonSerializerOptions.createDefault ()))
                                 .Build()
 
@@ -128,13 +145,13 @@ type SystemCreateScheduledTaskForAgentFunc
                         do!
                             addNotificationHandler.Handle(
                                 NotificationSource.Scheduler {
-                                    Name = args.Id
+                                    Name = args.Identity
                                     Group = Strings.SchedulerGroupForAgent
                                     Author = data.Author
                                     AgentId = data.AgentId
                                     LoopId = data.LoopId
                                 },
-                                $"Scheduled {args.Id}"
+                                $"Scheduled {args.Identity}"
                             )
 
                     | _ ->
@@ -147,6 +164,10 @@ type SystemCreateScheduledTaskForAgentFunc
             }),
             JsonSerializerOptions.createDefault (),
             functionName = SystemFunction.CreateScheduledTaskForAgent,
-            description = fn.Name + " " + fn.Description,
+            description =
+                fn.Name
+                + " "
+                + fn.Description
+                + "\nYou must specify SpecificTime or CronExpression accordingly. SpecificTime has higher priority if both are provided.",
             loggerFactory = loggerFactory
         )

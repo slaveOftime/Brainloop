@@ -15,13 +15,13 @@ open Brainloop.Share
 open Brainloop.Function
 
 
-type HttpRequestFunctionArgs() =
+type SendHttpArgs() =
     member val Url: string = "" with get, set
     member val Method: string | null = null with get, set
     member val Headers: Dictionary<string, string> | null = null with get, set
     member val Body: string | null = null with get, set
 
-type HttpRequestFunctionResult() =
+type SendHttpResult() =
     member val Status: HttpStatusCode = HttpStatusCode.OK with get, set
     member val ContentType: string = "text" with get, set
     member val Content: string = "" with get, set
@@ -31,7 +31,7 @@ type SystemSendHttpFunc(logger: ILogger<SystemSendHttpFunc>, loggerFactory: ILog
 
     member _.Create(fn: Function, config: SystemSendHttpConfig) =
         KernelFunctionFactory.CreateFromMethod(
-            Func<HttpRequestFunctionArgs, ValueTask<HttpRequestFunctionResult | null>>(fun args -> valueTask {
+            Func<SendHttpArgs, ValueTask<SendHttpResult | null>>(fun args -> valueTask {
                 try
                     logger.LogInformation("Sending http request to {url}", args.Url)
 
@@ -78,7 +78,7 @@ type SystemSendHttpFunc(logger: ILogger<SystemSendHttpFunc>, loggerFactory: ILog
                                 .Convert(content)
                         | _ -> content
 
-                    return HttpRequestFunctionResult(Status = response.StatusCode, ContentType = contentType, Content = content)
+                    return SendHttpResult(Status = response.StatusCode, ContentType = contentType, Content = content)
 
                 with ex ->
                     logger.LogError(ex, "Failed to send http request")

@@ -24,6 +24,7 @@ type Model = {
     CreatedAt: DateTime
     UpdatedAt: DateTime
     LastUsedAt: DateTime Nullable
+    InputTokens: int64 Nullable
     OutputTokens: int64 Nullable
 } with
 
@@ -46,6 +47,7 @@ type Model = {
         CreatedAt = DateTime.Now
         UpdatedAt = DateTime.Now
         LastUsedAt = Nullable()
+        InputTokens = Nullable()
         OutputTokens = Nullable()
     }
 

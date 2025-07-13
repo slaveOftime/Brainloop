@@ -5,6 +5,7 @@ open System.IO
 open Microsoft.JSInterop
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.AspNetCore.Components.Web
 open FSharp.Data.Adaptive
 open SixLabors.ImageSharp
 open SixLabors.ImageSharp.Processing
@@ -126,26 +127,32 @@ type LoopContentEditor =
                         match item with
                         | LoopContentItem.Text text ->
                             let txt = text.Text
-                            StandaloneCodeEditor'' {
-                                ConstructionOptions(fun _ ->
-                                    StandaloneEditorConstructionOptions(
-                                        Value = txt,
-                                        FontSize = 16,
-                                        Language = "markdown",
-                                        AutomaticLayout = true,
-                                        GlyphMargin = false,
-                                        Folding = false,
-                                        LineDecorationsWidth = 0,
-                                        LineNumbers = "off",
-                                        WordWrap = "on",
-                                        Minimap = EditorMinimapOptions(Enabled = false),
-                                        AcceptSuggestionOnEnter = "on",
-                                        FixedOverflowWidgets = true,
-                                        Theme = if isDarkMode then "vs-dark" else "vs-light"
+                            ErrorBoundary'' {
+                                ErrorContent(fun error -> MudAlert'' {
+                                    Severity Severity.Error
+                                    error.ToString()
+                                })
+                                StandaloneCodeEditor'' {
+                                    ConstructionOptions(fun _ ->
+                                        StandaloneEditorConstructionOptions(
+                                            Value = txt,
+                                            FontSize = 16,
+                                            Language = "markdown",
+                                            AutomaticLayout = true,
+                                            GlyphMargin = false,
+                                            Folding = false,
+                                            LineDecorationsWidth = 0,
+                                            LineNumbers = "off",
+                                            WordWrap = "on",
+                                            Minimap = EditorMinimapOptions(Enabled = false),
+                                            AcceptSuggestionOnEnter = "on",
+                                            FixedOverflowWidgets = true,
+                                            Theme = if isDarkMode then "vs-dark" else "vs-light"
+                                        )
                                     )
-                                )
-                                OnDidChangeModelContent(fun _ -> hasChanges.Publish true)
-                                ref (fun x -> editorRefs[index] <- x)
+                                    OnDidChangeModelContent(fun _ -> hasChanges.Publish true)
+                                    ref (fun x -> editorRefs[index] <- x)
+                                }
                             }
                         | LoopContentItem.ToolCall _ -> MudAlert'' {
                             Dense

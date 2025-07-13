@@ -40,6 +40,7 @@ type LoopContent = {
     TotalDurationMs: int
     CreatedAt: DateTime
     UpdatedAt: DateTime
+    InputTokens: int64 Nullable
     OutputTokens: int64 Nullable
 }
 

@@ -227,6 +227,22 @@ type ModelCard =
                         "Last used at: "
                         v.Value.ToString()
                     }
+
+                let! inputTokens = modelForm.UseFieldValue(fun x -> x.InputTokens) |> AVal.map (ValueOption.ofNullable >> ValueOption.defaultValue 0)
+                let! outputTokens =
+                    modelForm.UseFieldValue(fun x -> x.OutputTokens) |> AVal.map (ValueOption.ofNullable >> ValueOption.defaultValue 0)
+                if inputTokens > 0 || outputTokens > 0 then
+                    MudChip'' {
+                        Size Size.Small
+                        if inputTokens > 0 then
+                            "↑"
+                            int inputTokens
+                            " "
+                        if outputTokens > 0 then
+                            "↓"
+                            int outputTokens
+                        " tokens"
+                    }
             }
         }
     }
