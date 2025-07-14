@@ -522,7 +522,7 @@ type LoopContentView =
                     src $"/api/memory/document/{loopContentFile.Name}"
                 }
               }
-            | AUDIO -> audio {
+            | VIDEO -> video {
                 controls
                 source {
                     type' $"video/{loopContentFile.Extension}"

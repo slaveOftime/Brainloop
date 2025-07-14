@@ -167,17 +167,17 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
             region {
                 if not hasEmbedding && Seq.length models > 0 then
                     MudExpansionPanel'' {
-                        Expanded true
+                        Expanded false
                         TitleContent(
                             MudText'' {
                                 Color Color.Warning
-                                "For memory embedding"
+                                "For content embedding"
                             }
                         )
                         this.ModelForm(
                             {
                                 Model.Default with
-                                    Name = "Memory Embedding"
+                                    Name = "Embedding"
                                     CanHandleEmbedding = true
                             },
                             false

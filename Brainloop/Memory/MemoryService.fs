@@ -128,8 +128,9 @@ type MemoryService
             |> Seq.map (fun t -> t.Text.ReplaceLineEndings(" "))
             |> String.concat (Environment.NewLine + Environment.NewLine)
 
-        TextChunker.SplitPlainTextParagraphs([ pageText ], tokensPerChunk, overlapTokens = tokensOfChunkOverlap, tokenCounter = tokenCounter)
-        |> Seq.mapi (fun index text -> (pdfPage.Number, index, text))
+        TextChunker
+            .SplitPlainTextParagraphs([ pageText ], tokensPerChunk, overlapTokens = tokensOfChunkOverlap, tokenCounter = tokenCounter)
+            .Select(fun text index -> pdfPage.Number, index, text)
 
 
     member _.VectorizePdf

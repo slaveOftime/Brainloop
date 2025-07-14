@@ -164,15 +164,11 @@ type ChatCompletionHandler
 
 
     member private _.SetSystemPromptsForAgent(agent: Agent, chatMessages: System.Collections.Generic.IList<ChatMessageContent>) =
-        chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, agent.Prompt))
-        chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, $"Current time is {DateTime.Now.ToString()}. But it is not very precise."))
-        chatMessages.Insert(
-            0,
-            ChatMessageContent(
-                AuthorRole.System,
-                $"Your name is '{agent.Name}', when user ask with @'{agent.Name}', you should response it accordingly."
-            )
-        )
+        let items = ChatMessageContentItemCollection()
+        items.Add(TextContent("Current time is " + DateTime.Now.ToString()))
+        items.Add(TextContent($"Your name is '{agent.Name}', when user ask with @'{agent.Name}', you should response it accordingly."))
+        items.Add(TextContent(agent.Prompt))
+        chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, items))
 
 
     interface IChatCompletionHandler with

@@ -45,7 +45,17 @@ type AgentCard =
             adapt {
                 let! v, setV = agentForm.UseField(fun x -> x.Type)
                 MudSelect'' {
-                    Value'(v, setV)
+                    Value v
+                    ValueChanged(fun agentType ->
+                        setV agentType
+
+                        let agentPrompt = agentForm.GetFieldValue(fun x -> x.Prompt)
+                        if String.IsNullOrWhiteSpace agentPrompt then
+                            match agentType with
+                            | AgentType.CreateTitle -> agentForm.UseFieldSetter (fun x -> x.Prompt) Prompts.CREATE_TITLE
+                            | AgentType.GetTextFromImage -> agentForm.UseFieldSetter (fun x -> x.Prompt) Prompts.GET_TEXT_FROM_IMAGE
+                            | AgentType.General -> agentForm.UseFieldSetter (fun x -> x.Prompt) Prompts.GENERAL_ASSISTANT
+                    )
                     Label "Agent Type"
                     for option in [ AgentType.CreateTitle; AgentType.GetTextFromImage; AgentType.General ] do
                         MudSelectItem'' {
@@ -67,7 +77,7 @@ type AgentCard =
                     Value' binding
                     Step 0.1
                     Min 0.1
-                    Max 1.0
+                    Max 2.0
                 }
             }
         }
@@ -125,25 +135,7 @@ type AgentCard =
                     Severity Severity.Error
                     error.ToString()
                 })
-                AgentCard.PromptEditor(
-                    adaptive {
-                        let! agentType = agentForm.UseFieldValue(fun x -> x.Type)
-                        let! agentPrompt, setPrompt = agentForm.UseField(fun x -> x.Prompt)
-
-                        let hasPrompts = String.IsNullOrWhiteSpace agentPrompt |> not
-
-                        let agentPrompt =
-                            match agentType, hasPrompts with
-                            | AgentType.CreateTitle, false -> Prompts.CREATE_TITLE
-                            | AgentType.GetTextFromImage, false -> Prompts.GET_TEXT_FROM_IMAGE
-                            | AgentType.General, false -> Prompts.GENERAL_ASSISTANT
-                            | AgentType.CreateTitle, _
-                            | AgentType.GetTextFromImage, _
-                            | AgentType.General, _ -> agentPrompt
-
-                        return agentPrompt, setPrompt
-                    }
-                )
+                AgentCard.PromptEditor(agentForm.UseField(fun x -> x.Prompt))
             }
         }
         MudItem'' {
@@ -156,12 +148,7 @@ type AgentCard =
                     let! enableTools = agentForm.UseFieldValue(fun x -> x.EnableTools)
                     let! (agentModels, setAgentModels), errors = agentForm.UseFieldWithErrors(fun x -> x.AgentModels)
 
-                    let agentModels =
-                        agentModels
-                        |> Seq.filter (fun x -> if enableTools then x.Model.CanHandleFunctions else true)
-                        |> Seq.filter (fun x -> x.Model.CanHandleText || x.Model.CanHandleAudio || x.Model.CanHandleVideo)
-                        |> Seq.sortBy (fun x -> x.Order)
-                        |> Seq.toList
+                    let agentModels = agentModels |> Seq.sortBy (fun x -> x.Order) |> Seq.toList
 
                     div {
                         MudAutocomplete'' {
@@ -214,7 +201,7 @@ type AgentCard =
                                         Order = -1
                                         Model = item.Model
                                     }
-                                    |> Seq.filter (fun x -> x.ModelId <> item.ModelId || (x.ModelId = item.ModelId && x.Order = -1))
+                                    |> Seq.filter (fun x -> x.ModelId <> item.ModelId || (x.ModelId = item.ModelId && x.Order = -1)) // Remove the old one and keep the inserted one
                                     |> Seq.mapi (fun i x -> { x with Order = i })
                                     |> Seq.toArray
                                     |> setAgentModels

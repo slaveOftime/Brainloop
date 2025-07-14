@@ -40,6 +40,9 @@ module JsonUtils =
 
         // For any json string, we try to parse it to JsonNode for better formatting
         static member Prettier(input: obj | null) : string | null =
+            let jsonOptions = JsonSerializerOptions.createDefault ()
+            jsonOptions.Encoder <- JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+
             let rec loop (input: obj | null) =
                 match input with
                 | :? JsonNode as node ->
@@ -71,22 +74,8 @@ module JsonUtils =
 
                 | :? JsonElement as x when x.ValueKind = JsonValueKind.String -> loop (x.GetString())
 
-                | x -> JsonSerializer.Serialize(x, JsonSerializerOptions.createDefault ()) |> loop
+                | x -> JsonSerializer.Serialize(x, jsonOptions) |> loop
 
             match loop input with
             | null -> null
-            | node ->
-                let jsonString = node.ToJsonString(JsonSerializerOptions.createDefault ())
-                let isText = not (String.IsNullOrEmpty jsonString) && jsonString.StartsWith("\"") && jsonString.EndsWith("\"")
-
-                if isText then
-                    jsonString
-                        .Substring(1, jsonString.Length - 2)
-                        .Replace("\\r\\n", "\n")
-                        .Replace("\\r", "\n")
-                        .Replace("\\n", "\n")
-                        .Replace("\\\"", "\"")
-                        .Replace("\\\\", "\\")
-                else
-                    jsonString
-                |> fun x -> x.Normalize()
+            | node -> node.ToJsonString(jsonOptions)

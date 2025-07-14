@@ -173,7 +173,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
             region {
                 if not hasTitleBuilder && Seq.length agents > 0 then
                     MudExpansionPanel'' {
-                        Expanded true
+                        Expanded false
                         TitleContent(
                             MudText'' {
                                 Color Color.Warning
@@ -185,6 +185,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                                 Agent.Default with
                                     Name = "Create Title"
                                     Type = AgentType.CreateTitle
+                                    Prompt = Prompts.CREATE_TITLE
                             },
                             false
                         )
@@ -193,7 +194,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
             region {
                 if not hasImageToTextBuilder && Seq.length agents > 0 then
                     MudExpansionPanel'' {
-                        Expanded true
+                        Expanded false
                         TitleContent(
                             MudText'' {
                                 Color Color.Warning
@@ -205,6 +206,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                                 Agent.Default with
                                     Name = "Get text from image"
                                     Type = AgentType.GetTextFromImage
+                                    Prompt = Prompts.GET_TEXT_FROM_IMAGE
                             },
                             false
                         )
@@ -269,7 +271,14 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                             gap 12
                         }
                         Elevation 2
-                        this.AgentForm(Agent.Default, true)
+                        this.AgentForm(
+                            {
+                                Agent.Default with
+                                    Type = AgentType.General
+                                    Prompt = Prompts.GENERAL_ASSISTANT
+                            },
+                            true
+                        )
                     }
                     div {
                         style { padding 24 }
