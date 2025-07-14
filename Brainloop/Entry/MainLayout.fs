@@ -170,6 +170,10 @@ type MainLayout(shareStore: IShareStore, globalStore: IGlobalStore, localStorage
 
         region {
             if isThemeTypeLoaded then
+                stylesheet (this.MapAsset("_content/MudBlazor/MudBlazor.min.css"))
+                stylesheet (this.MapAsset("css/google-font.css"))
+                stylesheet (this.MapAsset("css/github-markdown.css"))
+                stylesheet (this.MapAsset("excalidraw/index-Cc5PzV2C.css"))
                 themeContents
                 stylesheet (this.MapAsset("css/site.css"))
                 mainContent

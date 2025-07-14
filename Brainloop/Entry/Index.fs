@@ -33,12 +33,6 @@ type Index() as this =
                             color "green"
                             fontWeightBold
                         }
-                    }
-                    stylesheet (this.MapAsset("_content/MudBlazor/MudBlazor.min.css"))
-                    stylesheet (this.MapAsset("css/google-font.css"))
-                    stylesheet (this.MapAsset("css/github-markdown.css"))
-                    stylesheet (this.MapAsset("excalidraw/index-Cc5PzV2C.css"))
-                    styleElt {
                         html.raw
                             """
                             body {

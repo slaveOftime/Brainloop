@@ -52,6 +52,7 @@ type NavMenu =
             displayFlex
             alignItemsCenter
             padding 4 0
+            backgroundColor "var(--mud-palette-background)"
         }
         a {
             style {
