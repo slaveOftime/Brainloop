@@ -7,27 +7,12 @@ open Microsoft.SemanticKernel
 open Brainloop.Db
 
 
-type IStartChatLoopHandler =
-    abstract member Handle:
-        loopId: int64 *
-        message: string *
-        ?agentId: int *
-        ?modelId: int *
-        ?author: string *
-        ?role: LoopContentAuthorRole *
-        ?includeHistory: bool *
-        ?ignoreInput: bool *
-        ?sourceLoopContentId: int64 *
-        ?cancellationToken: CancellationToken ->
-            ValueTask<unit>
+type ICreateTitleHandler =
+    abstract member Handle: agentId: int * chatMessages: IReadOnlyList<ChatMessageContent> * ?cancellationToken: CancellationToken -> ValueTask<string>
 
 
 type IGetTextFromImageHandler =
     abstract member Handle: imageFile: string * ?cancellationToken: CancellationToken -> ValueTask<string>
-
-
-type IBuildTitleHandler =
-    abstract member Handle: agentId: int * chatMessages: IList<ChatMessageContent> * ?cancellationToken: CancellationToken -> ValueTask<string>
 
 
 type IRebuildMemoryHandler =
@@ -41,8 +26,22 @@ type IAddNotificationHandler =
 type IChatCompletionHandler =
     abstract member Handle:
         agentId: int *
-        chatMessages: IList<ChatMessageContent> *
+        chatMessages: IReadOnlyList<ChatMessageContent> *
         targetContent: LoopContentWrapper *
         ?modelId: int *
+        ?cancellationToken: CancellationToken ->
+            ValueTask<unit>
+
+type IChatCompletionForLoopHandler =
+    abstract member Handle:
+        loopId: int64 *
+        message: string *
+        ?agentId: int *
+        ?modelId: int *
+        ?author: string *
+        ?role: LoopContentAuthorRole *
+        ?includeHistory: bool *
+        ?ignoreInput: bool *
+        ?sourceLoopContentId: int64 *
         ?cancellationToken: CancellationToken ->
             ValueTask<unit>

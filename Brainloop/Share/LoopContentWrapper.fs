@@ -24,7 +24,6 @@ type LoopContentWrapper = {
     UpdatedAt: DateTime cval
     AgentId: int voption
     ModelId: int voption cval
-    ModelName: string cval
     Items: LoopContentItem clist
     ErrorMessage: string cval
     ThinkDurationMs: int cval
@@ -46,7 +45,6 @@ type LoopContentWrapper = {
         UpdatedAt = cval DateTime.Now
         AgentId = ValueNone
         ModelId = cval ValueNone
-        ModelName = cval String.Empty
         Items = clist ()
         ErrorMessage = cval ""
         ThinkDurationMs = cval 0
@@ -68,7 +66,6 @@ type LoopContentWrapper = {
         AuthorRole = content.AuthorRole
         AgentId = ValueOption.ofNullable content.AgentId
         ModelId = cval (ValueOption.ofNullable content.ModelId)
-        ModelName = cval content.ModelName
         StreammingCount = cval -1
         Items =
             clist (
@@ -95,7 +92,6 @@ type LoopContentWrapper = {
         AuthorRole = this.AuthorRole
         AgentId = this.AgentId |> ValueOption.toNullable
         ModelId = this.ModelId.Value |> ValueOption.toNullable
-        ModelName = this.ModelName.Value
         Content = JsonSerializer.Serialize(this.Items.Value, options = JsonSerializerOptions.createDefault ())
         ErrorMessage =
             match this.ErrorMessage.Value with

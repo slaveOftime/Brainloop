@@ -1,4 +1,4 @@
-﻿namespace Brainloop.Loop
+﻿namespace Brainloop.Handlers
 
 open System
 open System.Linq
@@ -21,6 +21,7 @@ open Brainloop.Model
 open Brainloop.Function
 open Brainloop.Agent
 open Brainloop.Share
+open Brainloop.Loop
 
 
 type ChatCompletionHandler
@@ -163,7 +164,7 @@ type ChatCompletionHandler
         | ModelProvider.MistralAI -> MistralAI.MistralAIPromptExecutionSettings(Temperature = agent.Temperature, TopP = agent.TopP)
 
 
-    member private _.SetSystemPromptsForAgent(agent: Agent, chatMessages: System.Collections.Generic.IList<ChatMessageContent>) =
+    member private _.SetSystemPromptsForAgent(agent: Agent, chatMessages: ChatHistory) =
         let items = ChatMessageContentItemCollection()
         items.Add(TextContent("Current time is " + DateTime.Now.ToString()))
         items.Add(TextContent($"Your name is '{agent.Name}', when user ask with @'{agent.Name}', you should response it accordingly."))
@@ -173,16 +174,7 @@ type ChatCompletionHandler
 
     interface IChatCompletionHandler with
         member _.Handle(agentId, chatMessages, targetContent, ?modelId, ?cancellationToken) = valueTask {
-            let! agents =
-                agentService.GetAgentsWithCache()
-                |> ValueTask.map (
-                    List.filter (fun x ->
-                        match x.Type with
-                        | AgentType.CreateTitle
-                        | AgentType.GetTextFromImage -> false
-                        | AgentType.General -> true
-                    )
-                )
+            let! agents = agentService.GetAgentsWithCache()
 
             let agent =
                 agents
@@ -192,7 +184,6 @@ type ChatCompletionHandler
                     | None -> failwith $"Agent with ID {agentId} not found"
 
             let chatWatch = Stopwatch.StartNew()
-            let totalChatMessagesCount = chatMessages.Count
             let textSearchProvider = new TextSearchProvider(textSearch)
             let oldItems = targetContent.Items.Value |> Seq.toList
             let oldThinkDurationMs = targetContent.ThinkDurationMs.Value
@@ -228,7 +219,6 @@ type ChatCompletionHandler
                     targetContent.StreammingCount.Value <- 0
                     targetContent.ErrorMessage.Value <- ""
                     targetContent.ModelId.Value <- ValueSome model.Id
-                    targetContent.ModelName.Value <- model.Name
                     targetContent.ThinkDurationMs.Value <- 0
                     targetContent.TotalDurationMs.Value <- 0
                     targetContent.InputTokens.Value <- 0
@@ -309,18 +299,19 @@ type ChatCompletionHandler
                     let chatClient = kernel.GetRequiredService<IChatCompletionService>()
 
                     targetContent.ProgressMessage.Publish "Prepare content"
-                    let isSystemPromptAtHead =
-                        if chatMessages.Count = 0 then
-                            false
-                        else
-                            chatMessages[0].Role = AuthorRole.System
+
+                    let chatHistory = ChatHistory(chatMessages)
+
+                    this.SetSystemPromptsForAgent(agent, chatHistory)
+
+                    let isSystemPromptAtHead = if chatHistory.Count = 0 then false else chatHistory[0].Role = AuthorRole.System
 
                     let limit = Math.Max((if isSystemPromptAtHead then 2 else 1), agent.MaxHistory)
 
-                    while chatMessages.Count > limit do
-                        chatMessages.RemoveAt(if isSystemPromptAtHead then 1 else 0)
+                    while chatHistory.Count > limit do
+                        chatHistory.RemoveAt(if isSystemPromptAtHead then 1 else 0)
 
-                    for chatMessage in chatMessages do
+                    for chatMessage in chatHistory do
                         if chatMessage.Role = AuthorRole.Assistant && chatMessage.AuthorName <> agent.Name then
                             chatMessage.Role <- AuthorRole.User
 
@@ -328,20 +319,18 @@ type ChatCompletionHandler
                         "Start chat with {agent} {model} {reducedMessages}/{providedMessages}",
                         agent.Name,
                         model.Name,
-                        chatMessages.Count,
-                        totalChatMessagesCount
+                        chatHistory.Count,
+                        chatMessages.Count
                     )
 
                     targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {chatMessages.Count} messages"
-
-                    this.SetSystemPromptsForAgent(agent, chatMessages)
 
                     if agent.EnableStreaming then
                         let mutable hasReasoningContent = true
                         let mutable lastUpdate = chatWatch.ElapsedMilliseconds
                         for result in
                             chatClient.GetStreamingChatMessageContentsAsync(
-                                ChatHistory(chatMessages),
+                                chatHistory,
                                 kernel = kernel,
                                 executionSettings = chatOptions,
                                 cancellationToken = cancellationTokenSource.Token
@@ -414,7 +403,7 @@ type ChatCompletionHandler
                     else
                         let! result =
                             chatClient.GetChatMessageContentsAsync(
-                                ChatHistory(chatMessages),
+                                chatHistory,
                                 kernel = kernel,
                                 executionSettings = chatOptions,
                                 cancellationToken = cancellationTokenSource.Token

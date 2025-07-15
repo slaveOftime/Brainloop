@@ -1,4 +1,4 @@
-﻿namespace Brainloop.Notification
+﻿namespace Brainloop.Handlers
 
 open System
 open FSharp.Data.Adaptive
@@ -6,6 +6,7 @@ open IcedTasks
 open Fun.Blazor
 open Brainloop.Db
 open Brainloop.Share
+open Brainloop.Notification
 
 type AddNotificationHandler(dbService: IDbService, globalStore: IGlobalStore) =
 

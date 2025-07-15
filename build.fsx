@@ -92,10 +92,10 @@ pipeline "publish" {
 
             if ctx.TryGetCmdArg options.zip |> Option.isSome then
                 let changelog = Changelog.GetLastVersion(__SOURCE_DIRECTORY__ </> "Brainloop")
-                ZipFile.CreateFromDirectory(
-                    publishDir,
+                let destinationFileName =
                     publishDir </> ".." </> "brainloop-" + Path.GetFileName publishDir + "-" + changelog.Value.Version + ".zip"
-                )
+                if File.Exists destinationFileName then File.Delete destinationFileName
+                ZipFile.CreateFromDirectory(publishDir, destinationFileName)
         })
     }
     runIfOnlySpecified

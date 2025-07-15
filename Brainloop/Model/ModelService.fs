@@ -102,7 +102,7 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
         member _.TryGetModelWithCache(id) =
             (this :> IModelService).GetModelsWithCache() |> ValueTask.map (Seq.tryFind (fun x -> x.Id = id) >> ValueOption.ofOption)
 
-        member _.GetModelFromCache(id) =
+        member _.GetModelWithCache(id) =
             (this :> IModelService).TryGetModelWithCache(id)
             |> ValueTask.map (
                 function
@@ -193,7 +193,7 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
 
 
         member _.GetModelsFromSource(model, ?cancellationToken) = valueTask {
-            use httpClient = this.CreateHttpClient(model)
+            use httpClient = this.CreateHttpClient(model, timeoutMs = 10_000)
             match model.Provider with
             | ModelProvider.Ollama ->
                 let ollamaClient = new OllamaApiClient(httpClient)

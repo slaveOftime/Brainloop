@@ -17,4 +17,7 @@ type AppOptions = {
     
     [<Required>]
     VectorDbConnectionString: string
+
+    [<Required>]
+    VectorCollectionName: string
 }

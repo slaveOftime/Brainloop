@@ -1,9 +1,7 @@
 ﻿[<AutoOpen>]
 module Fun.Blazor.Hooks
 
-open System
 open FSharp.Data.Adaptive
-open Microsoft.JSInterop
 open Microsoft.Extensions.DependencyInjection
 open IcedTasks
 open Blazored.LocalStorage
@@ -26,28 +24,6 @@ type IComponentHook with
     member hook.SaveThemeType(x: ThemeType) = valueTask {
         let localStorageService = hook.ServiceProvider.GetRequiredService<ILocalStorageService>()
         do! localStorageService.SetItemAsync("theme-type", x)
-    }
-
-
-    member private hook.IsHightlightCode = hook.ShareStore.CreateCVal(nameof hook.IsHightlightCode, false)
-
-    member hook.HighlightCode(?maxCount) = task {
-        if not hook.IsHightlightCode.Value then
-            try
-                hook.IsHightlightCode.Publish true
-                let maxCount = defaultArg maxCount 10
-                let js = hook.ServiceProvider.GetRequiredService<IJSRuntime>()
-
-                let mutable retryCount = 0
-                while retryCount < maxCount do
-                    if retryCount > 0 then do! Async.Sleep 300
-                    try
-                        do! js.HighlightCode()
-                        retryCount <- Int32.MaxValue
-                    with _ ->
-                        retryCount <- retryCount + 1
-            finally
-                hook.IsHightlightCode.Publish false
     }
 
 

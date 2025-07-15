@@ -390,7 +390,7 @@ type LoopView =
         html.inject (fun (hook: IComponentHook, modelService: IModelService) -> adapt {
             let! modelName =
                 match contentWrapper.ModelId.Value with
-                | ValueNone -> AVal.constant contentWrapper.ModelName.Value
+                | ValueNone -> AVal.constant ""
                 | ValueSome modelId ->
                     modelService.TryGetModelWithCache(modelId)
                     |> ValueTask.map (ValueOption.map _.Model >> ValueOption.defaultValue "")

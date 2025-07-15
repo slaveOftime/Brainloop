@@ -36,7 +36,7 @@ type SystemInvokeAgentFunc
 
                 let sourceLoopContentId = kernelArgs.LoopContentId |> ValueOption.defaultValue sourceLoopContentId
 
-                let handler = serviceProvider.GetRequiredService<IStartChatLoopHandler>()
+                let handler = serviceProvider.GetRequiredService<IChatCompletionForLoopHandler>()
 
                 valueTask {
                     do!

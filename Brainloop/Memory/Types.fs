@@ -9,15 +9,6 @@ open Microsoft.Extensions.VectorData
 open Brainloop.Db
 
 
-type IDocumentService =
-    abstract member RootDir: string
-    // Return a file name with extension
-    abstract member SaveFile:
-        name: string * content: Stream * ?loopContentId: int64 * ?makeUnique: bool * ?cancellationToken: CancellationToken -> ValueTask<string>
-    abstract member DeleteFile: fileName: string -> ValueTask<unit>
-    abstract member ReadAsText: fileName: string -> ValueTask<string>
-
-
 type IMemoryService =
     abstract member VectorizeFile: fileName: string * ?loopContentId: int64 -> ValueTask<unit>
     abstract member VectorizeLoop: id: int64 * summary: string -> ValueTask<unit>
@@ -36,6 +27,14 @@ type IMemoryService =
 
     abstract member Clear: unit -> ValueTask<unit>
 
+
+type IDocumentService =
+    abstract member RootDir: string
+    // Return a file name with extension
+    abstract member SaveFile:
+        name: string * content: Stream * ?loopContentId: int64 * ?makeUnique: bool * ?cancellationToken: CancellationToken -> ValueTask<string>
+    abstract member DeleteFile: fileName: string -> ValueTask<unit>
+    abstract member ReadAsText: fileName: string -> ValueTask<string>
 
 type MemoryEmbedding = {
     Source: MemoryEmbeddingSource

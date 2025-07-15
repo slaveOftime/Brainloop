@@ -16,10 +16,6 @@ open Fun.Blazor
 open Fun.Blazor.Operators
 
 
-// https://github.com/xoofx/markdig/blob/master/src/Markdig/Renderers/Html/CodeBlockRenderer.cs
-// https://github.com/Valour-Software/Markdig.Blazor/blob/main/Components/MarkdownCodeComponent.cs
-
-
 [<AbstractClass>]
 type BlazorObjectRenderer<'TObject when 'TObject :> MarkdownObject>() =
     inherit MarkdownObjectRenderer<BlazorMarkdownRenderer, 'TObject>()

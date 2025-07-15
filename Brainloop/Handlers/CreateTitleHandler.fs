@@ -1,4 +1,4 @@
-﻿namespace Brainloop.Loop
+﻿namespace Brainloop.Handlers
 
 open System
 open System.Text
@@ -11,9 +11,10 @@ open Brainloop.Db
 open Brainloop.Model
 open Brainloop.Agent
 open Brainloop.Share
+open Brainloop.Loop
 
 
-type BuildTitleHandler(modelService: IModelService, agentService: IAgentService, logger: ILogger<ChatCompletionHandler>) as this =
+type CreateTitleHandler(modelService: IModelService, agentService: IAgentService, logger: ILogger<CreateTitleHandler>) as this =
 
     member private _.GetPromptExecutionSettings(agent: Agent, model: Model, enableFunctions: bool) : PromptExecutionSettings =
         match model.Provider with
@@ -37,7 +38,7 @@ type BuildTitleHandler(modelService: IModelService, agentService: IAgentService,
         | ModelProvider.MistralAI -> MistralAI.MistralAIPromptExecutionSettings(Temperature = agent.Temperature, TopP = agent.TopP)
 
 
-    interface IBuildTitleHandler with
+    interface ICreateTitleHandler with
         member _.Handle(agentId, chatMessages, ?cancellationToken) = valueTask {
             let! agent =
                 agentService.TryGetAgentWithCache(agentId)

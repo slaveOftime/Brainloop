@@ -21,21 +21,21 @@ type FunctionDIExtensions =
                 use connection = new Microsoft.Data.SqlClient.SqlConnection(appOptions.DataDbConnectionString)
                 connection.Open()
                 use command = connection.CreateCommand()
-                command.CommandText <- File.ReadAllText("Function/Quartz/tables_sqlServer.sql")
+                command.CommandText <- File.ReadAllText("Scripts/Quartz/tables_sqlServer.sql")
                 command.ExecuteNonQuery() |> ignore
 
             | "SqlLite" ->
                 use connection = new Microsoft.Data.Sqlite.SqliteConnection(appOptions.DataDbConnectionString)
                 connection.Open()
                 use command = connection.CreateCommand()
-                command.CommandText <- File.ReadAllText("Function/Quartz/tables_sqlite.sql")
+                command.CommandText <- File.ReadAllText("Scripts/Quartz/tables_sqlite.sql")
                 command.ExecuteNonQuery() |> ignore
 
             | "PostgreSQL" ->
                 use connection = new Npgsql.NpgsqlConnection(appOptions.DataDbConnectionString)
                 connection.Open()
                 use command = connection.CreateCommand()
-                command.CommandText <- File.ReadAllText("Function/Quartz/tables_postgres.sql")
+                command.CommandText <- File.ReadAllText("Scripts/Quartz/tables_postgres.sql")
                 command.ExecuteNonQuery() |> ignore
 
             | x -> failwith $"Unsupported database provider {x}"

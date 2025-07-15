@@ -2,9 +2,9 @@
 module Fun.Blazor.JsInterop
 
 open System.Threading.Tasks
+open System.Diagnostics.CodeAnalysis
 open Microsoft.JSInterop
 open Fun.Blazor
-open System.Diagnostics.CodeAnalysis
 
 
 let private highlightCode =

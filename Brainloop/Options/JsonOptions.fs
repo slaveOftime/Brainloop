@@ -1,6 +1,5 @@
 ﻿namespace System.Text.Json
 
-open System
 open System.Text.Json
 open System.Text.Json.Nodes
 open System.Text.Json.Serialization

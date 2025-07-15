@@ -19,6 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Include="Scripts\Quartz\*.sql" CopyToOutputDirectory="PreserveNewest" />
 		<Compile Include="Options\Strings.fs" />
 		<Compile Include="Options\JsonOptions.fs" />
 		<Compile Include="Options\AppOptions.fs" />
@@ -50,7 +51,6 @@
 		<Compile Include="Memory\MemoryService.fs" />
 		<Compile Include="Memory\Apis.fs" />
 		<Compile Include="Memory\DIExtensions.fs" />
-		<None Include="Function\Quartz\*.sql" CopyToOutputDirectory="PreserveNewest" />
 		<Compile Include="Function\Types.fs" />
 		<Compile Include="Function\Utils.fs" />
 		<Compile Include="Function\Mcp.fs" />
@@ -85,14 +85,15 @@
 		<Compile Include="Loop\LoopsView.fs" />
 		<Compile Include="Loop\LoopsPage.fs" />
 		<Compile Include="Notification\Stores.fs" />
-		<Compile Include="Notification\AddNotificationHandler.fs" />
 		<Compile Include="Notification\NotificationView.fs" />
 		<Compile Include="Settings\SettingsService.fs" />
 		<Compile Include="Settings\SettingsPage.fs" />
+		<Compile Include="Handlers\CreateTitleHandler.fs" />
 		<Compile Include="Handlers\GetTextFromImageHandler.fs" />
 		<Compile Include="Handlers\ChatCompletionHandler.fs" />
-		<Compile Include="Handlers\BuildTitleHandler.fs" />
+		<Compile Include="Handlers\ChatCompletionForLoopHandler.fs" />
 		<Compile Include="Handlers\RebuildMemoryHandler.fs" />
+		<Compile Include="Handlers\AddNotificationHandler.fs" />
 		<Compile Include="Entry\NavMenu.fs" />
 		<Compile Include="Entry\WelcomeView.fs" />
 		<Compile Include="Entry\MainLayout.fs" />
@@ -104,10 +105,10 @@
 	<ItemGroup>
 		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
 		<PackageReference Include="CliWrap" Version="3.9.0" />
-		<PackageReference Include="FreeSql.DbContext" Version="3.5.209" />
-		<PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.209" />
-		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.209" />
-		<PackageReference Include="FreeSql.Provider.SqlServer" Version="3.5.209" />
+		<PackageReference Include="FreeSql.DbContext" Version="3.5.210" />
+		<PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.210" />
+		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.210" />
+		<PackageReference Include="FreeSql.Provider.SqlServer" Version="3.5.210" />
 		<PackageReference Include="FSharp.Control.FusionTasks" Version="2.6.0" />
 		<PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
 		<PackageReference Include="FSharp.Data.Adaptive" Version="1.2.24" />
@@ -120,23 +121,22 @@
 		<PackageReference Include="Fun.Blazor.MudBlazor" Version="8.7.0" />
 		<PackageReference Include="IcedTasks" Version="0.11.8" />
 		<PackageReference Include="Markdig" Version="0.41.3" />
-		<PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="9.6.0" />
-		<PackageReference Include="Microsoft.SemanticKernel" Version="1.59.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.59.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.59.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.59.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.59.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.59.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Milvus" Version="1.59.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Chroma" Version="1.59.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.59.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.59.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.59.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.59.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.59.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.59.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.60.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.60.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.60.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.60.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.60.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.60.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Milvus" Version="1.60.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Chroma" Version="1.60.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.60.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.60.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.60.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.60.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.60.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.60.0-alpha" />
 		<PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.2" />
-		<PackageReference Include="OllamaSharp" Version="5.2.3" />
+		<PackageReference Include="OllamaSharp" Version="5.2.10" />
 		<PackageReference Include="PdfPig" Version="0.1.10" />
 		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
 		<PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />

@@ -40,7 +40,7 @@ type SystemGenerateImageFunc
                     logger.LogInformation("Generate image")
                     match config with
                     | SystemGenerateImageConfig.LLMModel config ->
-                        let! model = modelService.GetModelFromCache(config.ModelId)
+                        let! model = modelService.GetModelWithCache(config.ModelId)
                         let! kernel = modelService.GetKernel(config.ModelId)
 
                         let sourceLoopContentId = kernelArgs.LoopContentId

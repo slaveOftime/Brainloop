@@ -48,7 +48,7 @@ and [<RequireQualifiedAccess>] ScheduleTrigger =
 
 
 type SystemScheduledTaskToCallAgentJob
-    (startChatLoopHandler: IStartChatLoopHandler, addNotificationHandler: IAddNotificationHandler, logger: ILogger<SystemScheduledTaskToCallAgentJob>) as this
+    (startChatLoopHandler: IChatCompletionForLoopHandler, addNotificationHandler: IAddNotificationHandler, logger: ILogger<SystemScheduledTaskToCallAgentJob>) as this
     =
     interface IJob with
         member _.Execute(context: IJobExecutionContext) = task {
@@ -70,7 +70,7 @@ type SystemScheduledTaskToCallAgentJob
 
                     do!
                         addNotificationHandler.Handle(
-                            NotificationSource.Scheduler {
+                            NotificationSource.SchedulerForAgent {
                                 Name = context.JobDetail.Key.Name
                                 Group = context.JobDetail.Key.Group
                                 Author = data.Author
@@ -144,7 +144,7 @@ type SystemCreateScheduledTaskForAgentFunc
                         let addNotificationHandler = serviceProvider.GetRequiredService<IAddNotificationHandler>()
                         do!
                             addNotificationHandler.Handle(
-                                NotificationSource.Scheduler {
+                                NotificationSource.SchedulerForAgent {
                                     Name = args.Identity
                                     Group = Strings.SchedulerGroupForAgent
                                     Author = data.Author

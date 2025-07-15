@@ -29,12 +29,12 @@ type NotificationView =
                         MudText'' {
                             style { opacity 0.5 }
                             match notification.Source with
-                            | NotificationSource.Scheduler s -> s.Name + " " + notification.CreatedAt.ToLongTimeString()
+                            | NotificationSource.SchedulerForAgent s -> s.Name + " " + notification.CreatedAt.ToLongTimeString()
                         }
                         MudText'' {
                             Typo Typo.body1
                             match notification.Source with
-                            | NotificationSource.Scheduler s -> $"{notification.Message} by {s.Author}"
+                            | NotificationSource.SchedulerForAgent s -> $"{notification.Message} by {s.Author}"
                         }
                     }
                     div {
@@ -46,7 +46,7 @@ type NotificationView =
                             gap 8
                         }
                         match notification.Source with
-                        | NotificationSource.Scheduler s ->
+                        | NotificationSource.SchedulerForAgent s ->
                             MudButton'' {
                                 Size Size.Small
                                 Color Color.Primary

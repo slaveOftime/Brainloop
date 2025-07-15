@@ -1,4 +1,4 @@
-﻿namespace Brainloop.Loop
+﻿namespace Brainloop.Handlers
 
 open System.IO
 open FSharp.Control

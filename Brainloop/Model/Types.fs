@@ -10,7 +10,7 @@ open Brainloop.Db
 
 type IModelService =
     abstract member GetModel: id: int -> ValueTask<Model>
-    abstract member GetModelFromCache: id: int -> ValueTask<Model>
+    abstract member GetModelWithCache: id: int -> ValueTask<Model>
     abstract member TryGetModelWithCache: id: int -> ValueTask<Model voption>
 
     abstract member GetModels: unit -> ValueTask<Model list>

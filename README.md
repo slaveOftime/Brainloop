@@ -1,7 +1,7 @@
 # Brainloop 🧠⇄💻
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/Version-0.1.0-brightgreen)](https://github.com/albertwoo/brainloop/releases)
+[![Version](https://img.shields.io/badge/Version-0.1.0-brightgreen)](https://github.com/slaveoftime/brainloop/releases)
 
 > Create intelligent loops that combine LLM reasoning with actionable tools to amplify your productivity.
 
@@ -16,7 +16,29 @@ Simple but powerful patterns to get things done with LLMs:
 ## How to Use
 
 - download binaries to run directly on Windows/Mac/Linux: [release]()
+    
+    Unzip it and find file **Brainloop.exe** or **Brainloop.** to run it.
+
+    Examples for configuration (appsettings.Production.json):
+
+    Below is the default which is using sqlite for data and memory embedding:
+    ```json
+    {
+        "urls": "http://localhost:11435",
+        "AppOptions": {
+            "DataDbProvider": "SqlLite",
+            "DataDbConnectionString": "Data Source=brainloop.db",
+            "VectorDbProvider": "SqlLite",
+            "VectorDbConnectionString": "Data Source=brainloop.db",
+            "VectorCollectionName": "memory"
+        }
+    }
+    ```
+    
+    > For Qdrant, the "VectorDbConnectionString" can be "Endpoint=http://xxx;Key=xxx" or just "http://xxx" if it has no api key required
+
 - docker host, from the root dir run: docker compose up -d
+
 
 ## 🧩 Ecosystem Integration
 

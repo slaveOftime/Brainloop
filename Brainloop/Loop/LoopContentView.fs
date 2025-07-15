@@ -524,6 +524,7 @@ type LoopContentView =
               }
             | VIDEO -> video {
                 controls
+                style { width "100%" }
                 source {
                     type' $"video/{loopContentFile.Extension}"
                     src $"/api/memory/document/{loopContentFile.Name}"

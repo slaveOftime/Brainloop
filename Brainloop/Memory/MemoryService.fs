@@ -80,7 +80,8 @@ type MemoryService
 
         let contentVectorDefinition = MemoryEmbedding.GetVectorDefinition(keyType, dimensions)
 
-        let collection = vectoreStore.GetDynamicCollection($"MemoryCollectionsD{dimensions}", contentVectorDefinition)
+        let collection =
+            vectoreStore.GetDynamicCollection($"{appOptions.Value.VectorCollectionName}_{dimensions}", contentVectorDefinition)
 
         do! collection.EnsureCollectionExistsAsync()
 
@@ -104,11 +105,12 @@ type MemoryService
 
     member _.GetDependencies() = valueTask {
         let! settings = this.GetSettings()
-        let! model = modelService.GetModelFromCache(settings.EmbeddingModelId)
+        let! model = modelService.GetModelWithCache(settings.EmbeddingModelId)
         let! embeddingService = modelService.GetEmbeddingService(settings.EmbeddingModelId)
         let! collection = this.GetMemoryCollectionFromCache(model)
         return settings, embeddingService, collection
     }
+
 
     member _.UpsertMemory(collection: MemoryCollection, record: Dictionary<_, _>) = valueTask {
         do! upsertLocker.WaitAsync()
@@ -117,6 +119,34 @@ type MemoryService
         finally
             upsertLocker.Release() |> ignore
     }
+
+    member _.DeleteMemory(source: MemoryEmbeddingSource, collection: MemoryCollection) = valueTask {
+        let sourceType, sourceId =
+            match source with
+            | MemoryEmbeddingSource.File x -> nameof MemoryEmbeddingSource.File, x
+            | MemoryEmbeddingSource.Loop x -> nameof MemoryEmbeddingSource.Loop, x.ToString()
+            | MemoryEmbeddingSource.LoopContent x -> nameof MemoryEmbeddingSource.LoopContent, x.ToString()
+
+        do! upsertLocker.WaitAsync()
+
+        try
+            let! records =
+                collection.GetAsync((fun record -> record["SourceType"] = sourceType && record["SourceId"] = sourceId), 5)
+                |> TaskSeq.toListAsync
+
+            for record in records do
+                match record["Id"] with
+                | null -> ()
+                | x ->
+                    do! collection.DeleteAsync(x)
+                    logger.LogInformation("Memory is deleted for {type} {sourceId} chunk {index}", sourceType, sourceId, record["ChunkIndex"])
+
+        with ex ->
+            logger.LogError(ex, "Memory deleteing failed for {type} {sourceId}", sourceType, sourceId)
+
+        upsertLocker.Release() |> ignore
+    }
+
 
     member _.GetPdfPageParagraphs(pdfPage: Page, tokensPerChunk, tokensOfChunkOverlap) =
         let letters = pdfPage.Letters
@@ -200,29 +230,6 @@ type MemoryService
                     do! this.UpsertMemory(collection, embedding.ToVectorDictionary(createNewKey ()))
                     logger.LogInformation("Memory is added for {sourceId} chunk {index}", fileName, index)
         }
-
-    member _.DeleteMemory(source: MemoryEmbeddingSource, collection: MemoryCollection) = valueTask {
-        let sourceType, sourceId =
-            match source with
-            | MemoryEmbeddingSource.File x -> nameof MemoryEmbeddingSource.File, x
-            | MemoryEmbeddingSource.Loop x -> nameof MemoryEmbeddingSource.Loop, x.ToString()
-            | MemoryEmbeddingSource.LoopContent x -> nameof MemoryEmbeddingSource.LoopContent, x.ToString()
-
-        try
-            let! records =
-                collection.GetAsync((fun record -> record["SourceType"] = sourceType && record["SourceId"] = sourceId), 5)
-                |> TaskSeq.toListAsync
-
-            for record in records do
-                match record["Id"] with
-                | null -> ()
-                | x ->
-                    do! collection.DeleteAsync(x)
-                    logger.LogInformation("Memory is deleted for {type} {sourceId} chunk {index}", sourceType, sourceId, record["ChunkIndex"])
-
-        with ex ->
-            logger.LogError(ex, "Memory deleteing failed for {type} {sourceId}", sourceType, sourceId)
-    }
 
     member _.FromTextSearchOptions(options: TextSearchOptions | null) =
         let top =
@@ -391,7 +398,7 @@ type MemoryService
         }
 
         member _.DeleteLoopContent(id) = valueTask {
-            let! _, embeddingService, collection = this.GetDependencies()
+            let! _, _, collection = this.GetDependencies()
             do! this.DeleteMemory(MemoryEmbeddingSource.LoopContent id, collection)
         }
 

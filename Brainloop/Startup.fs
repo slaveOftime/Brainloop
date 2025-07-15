@@ -16,8 +16,8 @@ open Brainloop.Model
 open Brainloop.Memory
 open Brainloop.Agent
 open Brainloop.Loop
-open Brainloop.Notification
 open Brainloop.Settings
+open Brainloop.Handlers
 
 
 let builder = WebApplication.CreateBuilder(Environment.GetCommandLineArgs())
@@ -43,22 +43,23 @@ builder.Services.AddMudServices()
 builder.Services.AddHttpClient()
 
 builder.Services.AddMemoryCache()
-builder.Services.AddHybridCache()
 
 builder.Services.AddSingleton<IDbService, DbService>()
 builder.Services.AddScoped<IModelService, ModelService>()
 builder.Services.AddMemory(appOptions)
 builder.Services.AddFunction(appOptions)
 builder.Services.AddScoped<IAgentService, AgentService>()
-builder.Services.AddScoped<IGetTextFromImageHandler, GetTextFromImageHandler>()
-builder.Services.AddScoped<ILoopContentService, LoopContentService>()
 builder.Services.AddScoped<ILoopService, LoopService>()
-builder.Services.AddScoped<IStartChatLoopHandler, LoopService>()
+builder.Services.AddScoped<ILoopContentService, LoopContentService>()
+builder.Services.AddScoped<ISettingsService, SettingsService>()
+
+// Handlers
+builder.Services.AddScoped<ICreateTitleHandler, CreateTitleHandler>()
+builder.Services.AddScoped<IGetTextFromImageHandler, GetTextFromImageHandler>()
 builder.Services.AddScoped<IChatCompletionHandler, ChatCompletionHandler>()
-builder.Services.AddScoped<IBuildTitleHandler, BuildTitleHandler>()
+builder.Services.AddScoped<IChatCompletionForLoopHandler, ChatCompletionForLoopHandler>()
 builder.Services.AddScoped<IRebuildMemoryHandler, RebuildMemoryHandler>()
 builder.Services.AddScoped<IAddNotificationHandler, AddNotificationHandler>()
-builder.Services.AddScoped<ISettingsService, SettingsService>()
 
 
 let app = builder.Build()

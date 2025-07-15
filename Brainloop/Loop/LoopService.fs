@@ -22,7 +22,7 @@ type LoopService
     (
         dbService: IDbService,
         chatCompletionHandler: IChatCompletionHandler,
-        buildTitleHandler: IBuildTitleHandler,
+        buildTitleHandler: ICreateTitleHandler,
         memoryService: IMemoryService,
         documentService: IDocumentService,
         agentService: IAgentService,
@@ -144,7 +144,7 @@ type LoopService
 
                 let! _ = loopContentService.UpsertLoopContent({ outputContent with Id = outputContentId })
 
-                if chatMessages.Count = 2 then
+                if chatMessages.Count = 1 then
                     (this :> ILoopService).BuildTitle(loopId) |> ignore
         }
 
@@ -171,7 +171,7 @@ type LoopService
 
                         let! _ = loopContentService.UpsertLoopContent(target)
 
-                        if chatMessages.Count = 2 then
+                        if chatMessages.Count = 1 then
                             (this :> ILoopService).BuildTitle(loopId) |> ignore
         }
 
@@ -265,22 +265,3 @@ type LoopService
             match loopContentService.GetContentsCache(loopId) with
             | null -> AVal.constant false
             | x -> x |> AList.exists (fun x -> x.IsStreaming.Value)
-
-
-    interface IStartChatLoopHandler with
-        member _.Handle
-            (loopId, message, ?agentId, ?modelId, ?author, ?role, ?includeHistory, ?ignoreInput, ?sourceLoopContentId, ?cancellationToken)
-            =
-            (this :> ILoopService)
-                .Send(
-                    loopId,
-                    message,
-                    ?agentId = agentId,
-                    ?modelId = modelId,
-                    ?author = author,
-                    ?role = role,
-                    ?includeHistory = includeHistory,
-                    ?ignoreInput = ignoreInput,
-                    ?sourceLoopContentId = sourceLoopContentId,
-                    ?cancellationToken = cancellationToken
-                )

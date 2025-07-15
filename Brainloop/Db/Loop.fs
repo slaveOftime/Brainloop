@@ -30,7 +30,6 @@ type LoopContent = {
     LoopId: int64
     AgentId: int Nullable
     ModelId: int Nullable
-    ModelName: string
     SourceLoopContentId: int64 Nullable
     Author: string
     AuthorRole: LoopContentAuthorRole

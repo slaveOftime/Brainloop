@@ -3,7 +3,7 @@
 open System
 
 
-type NotificationScheduler = {
+type SchedulerForAgent = {
     Name: string
     Group: string
     Author: string
@@ -12,7 +12,7 @@ type NotificationScheduler = {
 }
 
 [<RequireQualifiedAccess>]
-type NotificationSource = Scheduler of NotificationScheduler
+type NotificationSource = SchedulerForAgent of SchedulerForAgent
 
 
 [<CLIMutable>]
