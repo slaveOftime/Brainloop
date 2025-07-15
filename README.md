@@ -14,7 +14,7 @@ Simple but powerful patterns to get things done with LLMs:
 
 ![brainloop screenshot](./Docs/brainloop-0.1.0%20screenshot1.png)
 
-There are the [video links for the demo](./Docs/brainloop-0.1.0.mp4)
+There are the [video links for the demo](./Docs/brainloop-0.1.0%20demo.gif)
 
 ## How to Use
 
