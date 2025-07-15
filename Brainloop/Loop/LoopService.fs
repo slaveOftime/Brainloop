@@ -106,14 +106,15 @@ type LoopService
             match agent with
             | ValueNone -> logger.LogInformation("No agent is specified")
             | ValueSome agent ->
-                let! contents = loopContentService.GetOrCreateContentsCache(loopId)
                 let chatMessages = List<ChatMessageContent>()
+                let! contents = loopContentService.GetOrCreateContentsCache(loopId)
                 if includeHistory then
                     for item in contents |> AList.force do
                         let! content = this.ToChatMessageContent(item)
                         chatMessages.Add(content)
 
-                chatMessages.Add(ChatMessageContent(role.ToSemanticKernelRole(), message, AuthorName = author))
+                if inputContentId.IsNone then
+                    chatMessages.Add(ChatMessageContent(role.ToSemanticKernelRole(), message, AuthorName = author.KeepLetterAndDigits()))
 
                 let outputContent = {
                     LoopContentWrapper.Default(loopId) with

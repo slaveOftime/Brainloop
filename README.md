@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/Version-0.1.0-brightgreen)](https://github.com/slaveoftime/brainloop/releases)
 
-> Create intelligent loops that combine LLM reasoning with actionable tools to amplify your productivity.
+> Create intelligent loops that combine LLM reasoning with actionable tools to amplify your brain.
 
 Simple but powerful patterns to get things done with LLMs:
 
@@ -12,6 +12,9 @@ Simple but powerful patterns to get things done with LLMs:
 3. Define any **agents**: prompt + models + tools
 4. Create loops to invoke agent to do something
 
+![brainloop screenshot](./Docs/brainloop-0.1.0%20screenshot1.png)
+
+There are the [video links for the demo](./Docs/brainloop-0.1.0.mp4)
 
 ## How to Use
 
@@ -58,4 +61,4 @@ Simple but powerful patterns to get things done with LLMs:
 - Read uploaded document as text 
 - Execute command 
 - Create a task for a specific agent 
-- Create a task scheduler for a specific agent |
+- Create a task scheduler for a specific agent

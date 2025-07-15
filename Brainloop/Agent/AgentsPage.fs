@@ -24,6 +24,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
     let addValidators (form: AdaptiveForm<Agent, string>) =
         form
             .AddValidators((fun x -> x.Name), false, [ Validators.required "Name is required" ])
+            .AddValidators((fun x -> x.Prompt), false, [ Validators.required "Prompt is required" ])
             .AddValidators((fun x -> x.AgentModels), false, [ Validators.seqMinLen 1 (fun _ -> "Add at least one model") ])
 
     let createAgent () = task {

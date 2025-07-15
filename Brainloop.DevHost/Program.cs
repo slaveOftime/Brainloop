@@ -14,6 +14,7 @@ var qdrant = builder.AddQdrant("Qdrant")
     .WithLifetime(ContainerLifetime.Persistent);
 
 builder.AddProject<Projects.Brainloop>("BrainloopServer")
+     .WithEnvironment("urls", "http://localhost:11436")
      .WithEnvironment("AppOptions:DataDbProvider", "PostgreSQL")
      .WithEnvironment("AppOptions:DataDbConnectionString", db)
      .WithEnvironment("AppOptions:VectorDbProvider", "Qdrant")
