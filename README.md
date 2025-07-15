@@ -18,13 +18,11 @@ There are the [video links for the demo](./Docs/brainloop-0.1.0.mp4)
 
 ## How to Use
 
-- download binaries to run directly on Windows/Mac/Linux: [release]()
+- download binaries to run directly on Windows/Mac/Linux from [releases](https://github.com/slaveOftime/Brainloop/releases)
     
-    Unzip it and find file **Brainloop.exe** or **Brainloop.** to run it.
+    Unzip it and find file **Brainloop** to run it.
 
-    Examples for configuration (appsettings.Production.json):
-
-    Below is the default which is using sqlite for data and memory embedding:
+    Below is the default configuration (appsettings.Production.json) which is using SqlLite for data and memory vector embedding, but you can open it and modify it accordingly:
     ```json
     {
         "urls": "http://localhost:11435",
@@ -39,6 +37,8 @@ There are the [video links for the demo](./Docs/brainloop-0.1.0.mp4)
     ```
     
     > For Qdrant, the "VectorDbConnectionString" can be "Endpoint=http://xxx;Key=xxx" or just "http://xxx" if it has no api key required
+
+    After it run, you just access the url you in the config file "http://localhost:11435" with your browser.
 
 - docker host, from the root dir run: docker compose up -d
 
