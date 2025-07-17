@@ -323,7 +323,7 @@ type ChatCompletionHandler
                         chatMessages.Count
                     )
 
-                    targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {chatMessages.Count} messages"
+                    targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {chatHistory.Count} messages"
 
                     if agent.EnableStreaming then
                         let mutable hasReasoningContent = true
