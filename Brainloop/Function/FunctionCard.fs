@@ -15,16 +15,10 @@ type FunctionCard =
         MudItem'' {
             xs 12
             adapt {
-                let! functionType = functionForm.UseFieldValue(fun x -> x.Type)
                 let! binding = functionForm.UseFieldWithErrors(fun x -> x.Name)
                 MudTextField'' {
                     Value' binding
                     Label "Name"
-                    ReadOnly(
-                        match functionType with
-                        | SYSTEM_FUNCTION -> true
-                        | _ -> false
-                    )
                 }
             }
         }
