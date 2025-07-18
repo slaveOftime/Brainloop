@@ -25,8 +25,7 @@ type SystemCreateTaskForAgentFunc(loggerFactory: ILoggerFactory) =
 
     static member GetArgs(toolCall: LoopContentToolCall) =
         match toolCall.Arguments.TryGetValue "args" with
-        | true, (:? string as x) -> JsonSerializer.Deserialize<CreateTaskForAgentArgs>(x, JsonSerializerOptions.createDefault ()) |> ValueOption.ofObj
-        | true, (:? JsonElement as x) -> x.Deserialize<CreateTaskForAgentArgs>(JsonSerializerOptions.createDefault ()) |> ValueOption.ofObj
+        | true, x -> JsonSerializer.Deserialize<CreateTaskForAgentArgs>(string x, JsonSerializerOptions.createDefault ()) |> ValueOption.ofObj
         | _ -> ValueNone
 
     member _.Create(fn: Function) =

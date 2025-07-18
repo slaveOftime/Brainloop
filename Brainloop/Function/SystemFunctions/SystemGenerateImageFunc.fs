@@ -60,7 +60,7 @@ type SystemGenerateImageFunc
                         let imageString = StringBuilder()
 
                         let addImageStream (notes: string) stream = valueTask {
-                            let date = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")
+                            let date = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss")
                             let name = $"tool-generated-{date}.png"
                             let! id =
                                 documentService.SaveFile(
@@ -69,7 +69,7 @@ type SystemGenerateImageFunc
                                     ?loopContentId = ValueOption.toOption sourceLoopContentId,
                                     ?cancellationToken = cancellationToken
                                 )
-                            imageString.Append("![").Append(name).Append("](/api/memory/document/").Append(id).AppendLine("/image)") |> ignore
+                            imageString.Append("![").Append(name).Append("](/api/memory/document/").Append(id) |> ignore
                             if String.IsNullOrWhiteSpace(notes) |> not then
                                 imageString.AppendLine().AppendLine(notes) |> ignore
                         }
