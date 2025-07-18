@@ -6,7 +6,10 @@ services:
       QDRANT__SERVICE__API_KEY: "${qdrant_api_key}"
       QDRANT__SERVICE__ENABLE_STATIC_CONTENT: "0"
     volumes:
-      - ./qdrant:/qdrant/storage
+      - type: "volume"
+        target: "/qdrant/storage"
+        source: "brainloop-qdrant-data"
+        read_only: false
 
   postgres:
     image: postgres:latest
@@ -15,7 +18,10 @@ services:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "${pg_password}"
     volumes:
-      - ./postgres:/var/lib/postgresql/data
+      - type: "volume"
+        target: "/var/lib/postgresql/data"
+        source: "brainloop-postgres-data"
+        read_only: false
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
@@ -35,9 +41,20 @@ services:
       AppOptions:VectorDbProvider: "Qdrant"
       AppOptions:VectorDbConnectionString: "Endpoint=http://qdrant:6334;Key=${qdrant_api_key}"
     volumes:
-      - ./documents:/app/documents
+      - type: "volume"
+        target: "/app/documents"
+        source: "brainloop-documents"
+        read_only: false
     depends_on:
       postgres:
         condition: "service_healthy"
       qdrant:
         condition: "service_started"
+
+volumes:
+  brainloop-postgres-data:
+    driver: "local"
+  brainloop-qdrant-data:
+    driver: "local"
+  brainloop-documents:
+    driver: "local"
