@@ -26,6 +26,7 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
         form
             .AddValidators((fun x -> x.Name), false, [ Validators.required "Name is required" ])
             .AddValidators((fun x -> x.Api), false, [ Validators.required "Api is required" ])
+            .AddValidators((fun x -> x.Model), false, [ Validators.required "Model is required" ])
 
     let createModel () = task {
         isCreating.Publish(true)

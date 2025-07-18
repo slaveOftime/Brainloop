@@ -13,16 +13,6 @@ type ModelCard =
 
     static member Create(modelForm: AdaptiveForm<Model, string>) = MudGrid'' {
         Spacing 4
-        MudItem'' {
-            xs 12
-            adapt {
-                let! binding = modelForm.UseFieldWithErrors(fun x -> x.Name)
-                MudTextField'' {
-                    Value' binding
-                    Label "Name"
-                }
-            }
-        }
         adapt {
             let! (v, setV), errors = modelForm.UseFieldWithErrors(fun x -> x.Provider)
             MudItem'' {
@@ -126,6 +116,16 @@ type ModelCard =
         MudItem'' {
             xs 12
             ModelSelector.Create(modelForm)
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! binding = modelForm.UseFieldWithErrors(fun x -> x.Name)
+                MudTextField'' {
+                    Value' binding
+                    Label "Name"
+                }
+            }
         }
         MudItem'' {
             xs 12
