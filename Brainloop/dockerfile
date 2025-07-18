@@ -1,11 +1,11 @@
 # Build assets
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
-WORKDIR /App
-COPY . ./
-RUN dotnet fsi ./build.fsx -- -p publish --docker
+WORKDIR /app
+COPY ../ .
+RUN dotnet publish ./Brainloop/Brainloop.fsproj -c Release -o ./publish
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
-WORKDIR /App
-COPY --from=build-env /App/publish/docker .
+WORKDIR /app
+COPY --from=build-env /app/publish .
 ENTRYPOINT ["dotnet", "Brainloop.dll"]

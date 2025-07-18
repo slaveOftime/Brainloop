@@ -25,7 +25,7 @@ There are the [video links for the demo](./Docs/brainloop-0.1.0%20demo.gif)
     Below is the default configuration (appsettings.Production.json) which is using SqlLite for data and memory vector embedding, but you can open it and modify it accordingly:
     ```json
     {
-        "urls": "http://localhost:11435",
+        "HTTP_PORTS": 11435,
         "AppOptions": {
             "DataDbProvider": "SqlLite",
             "DataDbConnectionString": "Data Source=brainloop.db",
@@ -38,7 +38,7 @@ There are the [video links for the demo](./Docs/brainloop-0.1.0%20demo.gif)
     
     > For Qdrant, the "VectorDbConnectionString" can be "Endpoint=http://xxx;Key=xxx" or just "http://xxx" if it has no api key required
 
-    After it run, you just access the url you in the config file "http://localhost:11435" with your browser.
+    After it run, you just access the url with the port in you in the config file like "http://localhost:11435" with your browser.
 
 - docker host, from the root dir run: docker compose up -d
 
@@ -62,3 +62,9 @@ There are the [video links for the demo](./Docs/brainloop-0.1.0%20demo.gif)
 - Execute command 
 - Create a task for a specific agent 
 - Create a task scheduler for a specific agent
+
+
+## Local dev requirements
+
+- [dotnet 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+- VSCode (+ extension: Ionide for F#) or VS2022 above

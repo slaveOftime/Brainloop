@@ -1,31 +1,43 @@
 services:  
+  
   qdrant:
-    image: qdrant/qdrant:latest
-    restart: unless-stopped
+    image: "docker.io/qdrant/qdrant:v1.13.6"
+    environment:
+      QDRANT__SERVICE__API_KEY: "${qdrant_api_key}"
+      QDRANT__SERVICE__ENABLE_STATIC_CONTENT: "0"
     volumes:
-      - .\qdrant:/qdrant/storage
+      - ./qdrant:/qdrant/storage
 
   postgres:
     image: postgres:latest
     environment:
-      POSTGRES_DB: brainloop
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${pg_password}
+      POSTGRES_DB: "brainloop"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "${pg_password}"
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      retries: 5
 
   brainloop:
     build:
       context: ./
-      dockerfile: dockerfile
+      dockerfile: ./Brainloop/dockerfile
     ports:
       - "11435:11435"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - AppOptions__DataDbProvider=PostgreSQL
-      - AppOptions__DataDbConnectionString=Host=postgres;Username=postgres;Password=${pg_password};Database=brainloop
-      - AppOptions__VectorDbProvider=Qdrant
-      - AppOptions__VectorDbConnectionString=http://qdrant:6333
-    depends_on:
-      - qdrant
-      - postgres
+      HTTP_PORTS: 11435
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      AppOptions:DataDbProvider: "PostgreSQL"
+      AppOptions:DataDbConnectionString: "Host=postgres;Username=postgres;Password=${pg_password};Database=brainloop"
+      AppOptions:VectorDbProvider: "Qdrant"
+      AppOptions:VectorDbConnectionString: "Endpoint=http://qdrant:6334;Key=${qdrant_api_key}"
     volumes:
-      - ./documents:/App/documents
+      - ./documents:/app/documents
+    depends_on:
+      postgres:
+        condition: "service_healthy"
+      qdrant:
+        condition: "service_started"

@@ -1,4 +1,5 @@
 .vs
+.aspire
 bin
 obj
 node_modules
@@ -6,5 +7,8 @@ dist
 Brainloop/documents
 documents
 qdrant
+postgres
 publish
 *.db
+Brainloop.WhisperApi/models
+Brainloop.DevHost/docker-compose-artifacts
