@@ -278,15 +278,16 @@ type LoopSearcher =
                     preventDefault "onclick" true
                     stopPropagation "onclick" true
                     onclick (fun _ -> task {
-                        onClose |> Option.iter (fun f -> f ())
-
                         match result with
-                        | { Result = MemorySearchResult.Loop loop } -> do! hook.ToggleLoop(loop.Id, false)
+                        | { Result = MemorySearchResult.Loop loop } ->
+                            onClose |> Option.iter (fun f -> f ())
+                            do! hook.ToggleLoop(loop.Id, false)
 
                         | { Result = MemorySearchResult.LoopContent loopContent }
                         | {
                               Result = MemorySearchResult.File { LoopContent = ValueSome loopContent }
                           } ->
+                            onClose |> Option.iter (fun f -> f ())
                             do! hook.ToggleLoop(loopContent.LoopId, false)
                             transact (fun _ -> shareStore.LoopContentsFocusing.Add(loopContent.LoopId, loopContent.Id) |> ignore)
 
@@ -332,20 +333,42 @@ type LoopSearcher =
                                     | _ -> ()
                                 }
 
-                            | { Result = MemorySearchResult.File file } -> MudLink'' {
-                                style { wordbreakBreakAll }
-                                stopPropagation "onclick" true
-                                download (
-                                    match file.FileName with
-                                    | PDF -> false
-                                    | _ -> true
-                                )
-                                Color Color.Info
-                                Underline Underline.Always
-                                Target "_blank"
-                                Href $"/api/memory/document/{file.FileName}"
-                                file.FileName
-                              }
+                            | { Result = MemorySearchResult.File file } ->
+                                MudLink'' {
+                                    style { wordbreakBreakAll }
+                                    stopPropagation "onclick" true
+                                    download (
+                                        match file.FileName with
+                                        | PDF -> false
+                                        | _ -> true
+                                    )
+                                    Color Color.Info
+                                    Underline Underline.Always
+                                    Target "_blank"
+                                    Href $"/api/memory/document/{file.FileName}"
+                                    file.FileName
+                                }
+                                match file.FileName with
+                                | IMAGE -> MudImage'' {
+                                    Fluid
+                                    Src $"/api/memory/document/{file.FileName}"
+                                  }
+                                | AUDIO -> audio {
+                                    controls
+                                    source {
+                                        type' $"audio/*"
+                                        src $"/api/memory/document/{file.FileName}"
+                                    }
+                                  }
+                                | VIDEO -> video {
+                                    controls
+                                    style { width "100%" }
+                                    source {
+                                        type' $"video/*"
+                                        src $"/api/memory/document/{file.FileName}"
+                                    }
+                                  }
+                                | _ -> ()
                         }
                         region {
                             match result.Text with
