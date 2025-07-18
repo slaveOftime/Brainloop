@@ -109,7 +109,7 @@ type LoopService
                 let chatMessages = List<ChatMessageContent>()
                 let! contents = loopContentService.GetOrCreateContentsCache(loopId)
                 if includeHistory then
-                    for item in contents |> AList.force do
+                    for item in contents |> AList.force |> _.TakeLast(Math.Max(0, agent.MaxHistory)) do
                         let! content = this.ToChatMessageContent(item)
                         chatMessages.Add(content)
 
@@ -164,7 +164,7 @@ type LoopService
                         do! loopContentService.DeleteLoopContentsOfSource(loopId, loopContentId)
 
                         let chatMessages = List<ChatMessageContent>()
-                        for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) do
+                        for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) |> _.TakeLast(Math.Max(0, agent.MaxHistory)) do
                             let! content = this.ToChatMessageContent(item)
                             chatMessages.Add(content)
 

@@ -2,6 +2,7 @@
 
 open System
 open System.Linq
+open System.Text
 open System.Threading
 open System.Threading.Tasks
 open System.Diagnostics
@@ -165,11 +166,16 @@ type ChatCompletionHandler
 
 
     member private _.SetSystemPromptsForAgent(agent: Agent, chatMessages: ChatHistory) =
-        let items = ChatMessageContentItemCollection()
-        items.Add(TextContent("Current time is " + DateTime.Now.ToString()))
-        items.Add(TextContent($"Your name is '{agent.Name}', when user ask with @'{agent.Name}', you should response it accordingly."))
-        items.Add(TextContent(agent.Prompt))
-        chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, items))
+        let sb =
+            StringBuilder()
+                .Append("Current time is ")
+                .Append(DateTime.Now.ToString())
+                .AppendLine()
+                .Append("You are an agent named '")
+                .Append(agent.Name)
+                .AppendLine("'")
+                .Append(agent.Prompt)
+        chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, sb.ToString()))
 
 
     interface IChatCompletionHandler with
@@ -301,29 +307,11 @@ type ChatCompletionHandler
                     targetContent.ProgressMessage.Publish "Prepare content"
 
                     let chatHistory = ChatHistory(chatMessages)
-
                     this.SetSystemPromptsForAgent(agent, chatHistory)
 
-                    let isSystemPromptAtHead = if chatHistory.Count = 0 then false else chatHistory[0].Role = AuthorRole.System
+                    logger.LogInformation("Start chat with {agent} {model} {messages}", agent.Name, model.Name, chatMessages.Count)
 
-                    let limit = Math.Max((if isSystemPromptAtHead then 2 else 1), agent.MaxHistory)
-
-                    while chatHistory.Count > limit do
-                        chatHistory.RemoveAt(if isSystemPromptAtHead then 1 else 0)
-
-                    for chatMessage in chatHistory do
-                        if chatMessage.Role = AuthorRole.Assistant && chatMessage.AuthorName <> agent.Name then
-                            chatMessage.Role <- AuthorRole.User
-
-                    logger.LogInformation(
-                        "Start chat with {agent} {model} {reducedMessages}/{providedMessages}",
-                        agent.Name,
-                        model.Name,
-                        chatHistory.Count,
-                        chatMessages.Count
-                    )
-
-                    targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {chatHistory.Count} messages"
+                    targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {chatMessages.Count} messages"
 
                     if agent.EnableStreaming then
                         let mutable hasReasoningContent = true

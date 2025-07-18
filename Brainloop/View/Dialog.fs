@@ -295,6 +295,7 @@ type IDialogService with
                             bottom 0
                             left 0
                             backgroundColor "var(--mud-palette-overlay-dark)"
+                            textAlignCenter
                         }
                         MudPaper'' {
                             style {
