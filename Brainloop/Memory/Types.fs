@@ -144,7 +144,6 @@ type MemorySearchResult =
 
 and MemorySearchFileResult = {
     FileName: string
-    ChunkText: string
     LoopContent: LoopContent voption
     PageNumber: int voption
 }

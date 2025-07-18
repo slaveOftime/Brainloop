@@ -434,7 +434,6 @@ type MemoryService
                                         | _ -> ValueNone
                                     let fileResult = {
                                         FileName = string fileName
-                                        ChunkText = record.ChunkText
                                         LoopContent = ValueNone
                                         PageNumber = pageNumber
                                     }

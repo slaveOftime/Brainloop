@@ -194,6 +194,12 @@ html {
     background-color: transparent;
 }
 
+@media (width <= 400px) {
+    .mud-dialog-width-full {
+        width: calc(100% - 8px);
+    }
+}
+
 pre[class*="language-"] {
     max-height: 500px !important;
     min-width: 250px !important;

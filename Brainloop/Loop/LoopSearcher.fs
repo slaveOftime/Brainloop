@@ -96,7 +96,7 @@ type LoopSearcher =
                             loops
                             |> Seq.map (fun x -> {
                                 Score = 0.
-                                Text = x.Description
+                                Text = ""
                                 Result = MemorySearchResult.Loop x
                             })
                         )
@@ -110,7 +110,7 @@ type LoopSearcher =
                                 query,
                                 top = 8,
                                 options = loopOptions,
-                                distinguishBySource = true,
+                                distinguishBySource = false,
                                 cancellationToken = source.Token
                             )
                         for result in results do
@@ -179,7 +179,7 @@ type LoopSearcher =
                             }
                             adapt {
                                 let! results = shareStore.SearchResults
-                                for i, result in Seq.indexed results do
+                                for i, result in results |> Seq.sortBy _.Score |> Seq.indexed do
                                     LoopSearcher.SearchResultCard(result, onClose = onClose, index = i)
                             }
                         }
@@ -294,12 +294,12 @@ type LoopSearcher =
                     })
                     Outlined
                     MudCardContent'' {
-                        style {
-                            maxHeight "12rem"
-                            overflowAuto
-                            positionRelative
-                        }
-                        region {
+                        style { positionRelative }
+                        div {
+                            style {
+                                maxHeight "12rem"
+                                overflowAuto
+                            }
                             match result with
                             | { Result = MemorySearchResult.Loop loop } -> loopCard loop
                             | { Result = MemorySearchResult.LoopContent loopContent } -> loopContentCard loopContent
@@ -307,7 +307,6 @@ type LoopSearcher =
                             | {
                                   Result = MemorySearchResult.File {
                                                                        FileName = fileName
-                                                                       ChunkText = chunkText
                                                                        PageNumber = pageNumber
                                                                        LoopContent = ValueSome loopContent
                                                                    }
@@ -330,25 +329,41 @@ type LoopSearcher =
                                             pageNumber
                                         }
                                       }
-                                    | _ -> MarkdownView.Create(chunkText)
+                                    | _ -> ()
                                 }
 
-                            | { Result = MemorySearchResult.File file } ->
-                                MudLink'' {
-                                    style { wordbreakBreakAll }
-                                    stopPropagation "onclick" true
-                                    download (
-                                        match file.FileName with
-                                        | PDF -> false
-                                        | _ -> true
-                                    )
-                                    Color Color.Info
-                                    Underline Underline.Always
-                                    Target "_blank"
-                                    Href $"/api/memory/document/{file.FileName}"
-                                    file.FileName
+                            | { Result = MemorySearchResult.File file } -> MudLink'' {
+                                style { wordbreakBreakAll }
+                                stopPropagation "onclick" true
+                                download (
+                                    match file.FileName with
+                                    | PDF -> false
+                                    | _ -> true
+                                )
+                                Color Color.Info
+                                Underline Underline.Always
+                                Target "_blank"
+                                Href $"/api/memory/document/{file.FileName}"
+                                file.FileName
+                              }
+                        }
+                        region {
+                            match result.Text with
+                            | NullOrEmptyString -> ()
+                            | text -> MudField'' {
+                                style { paddingTop 8 }
+                                Label "Chunk Text"
+                                Variant Variant.Outlined
+                                Margin Margin.Dense
+                                MudText'' {
+                                    Typo Typo.body2
+                                    style {
+                                        maxHeight "3rem"
+                                        overflowYAuto
+                                    }
+                                    text
                                 }
-                                MarkdownView.Create(file.ChunkText)
+                              }
                         }
                         region {
                             if result.Score <> 0 then
@@ -360,7 +375,8 @@ type LoopSearcher =
                                     }
                                     MudChip'' {
                                         Size Size.Small
-                                        sprintf "%.3f" result.Score
+                                        int ((1. - result.Score) * 100.0)
+                                        "%"
                                     }
                                 }
                         }
