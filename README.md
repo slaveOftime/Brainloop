@@ -40,8 +40,12 @@ There are the [video links for the demo](./Docs/brainloop-0.1.0%20demo.gif)
 
     After it run, you just access the url with the port in you in the config file like "http://localhost:11435" with your browser.
 
-- docker host, from the root dir run: docker compose up -d
+- docker host, from the root dir run: 
 
+    ```bash
+    docker compose build
+    docker compose up -d
+    ```
 
 ## 🧩 Ecosystem Integration
 
@@ -68,3 +72,15 @@ There are the [video links for the demo](./Docs/brainloop-0.1.0%20demo.gif)
 
 - [dotnet 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 - VSCode (+ extension: Ionide for F#) or VS2022 above
+
+You can run (posgres for data + qdrant for vector): 
+
+```bash
+dotnet run --project ./Brainloop.DevHost/Brainloop.DevHost.csproj
+```
+
+Or you can run directly (sqlite for data and vector) if you do not want to use docker:
+
+```bash
+dotnet run --project ./Brainloop/Brainloop.fsproj
+```
