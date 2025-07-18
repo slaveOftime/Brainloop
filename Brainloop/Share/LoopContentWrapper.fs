@@ -125,7 +125,9 @@ type LoopContentWrapper = {
                 )
             | LoopContentItem.File x -> sb.AppendLine().Append("File: ").Append(x.Name) |> ignore
             | LoopContentItem.Excalidraw _ -> sb.AppendLine("Excalidraw") |> ignore
+            | LoopContentItem.ToolCall { Result = ValueSome result } -> sb.AppendLine().AppendLine(JsonSerializer.Prettier result) |> ignore
             | LoopContentItem.ToolCall _ -> ()
+
         sb.ToString()
 
 
