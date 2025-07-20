@@ -1,10 +1,12 @@
 ﻿namespace System.Text.Json
 
+open System
 open System.Text.Json
 open System.Text.Json.Nodes
 open System.Text.Json.Serialization
 open System.Text.Unicode
 open System.Text.Encodings.Web
+open System.Text
 
 
 [<RequireQualifiedAccess>]
@@ -77,4 +79,19 @@ module JsonUtils =
 
             match loop input with
             | null -> null
-            | node -> node.ToJsonString(jsonOptions)
+            | node ->
+                let jsonString = node.ToJsonString(jsonOptions)
+                let isText = not (String.IsNullOrEmpty jsonString) && jsonString.StartsWith("\"") && jsonString.EndsWith("\"")
+
+                if isText then
+                    StringBuilder(jsonString)
+                        .Remove(0, 1)
+                        .Remove(jsonString.Length - 2, 1)
+                        .Replace("\r\n", "\n")
+                        .Replace("\\r\\n", "\n")
+                        .Replace("\r", "\n")
+                        .Replace("\\r", "\n")
+                        .Replace("\\\\", "\\")
+                        .ToString()
+                else
+                    jsonString
