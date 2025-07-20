@@ -31,6 +31,7 @@ type ModelSelector =
                         Errors errors
                         Immediate false
                         ShowProgressIndicator
+                        MaxItems 200
                         ToStringFunc(fun x -> x.DisplayName)
                         SearchFunc(fun q ct -> task {
                             let userInputModel = { Model = q; DisplayName = q }
@@ -70,6 +71,7 @@ type ModelSelector =
                     Placeholder "Search to add model"
                     Margin Margin.Dense
                     FullWidth true
+                    MaxItems 200
                     SearchFunc(fun q _ -> task {
                         return
                             match q with

@@ -79,6 +79,10 @@ type OpenAIAzure = {
 
 type ModelApiProps = {
     Headers: Map<string, string>
+    SensitiveHeaders: Map<string, string> option
 } with
 
-    static member Default = { Headers = Map.empty<string, string> }
+    static member Default = {
+        Headers = Map.empty<string, string>
+        SensitiveHeaders = None
+    }

@@ -156,6 +156,7 @@ type AgentCard =
                             Margin Margin.Dense
                             Errors errors
                             FullWidth true
+                            MaxItems 200
                             SearchFunc(fun q _ -> task {
                                 let! models = modelService.GetModelsWithCache()
                                 return
@@ -330,6 +331,7 @@ type AgentCard =
                                     Margin Margin.Dense
                                     Errors errors
                                     FullWidth true
+                                    MaxItems 200
                                     SearchFunc(fun q _ -> task {
                                         return
                                             match q with
@@ -409,6 +411,7 @@ type AgentCard =
                                         Margin Margin.Dense
                                         Errors errors
                                         FullWidth true
+                                        MaxItems 200
                                         SearchFunc(fun q _ -> task {
                                             return
                                                 match q with

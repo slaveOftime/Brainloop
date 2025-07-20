@@ -10,6 +10,14 @@ open Brainloop.Model
 
 type FunctionCard =
 
+    static member private SetAsSensitive (ls: string list option) (k: string) (v: bool) =
+        match ls with
+        | Some envs when v -> List.append [ k ] envs
+        | Some envs -> List.filter ((<>) k) envs
+        | None when v -> [ k ]
+        | None -> []
+
+
     static member Create(functionForm: AdaptiveForm<Function, string>) = MudGrid'' {
         Spacing 4
         MudItem'' {
@@ -149,12 +157,27 @@ type FunctionCard =
                     | FunctionType.SystemCreateTaskForAgent
                     | FunctionType.SystemCreateScheduledTaskForAgent -> ()
 
-                    | FunctionType.SystemSendHttp config -> MudSwitch'' {
-                        Color(if config.ConvertHtmlToMarkdown then Color.Primary else Color.Default)
-                        Value config.ConvertHtmlToMarkdown
-                        ValueChanged(fun x -> { config with ConvertHtmlToMarkdown = x } |> FunctionType.SystemSendHttp |> setFunctionType)
-                        Label "Convert text (html) response to markdown"
-                      }
+                    | FunctionType.SystemSendHttp config ->
+                        MudSwitch'' {
+                            Color(if config.ConvertHtmlToMarkdown then Color.Primary else Color.Default)
+                            Value config.ConvertHtmlToMarkdown
+                            ValueChanged(fun x -> { config with ConvertHtmlToMarkdown = x } |> FunctionType.SystemSendHttp |> setFunctionType)
+                            Label "Convert text (html) response to markdown"
+                        }
+                        MudField'' {
+                            Label "Headers"
+                            Variant Variant.Outlined
+                            KeyValueField.Create(
+                                (config.Headers |> Option.defaultValue Map.empty),
+                                (fun x -> { config with Headers = Some x } |> FunctionType.SystemSendHttp |> setFunctionType),
+                                isSensitiveKey = (fun k -> config.SensitiveHeaders |> Option.map (List.contains k) |> Option.defaultValue false),
+                                setAsSensitive =
+                                    (fun k v ->
+                                        let newEnvs = FunctionCard.SetAsSensitive config.SensitiveHeaders k v
+                                        { config with SensitiveHeaders = Some newEnvs } |> FunctionType.SystemSendHttp |> setFunctionType
+                                    )
+                            )
+                        }
 
                     | FunctionType.SystemSearchMemory config -> MudTextField'' {
                         Value config.Top
@@ -181,7 +204,8 @@ type FunctionCard =
                         MudTextField'' {
                             Value config.Arguments
                             ValueChanged(fun x -> { config with Arguments = x } |> FunctionType.SystemExecuteCommand |> setFunctionType)
-                            Label "Arguments"
+                            Label
+                                "Arguments. If some arg is write as {{arg}} then, it can have a description in the Arguments Description, to be provided to LLM, so they can provide and replace the {{arg}} dynamically"
                             AutoGrow
                             Lines 1
                             MaxLines 10
@@ -206,7 +230,13 @@ type FunctionCard =
                             Variant Variant.Outlined
                             KeyValueField.Create(
                                 config.Environments,
-                                fun x -> { config with Environments = x } |> FunctionType.SystemExecuteCommand |> setFunctionType
+                                (fun x -> { config with Environments = x } |> FunctionType.SystemExecuteCommand |> setFunctionType),
+                                isSensitiveKey = (fun k -> config.SensitiveEnvironments |> Option.map (List.contains k) |> Option.defaultValue false),
+                                setAsSensitive =
+                                    (fun k v ->
+                                        let newEnvs = FunctionCard.SetAsSensitive config.SensitiveEnvironments k v
+                                        { config with SensitiveEnvironments = Some newEnvs } |> FunctionType.SystemExecuteCommand |> setFunctionType
+                                    )
                             )
                         }
 
@@ -237,7 +267,16 @@ type FunctionCard =
                         MudField'' {
                             Label "Headers"
                             Variant Variant.Outlined
-                            KeyValueField.Create(config.Headers, fun x -> { config with Headers = x } |> FunctionType.OpenApi |> setFunctionType)
+                            KeyValueField.Create(
+                                config.Headers,
+                                (fun x -> { config with Headers = x } |> FunctionType.OpenApi |> setFunctionType),
+                                isSensitiveKey = (fun k -> config.SensitiveHeaders |> Option.map (List.contains k) |> Option.defaultValue false),
+                                setAsSensitive =
+                                    (fun k v ->
+                                        let newEnvs = FunctionCard.SetAsSensitive config.SensitiveHeaders k v
+                                        { config with SensitiveHeaders = Some newEnvs } |> FunctionType.OpenApi |> setFunctionType
+                                    )
+                            )
                         }
 
                     | FunctionType.OpenApiUrl config ->
@@ -250,7 +289,16 @@ type FunctionCard =
                         MudField'' {
                             Label "Headers"
                             Variant Variant.Outlined
-                            KeyValueField.Create(config.Headers, fun x -> { config with Headers = x } |> FunctionType.OpenApiUrl |> setFunctionType)
+                            KeyValueField.Create(
+                                config.Headers,
+                                (fun x -> { config with Headers = x } |> FunctionType.OpenApiUrl |> setFunctionType),
+                                isSensitiveKey = (fun k -> config.SensitiveHeaders |> Option.map (List.contains k) |> Option.defaultValue false),
+                                setAsSensitive =
+                                    (fun k v ->
+                                        let newEnvs = FunctionCard.SetAsSensitive config.SensitiveHeaders k v
+                                        { config with SensitiveHeaders = Some newEnvs } |> FunctionType.OpenApiUrl |> setFunctionType
+                                    )
+                            )
                         }
 
                     | FunctionType.Mcp functionConfig ->
@@ -276,7 +324,17 @@ type FunctionCard =
                                 Variant Variant.Outlined
                                 KeyValueField.Create(
                                     config.Environments,
-                                    fun x -> { config with Environments = x } |> McpConfig.STDIO |> FunctionType.Mcp |> setFunctionType
+                                    (fun x -> { config with Environments = x } |> McpConfig.STDIO |> FunctionType.Mcp |> setFunctionType),
+                                    isSensitiveKey =
+                                        (fun k -> config.SensitiveEnvironments |> Option.map (List.contains k) |> Option.defaultValue false),
+                                    setAsSensitive =
+                                        (fun k v ->
+                                            let newEnvs = FunctionCard.SetAsSensitive config.SensitiveEnvironments k v
+                                            { config with SensitiveEnvironments = Some newEnvs }
+                                            |> McpConfig.STDIO
+                                            |> FunctionType.Mcp
+                                            |> setFunctionType
+                                        )
                                 )
                             }
 
@@ -296,7 +354,13 @@ type FunctionCard =
                                 Variant Variant.Outlined
                                 KeyValueField.Create(
                                     config.Headers,
-                                    fun x -> { config with Headers = x } |> McpConfig.SSE |> FunctionType.Mcp |> setFunctionType
+                                    (fun x -> { config with Headers = x } |> McpConfig.SSE |> FunctionType.Mcp |> setFunctionType),
+                                    isSensitiveKey = (fun k -> config.SensitiveHeaders |> Option.map (List.contains k) |> Option.defaultValue false),
+                                    setAsSensitive =
+                                        (fun k v ->
+                                            let newEnvs = FunctionCard.SetAsSensitive config.SensitiveHeaders k v
+                                            { config with SensitiveHeaders = Some newEnvs } |> McpConfig.SSE |> FunctionType.Mcp |> setFunctionType
+                                        )
                                 )
                             }
                         McpToolsChecker.Create(functionName, functionConfig)

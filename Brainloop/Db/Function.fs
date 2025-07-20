@@ -62,21 +62,28 @@ type Function = {
 type OpenApiConfig = {
     JsonSchema: string
     Headers: Map<string, string>
+    SensitiveHeaders: List<string> option
 } with
 
-    static member Default = { JsonSchema = ""; Headers = Map.empty }
+    static member Default = {
+        JsonSchema = ""
+        Headers = Map.empty
+        SensitiveHeaders = None
+    }
 
 type OpenApiUriConfig = {
     Url: string
     Headers: Map<string, string>
+    SensitiveHeaders: List<string> option
 } with
 
-    static member Default = { Url = ""; Headers = Map.empty }
+    static member Default = { Url = ""; Headers = Map.empty; SensitiveHeaders = None }
 
 type McpSseConfig = {
     Url: string
     Authorization: string
     Headers: Map<string, string>
+    SensitiveHeaders: List<string> option
 }
 
 type McpStdioConfig = {
@@ -84,6 +91,7 @@ type McpStdioConfig = {
     Arguments: string
     WorkingDirectory: string
     Environments: Map<string, string>
+    SensitiveEnvironments: List<string> option
 }
 
 type McpConfig =
@@ -96,14 +104,27 @@ type McpConfig =
             Arguments = ""
             WorkingDirectory = ""
             Environments = Map.empty
+            SensitiveEnvironments = None
         }
-    static member DefaultSSE = SSE { Url = ""; Authorization = ""; Headers = Map.empty }
+    static member DefaultSSE =
+        SSE {
+            Url = ""
+            Authorization = ""
+            Headers = Map.empty
+            SensitiveHeaders = None
+        }
 
 type SystemSendHttpConfig = {
     ConvertHtmlToMarkdown: bool
+    Headers: Map<string, string> option
+    SensitiveHeaders: List<string> option
 } with
 
-    static member Default = { ConvertHtmlToMarkdown = true }
+    static member Default = {
+        ConvertHtmlToMarkdown = true
+        Headers = None
+        SensitiveHeaders = None
+    }
 
 type SystemSearchMemoryConfig = {
     Top: int
@@ -117,6 +138,7 @@ type SystemExecuteCommandConfig = {
     ArgumentsDescription: Map<string, string>
     WorkingDirectory: string
     Environments: Map<string, string>
+    SensitiveEnvironments: List<string> option
 } with
 
     static member Default = {
@@ -125,6 +147,7 @@ type SystemExecuteCommandConfig = {
         ArgumentsDescription = Map.empty
         WorkingDirectory = ""
         Environments = Map.empty
+        SensitiveEnvironments = None
     }
 
 [<RequireQualifiedAccess>]

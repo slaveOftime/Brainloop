@@ -45,6 +45,12 @@ type SystemSendHttpFunc(logger: ILogger<SystemSendHttpFunc>, loggerFactory: ILog
                             new Uri(args.Url)
                         )
 
+                    match config.Headers with
+                    | None -> ()
+                    | Some headers ->
+                        for KeyValue(key, value) in headers do
+                            request.Headers.Add(key, value)
+
                     match args.Headers with
                     | null -> ()
                     | headers ->
