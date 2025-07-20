@@ -26,7 +26,7 @@ type IAddNotificationHandler =
 type IChatCompletionHandler =
     abstract member Handle:
         agentId: int *
-        chatMessages: IReadOnlyList<ChatMessageContent> *
+        contents: IReadOnlyList<LoopContentWrapper> *
         targetContent: LoopContentWrapper *
         ?modelId: int *
         ?cancellationToken: CancellationToken ->

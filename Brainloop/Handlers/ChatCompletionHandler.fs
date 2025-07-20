@@ -179,7 +179,7 @@ type ChatCompletionHandler
 
 
     interface IChatCompletionHandler with
-        member _.Handle(agentId, chatMessages, targetContent, ?modelId, ?cancellationToken) = valueTask {
+        member _.Handle(agentId, contents, targetContent, ?modelId, ?cancellationToken) = valueTask {
             let! agents = agentService.GetAgentsWithCache()
 
             let agent =
@@ -306,12 +306,16 @@ type ChatCompletionHandler
 
                     targetContent.ProgressMessage.Publish "Prepare content"
 
-                    let chatHistory = ChatHistory(chatMessages)
+                    let chatHistory = ChatHistory()
+                    for content in contents do
+                        let! chatMessage = loopContentService.ToChatMessageContent(content, model = model)
+                        chatHistory.Add(chatMessage)
+
                     this.SetSystemPromptsForAgent(agent, chatHistory)
 
-                    logger.LogInformation("Start chat with {agent} {model} {messages}", agent.Name, model.Name, chatMessages.Count)
+                    logger.LogInformation("Start chat with {agent} {model} {messages}", agent.Name, model.Name, contents.Count)
 
-                    targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {chatMessages.Count} messages"
+                    targetContent.ProgressMessage.Publish $"Calling model {model.Model} with {contents.Count} messages"
 
                     if agent.EnableStreaming then
                         let mutable hasReasoningContent = true

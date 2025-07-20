@@ -3,6 +3,7 @@ namespace Brainloop.Loop
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Data.Adaptive
+open Microsoft.SemanticKernel
 open Brainloop.Db
 open Brainloop.Share
 
@@ -21,6 +22,8 @@ type ILoopContentService =
     abstract member UpdateLoopContent: loopId: int64 * loopContentId: int64 * content: string -> ValueTask<unit>
     abstract member DeleteLoopContent: loopId: int64 * loopContentId: int64 -> ValueTask<unit>
     abstract member DeleteLoopContentsOfSource: loopId: int64 * loopContentId: int64 -> ValueTask<unit>
+
+    abstract member ToChatMessageContent: content: LoopContentWrapper * ?model: Model -> ValueTask<ChatMessageContent>
 
 
 type ILoopService =

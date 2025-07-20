@@ -351,6 +351,10 @@ type LoopView =
             | _ -> css { }
         }
         html.inject (fun (hook: IComponentHook) -> MudButton'' {
+            style {
+                flexShrink 0
+                whiteSpaceNowrap
+            }
             Size Size.Small
             OnClick(fun _ ->
                 match contentWrapper.AgentId with
@@ -381,6 +385,10 @@ type LoopView =
         adapt {
             match! sourceContent with
             | ValueSome x when x.Author <> contentWrapper.Author && x.AuthorRole <> LoopContentAuthorRole.User -> MudChip'' {
+                style {
+                    flexShrink 0
+                    whiteSpaceNowrap
+                }
                 Size Size.Small
                 "by "
                 x.Author
@@ -397,6 +405,10 @@ type LoopView =
                     |> AVal.ofValueTask ""
             if not (String.IsNullOrEmpty modelName) then
                 MudChip'' {
+                    style {
+                        flexShrink 0
+                        whiteSpaceNowrap
+                    }
                     Size Size.Small
                     OnClick(fun _ ->
                         match contentWrapper.ModelId.Value with

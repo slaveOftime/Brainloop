@@ -1,12 +1,15 @@
 ﻿namespace Brainloop.Loop
 
 open System
+open System.IO
 open System.Threading
 open System.Collections.Concurrent
 open FSharp.Control
 open FSharp.Data.Adaptive
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Caching.Memory
+open Microsoft.SemanticKernel
+open Microsoft.SemanticKernel.ChatCompletion
 open IcedTasks
 open Fun.Result
 open Brainloop.Db
@@ -14,8 +17,14 @@ open Brainloop.Share
 open Brainloop.Memory
 
 
-type LoopContentService(dbService: IDbService, memoryService: IMemoryService, memoryCache: IMemoryCache, logger: ILogger<LoopContentService>) as this
-    =
+type LoopContentService
+    (
+        dbService: IDbService,
+        memoryService: IMemoryService,
+        documentService: IDocumentService,
+        memoryCache: IMemoryCache,
+        logger: ILogger<LoopContentService>
+    ) as this =
 
     static let contentsLockers = ConcurrentDictionary<int64, SemaphoreSlim>()
     static let getContentsLocker loopId = contentsLockers.GetOrAdd(loopId, fun _ -> new SemaphoreSlim(1))
@@ -190,4 +199,57 @@ type LoopContentService(dbService: IDbService, memoryService: IMemoryService, me
 
                 for contentId in contentIds do
                     do! (this :> ILoopContentService).DeleteLoopContentsOfSource(loopId, contentId)
+        }
+
+
+        member _.ToChatMessageContent(content, ?model) = valueTask {
+            let items = ChatMessageContentItemCollection()
+
+            let handleFile (fileName) = valueTask {
+                let file = Path.Combine(documentService.RootDir, fileName)
+                let ext =
+                    match Path.GetExtension(file) with
+                    | null -> "*"
+                    | x -> x.Substring(1)
+                match file with
+                | IMAGE ->
+                    match model with
+                    | None
+                    | Some { CanHandleImage = true } ->
+                        let! bytes = File.ReadAllBytesAsync(file)
+                        items.Add(ImageContent(bytes, mimeType = $"image/{ext}"))
+                    | _ -> ()
+                | AUDIO ->
+                    match model with
+                    | None
+                    | Some { CanHandleAudio = true } ->
+                        let! bytes = File.ReadAllBytesAsync(file)
+                        items.Add(AudioContent(bytes, mimeType = $"audio/{ext}"))
+                    | _ -> ()
+                | VIDEO ->
+                    match model with
+                    | None
+                    | Some { CanHandleVideo = true } ->
+                        let! bytes = File.ReadAllBytesAsync(file)
+                        items.Add(BinaryContent(bytes, mimeType = $"video/{ext}"))
+                    | _ -> ()
+                | _ ->
+                    let! text = documentService.ReadAsText(file)
+                    items.Add(TextContent(text))
+            }
+
+            for content in content.Items |> AList.force do
+                match content with
+                | LoopContentItem.File x -> do! handleFile x.Name
+                | LoopContentItem.Excalidraw x -> do! handleFile x.ImageFileName
+                | LoopContentItem.ToolCall x -> items.Add(TextContent $"Invoked tool: {x.FunctionName} {x.Description}")
+                | LoopContentItem.Text x ->
+                    x.Blocks
+                    |> Seq.iter (
+                        function
+                        | LoopContentTextBlock.Think _ -> items.Add(TextContent("Thinking..."))
+                        | LoopContentTextBlock.Content text -> items.Add(TextContent(text))
+                    )
+
+            return ChatMessageContent(content.AuthorRole.ToSemanticKernelRole(), items, AuthorName = content.Author.KeepLetterAndDigits())
         }

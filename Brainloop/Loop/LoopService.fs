@@ -1,7 +1,6 @@
 ﻿namespace Brainloop.Loop
 
 open System
-open System.IO
 open System.Linq
 open System.Collections.Generic
 open FSharp.Control
@@ -30,46 +29,6 @@ type LoopService
         globalStore: IGlobalStore,
         logger: ILogger<LoopService>
     ) as this =
-
-    member private _.ToChatMessageContent(content: LoopContentWrapper) = valueTask {
-        let items = ChatMessageContentItemCollection()
-
-        let handleFile (fileName) = valueTask {
-            let file = Path.Combine(documentService.RootDir, fileName)
-            let ext =
-                match Path.GetExtension(file) with
-                | null -> "*"
-                | x -> x.Substring(1)
-            match file with
-            | IMAGE ->
-                let! bytes = File.ReadAllBytesAsync(file)
-                items.Add(ImageContent(bytes, mimeType = $"image/{ext}"))
-            | AUDIO ->
-                let! bytes = File.ReadAllBytesAsync(file)
-                items.Add(AudioContent(bytes, mimeType = $"audio/{ext}"))
-            | VIDEO ->
-                let! bytes = File.ReadAllBytesAsync(file)
-                items.Add(BinaryContent(bytes, mimeType = $"video/{ext}"))
-            | _ ->
-                let! text = documentService.ReadAsText(file)
-                items.Add(TextContent(text))
-        }
-
-        for content in content.Items |> AList.force do
-            match content with
-            | LoopContentItem.File x -> do! handleFile x.Name
-            | LoopContentItem.Excalidraw x -> do! handleFile x.ImageFileName
-            | LoopContentItem.ToolCall x -> items.Add(TextContent $"Tool function is invoked {x.FunctionName} {x.Description}")
-            | LoopContentItem.Text x ->
-                x.Blocks
-                |> Seq.iter (
-                    function
-                    | LoopContentTextBlock.Think _ -> items.Add(TextContent("Thinking..."))
-                    | LoopContentTextBlock.Content text -> items.Add(TextContent(text))
-                )
-
-        return ChatMessageContent(content.AuthorRole.ToSemanticKernelRole(), items, AuthorName = content.Author.KeepLetterAndDigits())
-    }
 
 
     interface ILoopService with
@@ -106,15 +65,21 @@ type LoopService
             match agent with
             | ValueNone -> logger.LogInformation("No agent is specified")
             | ValueSome agent ->
-                let chatMessages = List<ChatMessageContent>()
+                let chatMessages = List<LoopContentWrapper>()
                 let! contents = loopContentService.GetOrCreateContentsCache(loopId)
                 if includeHistory then
                     for item in contents |> AList.force |> _.TakeLast(Math.Max(0, agent.MaxHistory)) do
-                        let! content = this.ToChatMessageContent(item)
-                        chatMessages.Add(content)
+                        chatMessages.Add(item)
 
                 if inputContentId.IsNone then
-                    chatMessages.Add(ChatMessageContent(role.ToSemanticKernelRole(), message, AuthorName = author.KeepLetterAndDigits()))
+                    chatMessages.Add(
+                        {
+                            LoopContentWrapper.Default 0 with
+                                Author = author
+                                AuthorRole = role
+                                Items = clist [ LoopContentItem.Text(LoopContentText message) ]
+                        }
+                    )
 
                 let outputContent = {
                     LoopContentWrapper.Default(loopId) with
@@ -163,10 +128,9 @@ type LoopService
                     | ValueSome agent ->
                         do! loopContentService.DeleteLoopContentsOfSource(loopId, loopContentId)
 
-                        let chatMessages = List<ChatMessageContent>()
+                        let chatMessages = List<LoopContentWrapper>()
                         for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) |> _.TakeLast(Math.Max(0, agent.MaxHistory)) do
-                            let! content = this.ToChatMessageContent(item)
-                            chatMessages.Add(content)
+                            chatMessages.Add(item)
 
                         do! chatCompletionHandler.Handle(agent.Id, chatMessages, target, ?modelId = modelId)
 
@@ -214,7 +178,7 @@ type LoopService
 
                     let chatMessages = List<ChatMessageContent>()
                     for item in contents.Take(2) do
-                        let! content = this.ToChatMessageContent(item)
+                        let! content = loopContentService.ToChatMessageContent(item)
                         chatMessages.Add(content)
 
                     if chatMessages.Count > 1 then
