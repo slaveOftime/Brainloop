@@ -15,6 +15,9 @@ open Brainloop.Db
 
 type SystemExecuteCommandFunc(logger: ILogger<SystemExecuteCommandFunc>, loggerFactory: ILoggerFactory) =
 
+    [<Literal>]
+    let WorkingDirectoryArgKey = "workingtDirectory"
+
     member _.Create(fn: Function, config: SystemExecuteCommandConfig, ?cancellationToken: CancellationToken) =
         KernelFunctionFactory.CreateFromMethod(
             Func<KernelArguments, ValueTask<string>>(fun args -> valueTask {
@@ -22,6 +25,8 @@ type SystemExecuteCommandFunc(logger: ILogger<SystemExecuteCommandFunc>, loggerF
                     logger.LogInformation("Executing command: {command} in {workingDir}", config.Command, config.WorkingDirectory)
 
                     let args = (args :> IEnumerable<KeyValuePair<string, obj | null>>).Select(fun x -> x.Key, string x.Value) |> Map.ofSeq
+
+                    let workingDirectory = args |> Map.tryFind WorkingDirectoryArgKey |> Option.defaultValue config.WorkingDirectory
 
                     let mutable actualArguments = config.Arguments
                     for KeyValue(key, _) in config.ArgumentsDescription do
@@ -35,7 +40,7 @@ type SystemExecuteCommandFunc(logger: ILogger<SystemExecuteCommandFunc>, loggerF
                             .Wrap(config.Command)
                             .WithValidation(CliWrap.CommandResultValidation.None)
                             .WithArguments(actualArguments)
-                            .WithWorkingDirectory(config.WorkingDirectory)
+                            .WithWorkingDirectory(workingDirectory)
                             .WithEnvironmentVariables(config.Environments)
                             .WithStandardErrorPipe(CliWrap.PipeTarget.ToDelegate(fun x -> sb.AppendLine x |> ignore))
                             .WithStandardOutputPipe(CliWrap.PipeTarget.ToDelegate(fun x -> sb.AppendLine x |> ignore))
@@ -62,6 +67,14 @@ type SystemExecuteCommandFunc(logger: ILogger<SystemExecuteCommandFunc>, loggerF
                         ParameterType = typeof<string>,
                         Description = argDescription
                     )
+                KernelParameterMetadata(
+                    WorkingDirectoryArgKey,
+                    JsonSerializerOptions.createDefault (),
+                    ParameterType = typeof<string>,
+                    IsRequired = false,
+                    Description =
+                        $"The working directory where the command will be executed, this is not required. If it is not provided, the default one will be used: {config.WorkingDirectory}"
+                )
             |],
             returnParameter = KernelReturnParameterMetadata(Description = "The result of the command", ParameterType = typeof<string>)
         )
