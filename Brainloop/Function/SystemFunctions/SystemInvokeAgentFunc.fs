@@ -22,6 +22,8 @@ type InvokeAgentArgs() =
     member val Prompt: string = "" with get, set
     [<Description "If you want to get notification after the agent finish its task">]
     member val CallbackAfterFinish: bool = false with get, set
+    [<Description "This is optional, when not provided it call the agent who triggered this tool/function">]
+    member val CallbackAgentId: Nullable<int> = Nullable() with get, set
 
 
 type SystemInvokeAgentFunc
@@ -51,20 +53,22 @@ type SystemInvokeAgentFunc
                             cancellationToken = ct
                         )
 
-                    match kernelArgs.TryGetValue(Strings.ToolCallAgentId) with
-                    | true, (:? int as sourceAgentId) when args.CallbackAfterFinish ->
-                        logger.LogInformation("Send callback to agent #{targetAgentId} from agent {sourceAgentName}", sourceAgentId, agent.Name)
-                        do!
-                            handler.Handle(
-                                loopId,
-                                "",
-                                agentId = sourceAgentId,
-                                author = agent.Name,
-                                role = LoopContentAuthorRole.Agent,
-                                ignoreInput = true,
-                                cancellationToken = ct
-                            )
-                    | _ -> ()
+                    if args.CallbackAfterFinish then
+                        let nextAgentId = args.CallbackAgentId |> ValueOption.ofNullable |> ValueOption.bind (fun _ -> kernelArgs.AgentId)
+                        match nextAgentId with
+                        | ValueNone -> ()
+                        | ValueSome nextAgentId ->
+                            logger.LogInformation("Send callback to agent #{nextAgentId} from agent {sourceAgentName}", nextAgentId, agent.Name)
+                            do!
+                                handler.Handle(
+                                    loopId,
+                                    "",
+                                    agentId = nextAgentId,
+                                    author = agent.Name,
+                                    role = LoopContentAuthorRole.Agent,
+                                    ignoreInput = true,
+                                    cancellationToken = ct
+                                )
 
                 }
                 |> ignore
@@ -72,5 +76,6 @@ type SystemInvokeAgentFunc
             JsonSerializerOptions.createDefault (),
             loggerFactory = loggerFactory,
             functionName = name,
-            description = $"@{agent.Name} for help. AgentId={agent.Id}, AgentDescription={agent.Description}. The task will be created immediately and return nothing."
+            description =
+                $"@{agent.Name} for help. AgentId={agent.Id}, AgentDescription={agent.Description}. The task will be created immediately and return nothing."
         )
