@@ -258,7 +258,7 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
                             displayFlex
                             alignItemsCenter
                             justifyContentCenter
-                            padding 12
+                            paddingTop 24
                         }
                         MudButton'' {
                             EndIcon(

@@ -278,7 +278,7 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
                             displayFlex
                             alignItemsCenter
                             justifyContentCenter
-                            padding 12
+                            paddingTop 24
                         }
                         MudButton'' {
                             EndIcon(

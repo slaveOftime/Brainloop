@@ -6,6 +6,7 @@ open Microsoft.JSInterop
 open FSharp.Data.Adaptive
 open IcedTasks
 open MudBlazor
+open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
 open Brainloop.Agent
@@ -100,34 +101,59 @@ type AgentSelector =
                                 adapt {
                                     let! agents = agents
                                     let! agentsFilter = agentsFilter
-                                    for agent in filterAgents agentsFilter agents do
-                                        MudMenuItem'' {
-                                            key agent.Id
-                                            OnClick(fun _ -> selectAgent (ValueSome agent))
-                                            MudText'' { agent.Name }
-                                            MudText'' {
-                                                Typo Typo.body2
-                                                agent.Description
+                                    let gropedAgents = filterAgents agentsFilter agents |> Seq.groupBy _.Group
+                                    for g, agents in gropedAgents do
+                                        match g with
+                                        | NullOrEmptyString -> ()
+                                        | SafeString g ->
+                                            MudDivider''
+                                            div {
+                                                style {
+                                                    displayFlex
+                                                    alignItemsCenter
+                                                    justifyContentCenter
+                                                    gap 8
+                                                    marginTop 4
+                                                    marginBottom 4
+                                                    opacity 0.75
+                                                }
+                                                MudText'' {
+                                                    Typo Typo.body2
+                                                    g
+                                                }
+                                                MudIcon'' {
+                                                    Size Size.Small
+                                                    Icon Icons.Material.Filled.KeyboardArrowDown
+                                                }
                                             }
-                                            MudChipSet'' {
-                                                if agent.EnableTools then
-                                                    MudChip'' {
-                                                        Size Size.Small
-                                                        Color Color.Info
-                                                        "Tools"
-                                                    }
-                                                for model in agent.AgentModels |> Seq.sortBy (fun x -> x.Order) do
-                                                    MudChip'' {
-                                                        stopPropagation "onclick" true
-                                                        Size Size.Small
-                                                        OnClick(fun _ -> task {
-                                                            do! selectAgent (ValueSome agent)
-                                                            setSelectedModel (ValueSome model.Model)
-                                                        })
-                                                        model.Model.Name
-                                                    }
+                                        for agent in agents do
+                                            MudMenuItem'' {
+                                                key agent.Id
+                                                OnClick(fun _ -> selectAgent (ValueSome agent))
+                                                MudText'' { agent.Name }
+                                                MudText'' {
+                                                    Typo Typo.body2
+                                                    agent.Description
+                                                }
+                                                MudChipSet'' {
+                                                    if agent.EnableTools then
+                                                        MudChip'' {
+                                                            Size Size.Small
+                                                            Color Color.Info
+                                                            "Tools"
+                                                        }
+                                                    for model in agent.AgentModels |> Seq.sortBy (fun x -> x.Order) do
+                                                        MudChip'' {
+                                                            stopPropagation "onclick" true
+                                                            Size Size.Small
+                                                            OnClick(fun _ -> task {
+                                                                do! selectAgent (ValueSome agent)
+                                                                setSelectedModel (ValueSome model.Model)
+                                                            })
+                                                            model.Model.Name
+                                                        }
+                                                }
                                             }
-                                        }
                                 }
                             }
                             MudDivider''
