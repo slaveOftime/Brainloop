@@ -61,17 +61,42 @@ let (|IMAGE|_|) (path: string) =
     match path with
     | SafeStringEndWithCi ".jpg"
     | SafeStringEndWithCi ".jpeg"
+    | SafeStringEndWithCi ".gif"
+    | SafeStringEndWithCi ".bmp"
+    | SafeStringEndWithCi ".tiff"
+    | SafeStringEndWithCi ".webp"
+    | SafeStringEndWithCi ".svg"
+    | SafeStringEndWithCi ".heif"
+    | SafeStringEndWithCi ".raw"
+    | SafeStringEndWithCi ".ico"
     | SafeStringEndWithCi ".png" -> true
     | _ -> false
 
 let (|AUDIO|_|) (path: string) =
     match path with
     | SafeStringEndWithCi ".mp3"
+    | SafeStringEndWithCi ".m4a"
+    | SafeStringEndWithCi ".flac"
+    | SafeStringEndWithCi ".aac"
+    | SafeStringEndWithCi ".ogg"
+    | SafeStringEndWithCi ".wma"
+    | SafeStringEndWithCi ".aiff"
+    | SafeStringEndWithCi ".alac"
+    | SafeStringEndWithCi ".opus"
     | SafeStringEndWithCi ".wav" -> true
     | _ -> false
 
 let (|VIDEO|_|) (path: string) =
     match path with
+    | SafeStringEndWithCi ".avi"
+    | SafeStringEndWithCi ".mov"
+    | SafeStringEndWithCi ".mkv"
+    | SafeStringEndWithCi ".wmv"
+    | SafeStringEndWithCi ".flv"
+    | SafeStringEndWithCi ".webm"
+    | SafeStringEndWithCi ".avchd"
+    | SafeStringEndWithCi ".mpeg"
+    | SafeStringEndWithCi ".3gp"
     | SafeStringEndWithCi ".mp4" -> true
     | _ -> false
 
