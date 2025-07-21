@@ -9,6 +9,7 @@ open Microsoft.JSInterop
 open IcedTasks
 open MudBlazor
 open Fun.Blazor
+open Fun.Result
 open Brainloop.Db
 
 
@@ -20,6 +21,7 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
     let isSaving = cval false
     let query = cval ""
     let modelsRefresher = cval 0
+    let expandedGroup = cval ""
 
 
     let addValidators (form: AdaptiveForm<Model, string>) =
@@ -104,10 +106,10 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
     }
 
 
-    member _.ModelForm(model: Model, isForCreating: bool) =
+    member _.ModelForm(model: Model, isForCreating: bool, groups) =
         let form = new AdaptiveForm<Model, string>(model) |> addValidators
         fragment {
-            ModelCard.Create(form)
+            ModelCard.Create(form, groups = groups)
             div {
                 style {
                     displayFlex
@@ -152,6 +154,73 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
             }
         }
 
+    member _.ModelNewForm(groups) = adaptiview (key = "new-model") {
+        match! isCreating with
+        | true ->
+            MudPaper'' {
+                id "model-new-form"
+                style {
+                    padding 12
+                    displayFlex
+                    flexDirectionColumn
+                    gap 12
+                }
+                Elevation 2
+                this.ModelForm(Model.Default, true, groups)
+            }
+            div {
+                style { padding 24 }
+                MudDivider''
+            }
+        | _ -> ()
+    }
+
+    member _.ModelPanel(model: Model, groups) = adaptiview (key = model.Id) {
+        let! isExpanded, setIsExpanded = cval(false).WithSetter()
+        MudExpansionPanel'' {
+            Expanded isExpanded
+            ExpandedChanged setIsExpanded
+            TitleContent(
+                div {
+                    style {
+                        displayFlex
+                        alignItemsCenter
+                        gap 12
+                    }
+                    model.Name
+                    MudChipSet'' {
+                        Size Size.Small
+                        Color Color.Secondary
+                        if model.CanHandleFunctions then
+                            MudChip'' {
+                                Color Color.Info
+                                "Tools"
+                            }
+                        if model.CanHandleEmbedding then MudChip'' { "Embedding" }
+                    }
+                    if not model.CanHandleEmbedding then
+                        MudIconButton'' {
+                            Size Size.Small
+                            Icon Icons.Material.Outlined.CopyAll
+                            OnClick(fun _ ->
+                                upsertModel
+                                    {
+                                        model with
+                                            Id = 0
+                                            Name = model.Name + " (Copy)"
+                                            CreatedAt = DateTime.Now
+                                    }
+                                    false
+                            )
+                        }
+                }
+            )
+            region {
+                if isExpanded then
+                    html.inject (model, fun () -> this.ModelForm(model, false, groups))
+            }
+        }
+    }
 
     member _.ModelsView = MudExpansionPanels'' {
         MultiExpansion
@@ -165,6 +234,21 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
             let filteredModels =
                 models |> Seq.filter (fun x -> String.IsNullOrEmpty query || x.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
 
+            let groupedModels =
+                filteredModels
+                |> Seq.groupBy (fun x ->
+                    match x.Group with
+                    | null -> ""
+                    | SafeString s -> s
+                    | _ -> ""
+                )
+                |> Seq.sortBy fst
+
+            let groups = groupedModels |> Seq.map fst |> Seq.toList
+
+            let! expandedGroup, setExpandedGroup = expandedGroup.WithSetter()
+
+            this.ModelNewForm(groups)
             region {
                 if not hasEmbedding && Seq.length models > 0 then
                     MudExpansionPanel'' {
@@ -181,54 +265,38 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
                                     Name = "Embedding"
                                     CanHandleEmbedding = true
                             },
-                            false
+                            false,
+                            groups = groups
                         )
                     }
             }
-            for model in filteredModels do
-                adaptiview (key = model.Id) {
-                    let! isExpanded, setIsExpanded = cval(false).WithSetter()
-                    MudExpansionPanel'' {
-                        Expanded isExpanded
-                        ExpandedChanged setIsExpanded
-                        TitleContent(
-                            div {
-                                style {
-                                    displayFlex
-                                    alignItemsCenter
-                                    gap 12
-                                }
-                                model.Name
-                                MudChipSet'' {
-                                    Size Size.Small
-                                    Color Color.Secondary
-                                    if model.CanHandleFunctions then
-                                        MudChip'' {
-                                            Color Color.Info
-                                            "Tools"
-                                        }
-                                    if model.CanHandleEmbedding then MudChip'' { "Embedding" }
-                                }
-                                if not model.CanHandleEmbedding then
-                                    MudIconButton'' {
-                                        Size Size.Small
-                                        Icon Icons.Material.Outlined.CopyAll
-                                        OnClick(fun _ ->
-                                            upsertModel
-                                                {
-                                                    model with
-                                                        Id = 0
-                                                        Name = model.Name + " (Copy)"
-                                                        CreatedAt = DateTime.Now
-                                                }
-                                                false
-                                        )
-                                    }
-                            }
-                        )
-                        region { if isExpanded then html.inject (model, fun () -> this.ModelForm(model, false)) }
+            for g, models in groupedModels do
+                match g with
+                | SafeString g ->
+                    div {
+                        style {
+                            displayFlex
+                            alignItemsCenter
+                            justifyContentCenter
+                            padding 12
+                        }
+                        MudButton'' {
+                            EndIcon(
+                                if g = expandedGroup then
+                                    Icons.Material.Filled.ExpandLess
+                                else
+                                    Icons.Material.Filled.ExpandMore
+                            )
+                            OnClick(fun _ -> setExpandedGroup (if g = expandedGroup then "" else g))
+                            g
+                        }
                     }
-                }
+                    if g = expandedGroup then
+                        for model in models do
+                            this.ModelPanel(model, groups)
+                | _ ->
+                    for model in models do
+                        this.ModelPanel(model, groups)
         }
     }
 
@@ -244,26 +312,6 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
         MudContainer'' {
             MaxWidth MaxWidth.Medium
             this.Header
-            adapt {
-                match! isCreating with
-                | true ->
-                    MudPaper'' {
-                        id "model-new-form"
-                        style {
-                            padding 12
-                            displayFlex
-                            flexDirectionColumn
-                            gap 12
-                        }
-                        Elevation 2
-                        this.ModelForm(Model.Default, true)
-                    }
-                    div {
-                        style { padding 24 }
-                        MudDivider''
-                    }
-                | _ -> ()
-            }
             this.ModelsView
         }
     }

@@ -16,6 +16,7 @@ type Agent = {
     Name: string
     Description: string
     Type: AgentType
+    Group: string | null
     Temperature: float
     TopP: float
     TopK: int
@@ -38,6 +39,7 @@ type Agent = {
         Name = ""
         Description = ""
         Type = AgentType.General
+        Group = null
         Temperature = 0.8
         TopP = 0.9
         TopK = 40

@@ -18,7 +18,7 @@ open Brainloop.Function
 
 type AgentCard =
 
-    static member Create(agentForm: AdaptiveForm<Agent, string>) = MudGrid'' {
+    static member Create(agentForm: AdaptiveForm<Agent, string>, ?groups: string seq) = MudGrid'' {
         Spacing 4
         MudItem'' {
             xs 12
@@ -65,6 +65,31 @@ type AgentCard =
                             | AgentType.GetTextFromImage -> "Get Text From Image"
                             | AgentType.General -> "General Assistant"
                         }
+                }
+            }
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! v, setV = agentForm.UseField(fun x -> x.Group)
+                MudAutocomplete'' {
+                    Label "Group"
+                    Value v
+                    ValueChanged setV
+                    MaxItems 200
+                    CoerceValue
+                    Clearable
+                    OnClearButtonClick(fun _ -> setV null)
+                    SearchFunc(fun q _ -> task {
+                        let models = groups |> Option.defaultValue Seq.empty
+                        return
+                            seq {
+                                match q with
+                                | SafeString q -> yield! models |> Seq.filter (fun x -> x.Contains(q, StringComparison.OrdinalIgnoreCase))
+                                | _ -> yield! models
+                            }
+                            |> Seq.distinct
+                    })
                 }
             }
         }

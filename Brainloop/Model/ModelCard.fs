@@ -6,12 +6,13 @@ open FSharp.Data.Adaptive
 open IcedTasks
 open MudBlazor
 open Fun.Blazor
+open Fun.Result
 open Brainloop.Db
 
 
 type ModelCard =
 
-    static member Create(modelForm: AdaptiveForm<Model, string>) = MudGrid'' {
+    static member Create(modelForm: AdaptiveForm<Model, string>, ?groups: string seq) = MudGrid'' {
         Spacing 4
         adapt {
             let! (v, setV), errors = modelForm.UseFieldWithErrors(fun x -> x.Provider)
@@ -124,6 +125,31 @@ type ModelCard =
                 MudTextField'' {
                     Value' binding
                     Label "Name"
+                }
+            }
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! v, setV = modelForm.UseField(fun x -> x.Group)
+                MudAutocomplete'' {
+                    Label "Group"
+                    Value v
+                    ValueChanged setV
+                    MaxItems 200
+                    CoerceValue
+                    Clearable
+                    OnClearButtonClick(fun _ -> setV null)
+                    SearchFunc(fun q _ -> task {
+                        let models = groups |> Option.defaultValue Seq.empty
+                        return
+                            seq {
+                                match q with
+                                | SafeString q -> yield! models |> Seq.filter (fun x -> x.Contains(q, StringComparison.OrdinalIgnoreCase))
+                                | _ -> yield! models
+                            }
+                            |> Seq.distinct
+                    })
                 }
             }
         }

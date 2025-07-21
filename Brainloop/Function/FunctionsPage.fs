@@ -21,6 +21,7 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
     let isSaving = cval false
     let query = cval ""
     let functionsRefresher = cval 0
+    let expandedGroup = cval ""
 
 
     let addValidators (form: AdaptiveForm<Function, string>) =
@@ -103,10 +104,10 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
     }
 
 
-    member _.FunctionForm(func: Function, isForCreating: bool) =
+    member _.FunctionForm(func: Function, isForCreating: bool, groups) =
         let form = new AdaptiveForm<Function, string>(func) |> addValidators
         fragment {
-            FunctionCard.Create(form)
+            FunctionCard.Create(form, groups = groups)
             div {
                 style {
                     displayFlex
@@ -151,6 +152,74 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
             }
         }
 
+    member _.FunctionsNewForm(groups) = adaptiview (key = "new-function") {
+        match! isCreating with
+        | true ->
+            MudPaper'' {
+                id "function-new-form"
+                style {
+                    padding 12
+                    displayFlex
+                    flexDirectionColumn
+                    gap 12
+                }
+                Elevation 2
+                this.FunctionForm(Function.Default, true, groups = groups)
+            }
+            div {
+                style { padding 24 }
+                MudDivider''
+            }
+        | _ -> ()
+    }
+
+    member _.FunctionPanel(func: Function, groups) = adaptiview (key = func.Id) {
+        let! isExpanded, setIsExpanded = cval(false).WithSetter()
+        MudExpansionPanel'' {
+            Expanded isExpanded
+            ExpandedChanged setIsExpanded
+            TitleContent(
+                div {
+                    style {
+                        displayFlex
+                        alignItemsCenter
+                        gap 12
+                    }
+                    func.Name
+                    MudChipSet'' {
+                        Size Size.Small
+                        Color Color.Secondary
+                        MudChip'' {
+                            Color(
+                                match func.Type with
+                                | SYSTEM_FUNCTION -> Color.Primary
+                                | _ -> Color.Default
+                            )
+                            match func.Type with
+                            | FunctionType.SystemGetCurrentTime
+                            | FunctionType.SystemRenderInIframe
+                            | FunctionType.SystemSendHttp _
+                            | FunctionType.SystemSearchMemory _
+                            | FunctionType.SystemReadDocumentAsText
+                            | FunctionType.SystemExecuteCommand _
+                            | FunctionType.SystemGenerateImage _
+                            | FunctionType.SystemCreateTaskForAgent
+                            | FunctionType.SystemCreateScheduledTaskForAgent -> "System"
+                            | FunctionType.Mcp(McpConfig.STDIO _) -> "MCP"
+                            | FunctionType.Mcp(McpConfig.SSE _) -> "MCP"
+                            | FunctionType.OpenApi _
+                            | FunctionType.OpenApiUrl _ -> "OpenApi"
+                        }
+                    }
+                }
+            )
+            region {
+                if isExpanded then
+                    html.inject (func, fun () -> this.FunctionForm(func, false, groups))
+            }
+        }
+    }
+
     member _.FunctionsView = MudExpansionPanels'' {
         MultiExpansion
         adapt {
@@ -166,50 +235,48 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
                     || x.Description.Contains(query, StringComparison.OrdinalIgnoreCase)
                 )
 
-            for func in filteredFunctions do
-                adaptiview (key = func.Id) {
-                    let! isExpanded, setIsExpanded = cval(false).WithSetter()
-                    MudExpansionPanel'' {
-                        Expanded isExpanded
-                        ExpandedChanged setIsExpanded
-                        TitleContent(
-                            div {
-                                style {
-                                    displayFlex
-                                    alignItemsCenter
-                                    gap 12
-                                }
-                                func.Name
-                                MudChipSet'' {
-                                    Size Size.Small
-                                    Color Color.Secondary
-                                    MudChip'' {
-                                        Color(
-                                            match func.Type with
-                                            | SYSTEM_FUNCTION -> Color.Primary
-                                            | _ -> Color.Default
-                                        )
-                                        match func.Type with
-                                        | FunctionType.SystemGetCurrentTime
-                                        | FunctionType.SystemRenderInIframe
-                                        | FunctionType.SystemSendHttp _
-                                        | FunctionType.SystemSearchMemory _
-                                        | FunctionType.SystemReadDocumentAsText
-                                        | FunctionType.SystemExecuteCommand _
-                                        | FunctionType.SystemGenerateImage _
-                                        | FunctionType.SystemCreateTaskForAgent
-                                        | FunctionType.SystemCreateScheduledTaskForAgent -> "System"
-                                        | FunctionType.Mcp(McpConfig.STDIO _) -> "MCP"
-                                        | FunctionType.Mcp(McpConfig.SSE _) -> "MCP"
-                                        | FunctionType.OpenApi _
-                                        | FunctionType.OpenApiUrl _ -> "OpenApi"
-                                    }
-                                }
-                            }
-                        )
-                        region { if isExpanded then html.inject (func, fun () -> this.FunctionForm(func, false)) }
+            let groupedFunctions =
+                filteredFunctions
+                |> Seq.groupBy (fun x ->
+                    match x.Group with
+                    | null -> ""
+                    | SafeString s -> s
+                    | _ -> ""
+                )
+                |> Seq.sortBy fst
+
+            let groups = groupedFunctions |> Seq.map fst |> Seq.toList
+
+            let! expandedGroup, setExpandedGroup = expandedGroup.WithSetter()
+
+            this.FunctionsNewForm(groups)
+            for g, functions in groupedFunctions do
+                match g with
+                | SafeString g ->
+                    div {
+                        style {
+                            displayFlex
+                            alignItemsCenter
+                            justifyContentCenter
+                            padding 12
+                        }
+                        MudButton'' {
+                            EndIcon(
+                                if g = expandedGroup then
+                                    Icons.Material.Filled.ExpandLess
+                                else
+                                    Icons.Material.Filled.ExpandMore
+                            )
+                            OnClick(fun _ -> setExpandedGroup (if g = expandedGroup then "" else g))
+                            g
+                        }
                     }
-                }
+                    if g = expandedGroup then
+                        for func in functions do
+                            this.FunctionPanel(func, groups)
+                | _ ->
+                    for dunc in functions do
+                        this.FunctionPanel(dunc, groups)
         }
     }
 
@@ -225,26 +292,6 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
         MudContainer'' {
             MaxWidth MaxWidth.Medium
             this.Header
-            adapt {
-                match! isCreating with
-                | true ->
-                    MudPaper'' {
-                        id "function-new-form"
-                        style {
-                            padding 12
-                            displayFlex
-                            flexDirectionColumn
-                            gap 12
-                        }
-                        Elevation 2
-                        this.FunctionForm(Function.Default, true)
-                    }
-                    div {
-                        style { padding 24 }
-                        MudDivider''
-                    }
-                | _ -> ()
-            }
             this.FunctionsView
         }
     }

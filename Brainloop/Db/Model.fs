@@ -9,6 +9,7 @@ type Model = {
     Name: string
     Model: string
     Provider: ModelProvider
+    Group: string | null
     CanHandleText: bool
     CanHandleImage: bool
     CanHandleVideo: bool
@@ -33,6 +34,7 @@ type Model = {
         Name = ""
         Model = ""
         Provider = ModelProvider.OpenAI
+        Group = null
         CanHandleText = true
         CanHandleImage = false
         CanHandleVideo = false

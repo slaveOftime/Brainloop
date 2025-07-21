@@ -20,6 +20,7 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
     let isSaving = cval false
     let query = cval ""
     let agentsRefresher = cval 0
+    let expandedGroup = cval ""
 
     let addValidators (form: AdaptiveForm<Agent, string>) =
         form
@@ -104,10 +105,10 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
     }
 
 
-    member _.AgentForm(agent: Agent, isForCreating: bool) =
+    member _.AgentForm(agent: Agent, isForCreating: bool, groups) =
         let form = new AdaptiveForm<Agent, string>(agent) |> addValidators
         fragment {
-            AgentCard.Create(form)
+            AgentCard.Create(form, groups = groups)
             div {
                 style {
                     displayFlex
@@ -152,6 +153,69 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
             }
         }
 
+    member _.AgentNewForm(groups) = adaptiview (key = "new-agent") {
+        match! isCreating with
+        | false -> ()
+        | true ->
+            MudPaper'' {
+                id "agent-new-form"
+                style {
+                    padding 12
+                    displayFlex
+                    flexDirectionColumn
+                    gap 12
+                }
+                Elevation 2
+                this.AgentForm(
+                    {
+                        Agent.Default with
+                            Type = AgentType.General
+                            Prompt = Prompts.GENERAL_ASSISTANT
+                    },
+                    true,
+                    groups = groups
+                )
+            }
+            div {
+                style { padding 24 }
+                MudDivider''
+            }
+    }
+
+    member _.AgentPanel(agent: Agent, groups) = adaptiview (key = agent.Id) {
+        let! isExpanded, setIsExpanded = cval(false).WithSetter()
+        MudExpansionPanel'' {
+            Expanded isExpanded
+            ExpandedChanged setIsExpanded
+            TitleContent(
+                div {
+                    style {
+                        displayFlex
+                        alignItemsCenter
+                        gap 12
+                    }
+                    agent.Name
+                    MudChipSet'' {
+                        Size Size.Small
+                        MudChip'' {
+                            Color(if agent.Type = AgentType.CreateTitle then Color.Primary else Color.Default)
+                            string agent.Type
+                        }
+                        if agent.EnableTools then
+                            MudChip'' {
+                                Color Color.Info
+                                "Tools"
+                            }
+                    }
+                }
+            )
+            region {
+                if isExpanded then
+                    html.inject (agent, fun () -> this.AgentForm(agent, false, groups))
+            }
+        }
+    }
+
     member _.AgentsView = MudExpansionPanels'' {
         MultiExpansion
         adapt {
@@ -170,7 +234,21 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                     || x.Description.Contains(query, StringComparison.OrdinalIgnoreCase)
                 )
 
+            let groupedAgents =
+                filteredAgents
+                |> Seq.groupBy (fun x ->
+                    match x.Group with
+                    | null -> ""
+                    | SafeString s -> s
+                    | _ -> ""
+                )
+                |> Seq.sortBy fst
 
+            let groups = groupedAgents |> Seq.map fst |> Seq.toList
+
+            let! expandedGroup, setExpandedGroup = expandedGroup.WithSetter()
+
+            this.AgentNewForm(groups)
             region {
                 if not hasTitleBuilder && Seq.length agents > 0 then
                     MudExpansionPanel'' {
@@ -188,7 +266,8 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                                     Type = AgentType.CreateTitle
                                     Prompt = Prompts.CREATE_TITLE
                             },
-                            false
+                            false,
+                            groups = groups
                         )
                     }
             }
@@ -209,41 +288,38 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                                     Type = AgentType.GetTextFromImage
                                     Prompt = Prompts.GET_TEXT_FROM_IMAGE
                             },
-                            false
+                            false,
+                            groups = groups
                         )
                     }
             }
-            for agent in filteredAgents do
-                adaptiview (key = agent.Id) {
-                    let! isExpanded, setIsExpanded = cval(false).WithSetter()
-                    MudExpansionPanel'' {
-                        Expanded isExpanded
-                        ExpandedChanged setIsExpanded
-                        TitleContent(
-                            div {
-                                style {
-                                    displayFlex
-                                    alignItemsCenter
-                                    gap 12
-                                }
-                                agent.Name
-                                MudChipSet'' {
-                                    Size Size.Small
-                                    MudChip'' {
-                                        Color(if agent.Type = AgentType.CreateTitle then Color.Primary else Color.Default)
-                                        string agent.Type
-                                    }
-                                    if agent.EnableTools then
-                                        MudChip'' {
-                                            Color Color.Info
-                                            "Tools"
-                                        }
-                                }
-                            }
-                        )
-                        region { if isExpanded then html.inject (agent, fun () -> this.AgentForm(agent, false)) }
+            for g, agents in groupedAgents do
+                match g with
+                | SafeString g ->
+                    div {
+                        style {
+                            displayFlex
+                            alignItemsCenter
+                            justifyContentCenter
+                            padding 12
+                        }
+                        MudButton'' {
+                            EndIcon(
+                                if g = expandedGroup then
+                                    Icons.Material.Filled.ExpandLess
+                                else
+                                    Icons.Material.Filled.ExpandMore
+                            )
+                            OnClick(fun _ -> setExpandedGroup (if g = expandedGroup then "" else g))
+                            g
+                        }
                     }
-                }
+                    if g = expandedGroup then
+                        for agent in agents do
+                            this.AgentPanel(agent, groups)
+                | _ ->
+                    for agent in agents do
+                        this.AgentPanel(agent, groups)
         }
     }
 
@@ -259,33 +335,6 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
         MudContainer'' {
             MaxWidth MaxWidth.Medium
             this.Header
-            adapt {
-                match! isCreating with
-                | false -> ()
-                | true ->
-                    MudPaper'' {
-                        id "agent-new-form"
-                        style {
-                            padding 12
-                            displayFlex
-                            flexDirectionColumn
-                            gap 12
-                        }
-                        Elevation 2
-                        this.AgentForm(
-                            {
-                                Agent.Default with
-                                    Type = AgentType.General
-                                    Prompt = Prompts.GENERAL_ASSISTANT
-                            },
-                            true
-                        )
-                    }
-                    div {
-                        style { padding 24 }
-                        MudDivider''
-                    }
-            }
             this.AgentsView
         }
     }

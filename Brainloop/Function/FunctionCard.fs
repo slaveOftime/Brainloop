@@ -1,9 +1,11 @@
 ﻿namespace Brainloop.Function
 
+open System
 open System.Text.RegularExpressions
 open FSharp.Data.Adaptive
 open MudBlazor
 open Fun.Blazor
+open Fun.Result
 open Brainloop.Db
 open Brainloop.Model
 
@@ -18,7 +20,7 @@ type FunctionCard =
         | None -> []
 
 
-    static member Create(functionForm: AdaptiveForm<Function, string>) = MudGrid'' {
+    static member Create(functionForm: AdaptiveForm<Function, string>, ?groups: string seq) = MudGrid'' {
         Spacing 4
         MudItem'' {
             xs 12
@@ -37,6 +39,31 @@ type FunctionCard =
                 MudTextField'' {
                     Value' binding
                     Label "Description"
+                }
+            }
+        }     
+        MudItem'' {
+            xs 12
+            adapt {
+                let! v, setV = functionForm.UseField(fun x -> x.Group)
+                MudAutocomplete'' {
+                    Label "Group"
+                    Value v
+                    ValueChanged setV
+                    MaxItems 200
+                    CoerceValue
+                    Clearable
+                    OnClearButtonClick(fun _ -> setV null)
+                    SearchFunc(fun q _ -> task {
+                        let models = groups |> Option.defaultValue Seq.empty
+                        return
+                            seq {
+                                match q with
+                                | SafeString q -> yield! models |> Seq.filter (fun x -> x.Contains(q, StringComparison.OrdinalIgnoreCase))
+                                | _ -> yield! models
+                            }
+                            |> Seq.distinct
+                    })
                 }
             }
         }

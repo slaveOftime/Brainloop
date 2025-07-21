@@ -43,6 +43,7 @@ type Function = {
     Description: string
     Proxy: string
     Type: FunctionType
+    Group: string | null
     CreatedAt: DateTime
     UpdatedAt: DateTime
     LastUsedAt: DateTime Nullable
@@ -54,6 +55,7 @@ type Function = {
         Description = ""
         Proxy = ""
         Type = FunctionType.Mcp McpConfig.Default
+        Group = null
         CreatedAt = DateTime.Now
         UpdatedAt = DateTime.Now
         LastUsedAt = Nullable()
