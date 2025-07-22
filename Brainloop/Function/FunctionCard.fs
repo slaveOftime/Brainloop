@@ -41,7 +41,7 @@ type FunctionCard =
                     Label "Description"
                 }
             }
-        }     
+        }
         MudItem'' {
             xs 12
             adapt {
@@ -251,6 +251,18 @@ type FunctionCard =
                             Value config.WorkingDirectory
                             ValueChanged(fun x -> { config with WorkingDirectory = x } |> FunctionType.SystemExecuteCommand |> setFunctionType)
                             Label "Working Directory"
+                        }
+                        MudSwitch'' {
+                            Value(config.SupportOverrideWorkingDirectory |> ValueOption.defaultValue false)
+                            ValueChanged(fun x ->
+                                let newConfig = {
+                                    config with
+                                        SupportOverrideWorkingDirectory = ValueSome x
+                                }
+                                FunctionType.SystemExecuteCommand newConfig |> setFunctionType
+                            )
+                            Label "Support override working directory"
+                            Color Color.Primary
                         }
                         MudField'' {
                             Label "Enviroments"

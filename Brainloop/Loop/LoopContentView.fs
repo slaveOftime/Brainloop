@@ -243,7 +243,10 @@ type LoopContentView =
                     if toolCall.Arguments.Count > 0 then
                         let codeId = $"{Strings.ToolCallPrefix}args-{contentWrapper.Id}-{index}"
                         p {
-                            style { marginBottom "0.5rem" }
+                            style {
+                                marginTop "1rem"
+                                marginBottom "0.5rem"
+                            }
                             "arguments:"
                         }
                         for index, KeyValue(argKey, argValue) in Seq.indexed toolCall.Arguments do

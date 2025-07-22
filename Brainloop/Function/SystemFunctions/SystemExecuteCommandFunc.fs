@@ -26,7 +26,10 @@ type SystemExecuteCommandFunc(logger: ILogger<SystemExecuteCommandFunc>, loggerF
 
                     let args = (args :> IEnumerable<KeyValuePair<string, obj | null>>).Select(fun x -> x.Key, string x.Value) |> Map.ofSeq
 
-                    let workingDirectory = args |> Map.tryFind WorkingDirectoryArgKey |> Option.defaultValue config.WorkingDirectory
+                    let workingDirectory =
+                        match config.SupportOverrideWorkingDirectory with
+                        | ValueSome true -> args |> Map.tryFind WorkingDirectoryArgKey |> Option.defaultValue config.WorkingDirectory
+                        | _ -> config.WorkingDirectory
 
                     let mutable actualArguments = config.Arguments
                     for KeyValue(key, _) in config.ArgumentsDescription do
@@ -67,14 +70,17 @@ type SystemExecuteCommandFunc(logger: ILogger<SystemExecuteCommandFunc>, loggerF
                         ParameterType = typeof<string>,
                         Description = argDescription
                     )
-                KernelParameterMetadata(
-                    WorkingDirectoryArgKey,
-                    JsonSerializerOptions.createDefault (),
-                    ParameterType = typeof<string>,
-                    IsRequired = false,
-                    Description =
-                        $"The working directory where the command will be executed, this is not required. If it is not provided, the default one will be used: {config.WorkingDirectory}"
-                )
+                match config.SupportOverrideWorkingDirectory with
+                | ValueSome true ->
+                    KernelParameterMetadata(
+                        WorkingDirectoryArgKey,
+                        JsonSerializerOptions.createDefault (),
+                        ParameterType = typeof<string>,
+                        IsRequired = false,
+                        Description =
+                            $"The working directory where the command will be executed, this is not required. If it is not provided, the default one will be used: {config.WorkingDirectory}"
+                    )
+                | _ -> ()
             |],
             returnParameter = KernelReturnParameterMetadata(Description = "The result of the command", ParameterType = typeof<string>)
         )

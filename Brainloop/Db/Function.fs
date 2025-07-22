@@ -139,6 +139,7 @@ type SystemExecuteCommandConfig = {
     Arguments: string
     ArgumentsDescription: Map<string, string>
     WorkingDirectory: string
+    SupportOverrideWorkingDirectory: bool voption
     Environments: Map<string, string>
     SensitiveEnvironments: List<string> option
 } with
@@ -148,6 +149,7 @@ type SystemExecuteCommandConfig = {
         Arguments = ""
         ArgumentsDescription = Map.empty
         WorkingDirectory = ""
+        SupportOverrideWorkingDirectory = ValueNone
         Environments = Map.empty
         SensitiveEnvironments = None
     }
