@@ -57,6 +57,11 @@ type AgentSelector =
                                    || m.Model.Model.Contains(agentsFilter, StringComparison.OrdinalIgnoreCase)
                                    || m.Model.Provider.ToString().Contains(agentsFilter, StringComparison.OrdinalIgnoreCase)
                                )
+                            || (
+                                match x.Group with
+                                | null -> false
+                                | g -> g.Contains(agentsFilter, StringComparison.OrdinalIgnoreCase)
+                            )
                         )
 
                 div {

@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.Text
 open System.Threading
 open System.Collections.Concurrent
 open FSharp.Control
@@ -204,6 +205,7 @@ type LoopContentService
 
         member _.ToChatMessageContent(content, ?model) = valueTask {
             let items = ChatMessageContentItemCollection()
+            let documentPattern = RegularExpressions.Regex @"/api/memory/document/([\w\s\.\-]*)[\)""]"
 
             let handleFile (fileName) = valueTask {
                 let file = Path.Combine(documentService.RootDir, fileName)
@@ -244,12 +246,16 @@ type LoopContentService
                 | LoopContentItem.Excalidraw x -> do! handleFile x.ImageFileName
                 | LoopContentItem.ToolCall x -> items.Add(TextContent $"Invoked tool: {x.FunctionName} {x.Description}")
                 | LoopContentItem.Text x ->
-                    x.Blocks
-                    |> Seq.iter (
-                        function
+                    for block in x.Blocks do
+                        match block with
                         | LoopContentTextBlock.Think _ -> items.Add(TextContent("Thinking..."))
-                        | LoopContentTextBlock.Content text -> items.Add(TextContent(text))
-                    )
+                        | LoopContentTextBlock.Content text ->
+                            items.Add(TextContent(text))
+                            for mat in documentPattern.Matches(text) do
+                                try
+                                    do! handleFile mat.Groups[1].Value
+                                with ex ->
+                                    logger.LogWarning(ex, "Failed to handle file in content: {fileName}", mat.Groups[1].Value)
 
             return ChatMessageContent(content.AuthorRole.ToSemanticKernelRole(), items, AuthorName = content.Author.KeepLetterAndDigits())
         }

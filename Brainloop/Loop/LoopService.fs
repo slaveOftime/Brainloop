@@ -95,18 +95,7 @@ type LoopService
                 let! outputContentId = loopContentService.AddContentToCacheAndUpsert(outputContent)
                 let outputContent = { outputContent with Id = outputContentId }
 
-                match agent.Type with
-                | AgentType.General ->
-                    do!
-                        chatCompletionHandler.Handle(
-                            agent.Id,
-                            chatMessages,
-                            outputContent,
-                            ?modelId = modelId,
-                            ?cancellationToken = cancellationToken
-                        )
-
-                | _ -> failwith "Agent type not supported"
+                do! chatCompletionHandler.Handle(agent.Id, chatMessages, outputContent, ?modelId = modelId, ?cancellationToken = cancellationToken)
 
                 let! _ = loopContentService.UpsertLoopContent({ outputContent with Id = outputContentId })
 

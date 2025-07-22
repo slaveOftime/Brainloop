@@ -318,8 +318,9 @@ type LoopView =
                     adapt {
                         let! items = contentWrapper.Items
                         let! isStreamming = contentWrapper.IsStreaming
+                        let! hasError = contentWrapper.ErrorMessage |> AVal.map (String.IsNullOrEmpty >> not)
                         div {
-                            class' (if isStreamming then "" else "show-onhover")
+                            class' (if isStreamming || hasError then "" else "show-onhover")
                             LoopView.ContentFooter(contentWrapper, viewRaw, isEditing)
                         }
                         script {
@@ -396,8 +397,9 @@ type LoopView =
             | _ -> ()
         }
         html.inject (fun (hook: IComponentHook, modelService: IModelService) -> adapt {
+            let! modelId = contentWrapper.ModelId
             let! modelName =
-                match contentWrapper.ModelId.Value with
+                match modelId with
                 | ValueNone -> AVal.constant ""
                 | ValueSome modelId ->
                     modelService.TryGetModelWithCache(modelId)
@@ -578,8 +580,8 @@ type LoopView =
                         }
                         match agent with
                         | ValueSome agent when agent.AgentModels.Count > 1 -> MudMenu'' {
-                            PositionAtCursor
                             Size Size.Small
+                            Modal false
                             Icon Icons.Material.Filled.ArrowDropDown
                             Disabled(isSending || cancellationTokenSource.IsSome)
                             OpenChanged(fun _ -> refreshAgentsListCount.Publish((+) 1))
