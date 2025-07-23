@@ -91,7 +91,11 @@ type CreateTitleHandler(modelService: IModelService, agentService: IAgentService
 
                 with ex ->
                     logger.LogError(ex, "Complete chat failed with {name} {model}", model.Name, model.Model)
-                    raise ex
+                    modelIndex <- modelIndex + 1
+
+            if modelIndex = agent.AgentModels.Count then
+                logger.LogWarning("All models failed to summarize for {agent}", agent.Name)
+                failwith "All models failed to summarize"
 
             try
                 do! agentService.UpdateUsedTime(agent.Id)
