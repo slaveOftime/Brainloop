@@ -33,7 +33,9 @@ type SystemInvokeAgentFunc
 
     member _.Create(author: string, agentId: int, loopId: int64, sourceLoopContentId: int64) =
         let agent = dbService.DbContext.Queryable<Agent>().Where(fun (x: Agent) -> x.Id = agentId).First<Agent>()
-        let name = $"call_agent_{agent.Id}"
+        let agentName = if agent.Name.Contains " " then $"\"{agent.Name}\"" else agent.Name
+        let functionName = $"call_agent_{agent.Id}"
+
         KernelFunctionFactory.CreateFromMethod(
             Func<InvokeAgentArgs, KernelArguments, CancellationToken, Task<unit>>(fun arguments kernelArgs ct -> task {
                 logger.LogInformation("Call {agent} for help", agent.Name)
@@ -85,7 +87,7 @@ type SystemInvokeAgentFunc
             }),
             JsonSerializerOptions.createDefault (),
             loggerFactory = loggerFactory,
-            functionName = name,
+            functionName = functionName,
             description =
-                $"@{agent.Name} for help. AgentId={agent.Id}, AgentDescription={agent.Description}. The task will be created immediately and return nothing."
+                $"AgentId={agent.Id}, AgentName={agentName}, AgentDescription={agent.Description}. This function will not return anything, you can specify some parameters to wait untill finish or ask for a callback if it is necessary."
         )
