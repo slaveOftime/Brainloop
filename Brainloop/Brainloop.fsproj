@@ -135,8 +135,8 @@
 		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.60.0-preview" />
 		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.60.0-alpha" />
 		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.60.0-alpha" />
-		<PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.2" />
-		<PackageReference Include="OllamaSharp" Version="5.2.10" />
+		<PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.3" />
+		<PackageReference Include="OllamaSharp" Version="5.3.3" />
 		<PackageReference Include="PdfPig" Version="0.1.10" />
 		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
 		<PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
@@ -145,7 +145,7 @@
 		<PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
 		<PackageReference Include="SharpToken" Version="2.0.3" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
-		<PackageReference Include="System.CommandLine" Version="2.0.0-beta5.25306.1" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta6.25358.103" />
 	</ItemGroup>
 
 	<ItemGroup>
