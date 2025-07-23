@@ -129,6 +129,9 @@ html {
     padding: 0.5rem 0;
 }
 
+.loop-content-container {
+    background-color: var(--mud-palette-surface);
+}
 
 .focus-border {
     border: 1px solid transparent;

@@ -539,7 +539,6 @@ type LoopView =
                 }
               }
         }
-        LoopView.StopBtn(contentWrapper)
         region {
             match contentWrapper.SourceLoopContentId with
             | ValueSome sourceId ->
@@ -550,6 +549,7 @@ type LoopView =
                 })
             | ValueNone -> ()
         }
+        LoopView.StopBtn(contentWrapper)
         LoopView.TokenUsage(contentWrapper)
     }
 
