@@ -23,26 +23,6 @@ type AgentCard =
         MudItem'' {
             xs 12
             adapt {
-                let! binding = agentForm.UseFieldWithErrors(fun x -> x.Name)
-                MudTextField'' {
-                    Value' binding
-                    Label "Name"
-                }
-            }
-        }
-        MudItem'' {
-            xs 12
-            adapt {
-                let! binding = agentForm.UseField(fun x -> x.Description)
-                MudTextField'' {
-                    Value' binding
-                    Label "Description"
-                }
-            }
-        }
-        MudItem'' {
-            xs 12
-            adapt {
                 let! v, setV = agentForm.UseField(fun x -> x.Type)
                 MudSelect'' {
                     Value v
@@ -65,6 +45,26 @@ type AgentCard =
                             | AgentType.GetTextFromImage -> "Get Text From Image"
                             | AgentType.General -> "General Assistant"
                         }
+                }
+            }
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! binding = agentForm.UseFieldWithErrors(fun x -> x.Name)
+                MudTextField'' {
+                    Value' binding
+                    Label "Name"
+                }
+            }
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! binding = agentForm.UseField(fun x -> x.Description)
+                MudTextField'' {
+                    Value' binding
+                    Label "Description"
                 }
             }
         }

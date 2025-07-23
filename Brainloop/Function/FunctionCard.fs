@@ -25,51 +25,6 @@ type FunctionCard =
         MudItem'' {
             xs 12
             adapt {
-                let! binding = functionForm.UseFieldWithErrors(fun x -> x.Name)
-                MudTextField'' {
-                    Value' binding
-                    Label "Name"
-                }
-            }
-        }
-        MudItem'' {
-            xs 12
-            adapt {
-                let! binding = functionForm.UseField(fun x -> x.Description)
-                MudTextField'' {
-                    Value' binding
-                    Label "Description"
-                }
-            }
-        }
-        MudItem'' {
-            xs 12
-            adapt {
-                let! v, setV = functionForm.UseField(fun x -> x.Group)
-                MudAutocomplete'' {
-                    Label "Group"
-                    Value v
-                    ValueChanged setV
-                    MaxItems 200
-                    CoerceValue
-                    Clearable
-                    OnClearButtonClick(fun _ -> setV null)
-                    SearchFunc(fun q _ -> task {
-                        let models = groups |> Option.defaultValue Seq.empty
-                        return
-                            seq {
-                                match q with
-                                | SafeString q -> yield! models |> Seq.filter (fun x -> x.Contains(q, StringComparison.OrdinalIgnoreCase))
-                                | _ -> yield! models
-                            }
-                            |> Seq.distinct
-                    })
-                }
-            }
-        }
-        MudItem'' {
-            xs 12
-            adapt {
                 let! v, setV = functionForm.UseField(fun x -> x.Type)
                 MudSelect'' {
                     Value v
@@ -136,6 +91,51 @@ type FunctionCard =
                             FunctionType.OpenApiUrl OpenApiUriConfig.Default
                         ] do
                         MudSelectItem'' { Value option }
+                }
+            }
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! binding = functionForm.UseFieldWithErrors(fun x -> x.Name)
+                MudTextField'' {
+                    Value' binding
+                    Label "Name"
+                }
+            }
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! binding = functionForm.UseField(fun x -> x.Description)
+                MudTextField'' {
+                    Value' binding
+                    Label "Description"
+                }
+            }
+        }
+        MudItem'' {
+            xs 12
+            adapt {
+                let! v, setV = functionForm.UseField(fun x -> x.Group)
+                MudAutocomplete'' {
+                    Label "Group"
+                    Value v
+                    ValueChanged setV
+                    MaxItems 200
+                    CoerceValue
+                    Clearable
+                    OnClearButtonClick(fun _ -> setV null)
+                    SearchFunc(fun q _ -> task {
+                        let models = groups |> Option.defaultValue Seq.empty
+                        return
+                            seq {
+                                match q with
+                                | SafeString q -> yield! models |> Seq.filter (fun x -> x.Contains(q, StringComparison.OrdinalIgnoreCase))
+                                | _ -> yield! models
+                            }
+                            |> Seq.distinct
+                    })
                 }
             }
         }

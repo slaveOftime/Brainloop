@@ -22,8 +22,9 @@ type ModelCard =
                     Value v
                     ValueChanged(fun v ->
                         setV v
-                        if modelForm.GetFieldValue(fun x -> x.Api) |> String.IsNullOrEmpty then
-                            modelForm.UseFieldSetter (fun x -> x.Api) "http://localhost:11434"
+                        match modelForm.GetFieldValue(fun x -> x.Provider), modelForm.GetFieldValue(fun x -> x.Api) with
+                        | ModelProvider.Ollama, NullOrEmptyString -> modelForm.UseFieldSetter (fun x -> x.Api) "http://localhost:11434"
+                        | _ -> ()
                     )
                     Errors errors
                     Label "Model Provider"

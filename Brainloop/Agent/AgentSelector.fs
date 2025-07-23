@@ -106,7 +106,7 @@ type AgentSelector =
                                 adapt {
                                     let! agents = agents
                                     let! agentsFilter = agentsFilter
-                                    let gropedAgents = filterAgents agentsFilter agents |> Seq.groupBy _.Group
+                                    let gropedAgents = filterAgents agentsFilter agents |> Seq.groupBy _.Group |> Seq.sortBy fst
                                     for g, agents in gropedAgents do
                                         match g with
                                         | NullOrEmptyString -> ()

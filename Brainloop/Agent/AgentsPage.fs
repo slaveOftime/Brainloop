@@ -294,30 +294,27 @@ type AgentsPage(agentService: IAgentService, snackbar: ISnackbar, dialog: IDialo
                     }
             }
             for g, agents in groupedAgents do
-                match g with
-                | SafeString g ->
-                    div {
-                        style {
-                            displayFlex
-                            alignItemsCenter
-                            justifyContentCenter
-                            paddingTop 24
-                        }
-                        MudButton'' {
-                            EndIcon(
-                                if g = expandedGroup then
-                                    Icons.Material.Filled.ExpandLess
-                                else
-                                    Icons.Material.Filled.ExpandMore
-                            )
-                            OnClick(fun _ -> setExpandedGroup (if g = expandedGroup then "" else g))
-                            g
-                        }
+                div {
+                    style {
+                        displayFlex
+                        alignItemsCenter
+                        justifyContentCenter
+                        paddingTop 24
                     }
-                    if g = expandedGroup then
-                        for agent in agents do
-                            this.AgentPanel(agent, groups)
-                | _ ->
+                    MudButton'' {
+                        EndIcon(
+                            if g = expandedGroup then
+                                Icons.Material.Filled.ExpandLess
+                            else
+                                Icons.Material.Filled.ExpandMore
+                        )
+                        OnClick(fun _ -> setExpandedGroup (if g = expandedGroup then "" else g))
+                        match g with
+                        | SafeString x -> x
+                        | _ -> "No Group"
+                    }
+                }
+                if g = expandedGroup then
                     for agent in agents do
                         this.AgentPanel(agent, groups)
         }
