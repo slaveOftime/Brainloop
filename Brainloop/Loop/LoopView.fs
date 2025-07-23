@@ -540,6 +540,16 @@ type LoopView =
               }
         }
         LoopView.StopBtn(contentWrapper)
+        region {
+            match contentWrapper.SourceLoopContentId with
+            | ValueSome sourceId ->
+                html.inject (fun (shareStore: IShareStore) -> MudIconButton'' {
+                    Size Size.Small
+                    Icon Icons.Material.Filled.AdsClick
+                    OnClick(fun _ -> transact (fun _ -> shareStore.LoopContentsFocusing.Add(contentWrapper.LoopId, sourceId) |> ignore))
+                })
+            | ValueNone -> ()
+        }
         LoopView.TokenUsage(contentWrapper)
     }
 
