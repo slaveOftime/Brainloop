@@ -121,7 +121,11 @@ type LoopService
                         do! loopContentService.DeleteLoopContentsOfSource(loopId, loopContentId)
 
                         let chatMessages = List<LoopContentWrapper>()
-                        for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) |> _.TakeLast(Math.Max(0, agent.MaxHistory)) do
+                        let includedHistoryCount =
+                            match target.DirectPrompt.Value with
+                            | ValueSome _ -> target.IncludedHistoryCount.Value
+                            | ValueNone -> agent.MaxHistory
+                        for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) |> _.TakeLast(Math.Max(0, includedHistoryCount)) do
                             chatMessages.Add(item)
 
                         match target.DirectPrompt.Value with
