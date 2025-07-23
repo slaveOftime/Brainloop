@@ -168,8 +168,8 @@ type ChatCompletionHandler
     member private _.SetSystemPromptsForAgent(agent: Agent, chatMessages: ChatHistory) =
         let sb =
             StringBuilder()
-                .Append("Current time is ")
-                .Append(DateTime.Now.ToString())
+                .Append("Current date is ")
+                .Append(DateTime.Now.ToShortDateString())
                 .AppendLine()
                 .Append("You are an agent named '")
                 .Append(agent.Name)
