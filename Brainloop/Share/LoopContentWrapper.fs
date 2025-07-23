@@ -25,6 +25,8 @@ type LoopContentWrapper = {
     AgentId: int voption
     ModelId: int voption cval
     Items: LoopContentItem clist
+    DirectPrompt: string voption cval
+    IncludedHistoryCount: int cval
     ErrorMessage: string cval
     ThinkDurationMs: int cval
     TotalDurationMs: int cval
@@ -46,6 +48,8 @@ type LoopContentWrapper = {
         AgentId = ValueNone
         ModelId = cval ValueNone
         Items = clist ()
+        DirectPrompt = cval ValueNone
+        IncludedHistoryCount = cval 0
         ErrorMessage = cval ""
         ThinkDurationMs = cval 0
         TotalDurationMs = cval 0
@@ -75,6 +79,13 @@ type LoopContentWrapper = {
                     | x -> x
                 with _ -> [ LoopContentItem.Text(LoopContentText content.Content) ]
             )
+        DirectPrompt =
+            cval (
+                match content.DirectPrompt with
+                | SafeString x -> ValueSome x
+                | _ -> ValueNone
+            )
+        IncludedHistoryCount = cval (content.IncludedHistoryCount |> ValueOption.ofNullable |> ValueOption.defaultValue 0)
         CancellationTokenSource = cval ValueNone
         ErrorMessage = cval content.ErrorMessage
         ThinkDurationMs = cval content.ThinkDurationMs
@@ -93,6 +104,11 @@ type LoopContentWrapper = {
         AgentId = this.AgentId |> ValueOption.toNullable
         ModelId = this.ModelId.Value |> ValueOption.toNullable
         Content = JsonSerializer.Serialize(this.Items.Value, options = JsonSerializerOptions.createDefault ())
+        DirectPrompt =
+            match this.DirectPrompt.Value with
+            | ValueSome(SafeString x) -> x
+            | _ -> null
+        IncludedHistoryCount = this.IncludedHistoryCount.Value |> Nullable
         ErrorMessage =
             match this.ErrorMessage.Value with
             | SafeString x -> x

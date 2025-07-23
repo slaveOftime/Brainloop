@@ -20,11 +20,11 @@ type SystemExecuteCommandFunc(logger: ILogger<SystemExecuteCommandFunc>, loggerF
 
     member _.Create(fn: Function, config: SystemExecuteCommandConfig, ?cancellationToken: CancellationToken) =
         KernelFunctionFactory.CreateFromMethod(
-            Func<KernelArguments, ValueTask<string>>(fun args -> valueTask {
+            Func<KernelArguments, ValueTask<string>>(fun arguments -> valueTask {
                 try
                     logger.LogInformation("Executing command: {command} in {workingDir}", config.Command, config.WorkingDirectory)
 
-                    let args = (args :> IEnumerable<KeyValuePair<string, obj | null>>).Select(fun x -> x.Key, string x.Value) |> Map.ofSeq
+                    let args = (arguments :> IEnumerable<KeyValuePair<string, obj | null>>).Select(fun x -> x.Key, string x.Value) |> Map.ofSeq
 
                     let workingDirectory =
                         match config.SupportOverrideWorkingDirectory with

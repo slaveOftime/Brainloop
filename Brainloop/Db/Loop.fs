@@ -35,6 +35,8 @@ type LoopContent = {
     AuthorRole: LoopContentAuthorRole
     Content: string
     ErrorMessage: string | null
+    DirectPrompt: string | null
+    IncludedHistoryCount: int Nullable
     ThinkDurationMs: int
     TotalDurationMs: int
     CreatedAt: DateTime

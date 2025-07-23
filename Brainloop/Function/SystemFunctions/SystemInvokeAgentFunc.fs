@@ -20,6 +20,8 @@ type InvokeAgentArgs() =
     [<Required>]
     [<Description "Complete context for an agent to finish its task">]
     member val Prompt: string = "" with get, set
+    [<Description "Wait the function finish">]
+    member val WaitForFinish: bool = false with get, set
     [<Description "If you want to get notification after the agent finish its task">]
     member val CallbackAfterFinish: bool = false with get, set
     [<Description "This is optional, when not provided it call the agent who triggered this tool/function">]
@@ -33,28 +35,34 @@ type SystemInvokeAgentFunc
         let agent = dbService.DbContext.Queryable<Agent>().Where(fun (x: Agent) -> x.Id = agentId).First<Agent>()
         let name = $"call_agent_{agent.Id}"
         KernelFunctionFactory.CreateFromMethod(
-            Func<InvokeAgentArgs, KernelArguments, CancellationToken, Task<unit>>(fun args kernelArgs ct -> task {
+            Func<InvokeAgentArgs, KernelArguments, CancellationToken, Task<unit>>(fun arguments kernelArgs ct -> task {
                 logger.LogInformation("Call {agent} for help", agent.Name)
 
                 let sourceLoopContentId = kernelArgs.LoopContentId |> ValueOption.defaultValue sourceLoopContentId
 
                 let handler = serviceProvider.GetRequiredService<IChatCompletionForLoopHandler>()
 
-                valueTask {
+                let task = valueTask {
                     do!
                         handler.Handle(
                             loopId,
-                            args.Prompt,
+                            arguments.Prompt,
                             agentId = agent.Id,
                             author = author,
                             role = LoopContentAuthorRole.Agent,
                             ignoreInput = true,
+                            includeHistory = false,
                             sourceLoopContentId = sourceLoopContentId,
                             cancellationToken = ct
                         )
 
-                    if args.CallbackAfterFinish then
-                        let nextAgentId = args.CallbackAgentId |> ValueOption.ofNullable |> ValueOption.bind (fun _ -> kernelArgs.AgentId)
+                    if arguments.CallbackAfterFinish then
+                        let nextAgentId =
+                            arguments.CallbackAgentId
+                            |> ValueOption.ofNullable
+                            |> function
+                                | ValueNone -> kernelArgs.AgentId
+                                | x -> x
                         match nextAgentId with
                         | ValueNone -> ()
                         | ValueSome nextAgentId ->
@@ -67,11 +75,13 @@ type SystemInvokeAgentFunc
                                     author = agent.Name,
                                     role = LoopContentAuthorRole.Agent,
                                     ignoreInput = true,
+                                    includeHistory = true,
                                     cancellationToken = ct
                                 )
 
                 }
-                |> ignore
+
+                if arguments.WaitForFinish then do! task
             }),
             JsonSerializerOptions.createDefault (),
             loggerFactory = loggerFactory,

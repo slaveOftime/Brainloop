@@ -12,6 +12,6 @@ type IFunctionService =
     abstract member DeleteFunction: id: int -> ValueTask<unit>
     abstract member UpdateUsedTime: id: int -> ValueTask<unit>
 
-    abstract member GetKernelPlugins: ids: int seq * ?cancellationToken: CancellationToken -> ValueTask<KernelPlugin list>
+    abstract member GetKernelPlugins: ids: int seq * ?agentId: int * ?cancellationToken: CancellationToken -> ValueTask<KernelPlugin list>
 
     abstract member CreateInvokeAgentFunc: author: string * agentId: int * loopId: int64 * sourceLoopContentId: int64 -> KernelFunction

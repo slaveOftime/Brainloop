@@ -299,28 +299,13 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
                 )
 
 
-        member _.GetKernel(modelId, ?timeoutMs) =
-            memoryCache.GetOrCreateAsync(
-                $"kernel-{modelId}",
-                (fun _ -> task {
-                    let! model = (this :> IModelService).GetModelsWithCache() |> ValueTask.map (Seq.tryFind (fun x -> x.Id = modelId))
-                    return
-                        match model with
-                        | None -> None
-                        | Some model -> this.CreateKernelBuilder(model, ?timeoutMs = timeoutMs).Build() |> Some
-                })
-            )
-            |> ValueTask.ofTask
-            |> ValueTask.map (
-                function
-                | null
+        member _.GetKernel(modelId, ?timeoutMs) = valueTask {
+            let! model = (this :> IModelService).GetModelsWithCache() |> ValueTask.map (Seq.tryFind (fun x -> x.Id = modelId))
+            return
+                match model with
                 | None -> failwithf "Kernel for model with id %d not found" modelId
-                | Some x ->
-                    x.Plugins.Clear()
-                    x.FunctionInvocationFilters.Clear()
-                    x.PromptRenderFilters.Clear()
-                    x
-            )
+                | Some model -> this.CreateKernelBuilder(model, ?timeoutMs = timeoutMs).Build()
+        }
 
         member _.GetEmbeddingService(modelId, ?timeoutMs) = valueTask {
             let! kernel = (this :> IModelService).GetKernel(modelId, ?timeoutMs = timeoutMs)

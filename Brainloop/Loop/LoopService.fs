@@ -23,7 +23,6 @@ type LoopService
         chatCompletionHandler: IChatCompletionHandler,
         buildTitleHandler: ICreateTitleHandler,
         memoryService: IMemoryService,
-        documentService: IDocumentService,
         agentService: IAgentService,
         loopContentService: ILoopContentService,
         globalStore: IGlobalStore,
@@ -45,7 +44,7 @@ type LoopService
 
             let message =
                 match agent, message with
-                | ValueSome x, NullOrEmptyString -> $"@{x.Name}"
+                | ValueSome x, NullOrEmptyString -> if x.Name.Contains(' ') then $"@\"{x.Name}\"" else $"@{x.Name}"
                 | _ -> message
 
             let mutable inputContentId = ValueNone
@@ -74,7 +73,7 @@ type LoopService
                 if inputContentId.IsNone then
                     chatMessages.Add(
                         {
-                            LoopContentWrapper.Default 0 with
+                            LoopContentWrapper.Default loopId with
                                 Author = author
                                 AuthorRole = role
                                 Items = clist [ LoopContentItem.Text(LoopContentText message) ]
@@ -84,6 +83,10 @@ type LoopService
                 let outputContent = {
                     LoopContentWrapper.Default(loopId) with
                         Items = clist ()
+                        DirectPrompt =
+                            (match ignoreInput, message with
+                             | true, SafeString x -> cval (ValueSome x)
+                             | _ -> cval ValueNone)
                         Author = agent.Name
                         AuthorRole = LoopContentAuthorRole.Agent
                         AgentId = ValueSome agent.Id
@@ -120,6 +123,16 @@ type LoopService
                         let chatMessages = List<LoopContentWrapper>()
                         for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) |> _.TakeLast(Math.Max(0, agent.MaxHistory)) do
                             chatMessages.Add(item)
+
+                        match target.DirectPrompt.Value with
+                        | ValueSome(SafeString prompt) ->
+                            chatMessages.Add {
+                                LoopContentWrapper.Default loopId with
+                                    Author = target.Author
+                                    AuthorRole = target.AuthorRole
+                                    Items = clist [ LoopContentItem.Text(LoopContentText prompt) ]
+                            }
+                        | _ -> ()
 
                         do! chatCompletionHandler.Handle(agent.Id, chatMessages, target, ?modelId = modelId)
 

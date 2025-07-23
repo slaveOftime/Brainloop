@@ -35,7 +35,7 @@ type SystemGenerateImageFunc
 
     member _.Create(fn: Function, config: SystemGenerateImageConfig, ?cancellationToken: CancellationToken) =
         KernelFunctionFactory.CreateFromMethod(
-            Func<GenerateImageArgs, KernelArguments, ValueTask<string>>(fun args kernelArgs -> valueTask {
+            Func<GenerateImageArgs, KernelArguments, ValueTask<string>>(fun arguments kernelArgs -> valueTask {
                 try
                     logger.LogInformation("Generate image")
                     match config with
@@ -46,7 +46,7 @@ type SystemGenerateImageFunc
                         let sourceLoopContentId = kernelArgs.LoopContentId
 
                         let textToImageService = kernel.GetRequiredService<TextToImage.ITextToImageService>()
-                        let input = TextContent(args.Prompt)
+                        let input = TextContent(arguments.Prompt)
                         let executionSettings = PromptExecutionSettings()
 
                         let! images =
@@ -77,10 +77,10 @@ type SystemGenerateImageFunc
                         for image in images do
                             if image.Data.HasValue then
                                 use stream = new MemoryStream(image.Data.Value.ToArray())
-                                do! addImageStream args.Prompt stream
+                                do! addImageStream arguments.Prompt stream
                             else if image.DataUri <> null then
                                 use! stream = this.DownloadImageAsync(image.DataUri, proxy = model.Proxy)
-                                do! addImageStream args.Prompt stream
+                                do! addImageStream arguments.Prompt stream
                             else
                                 match image.InnerContent with
                                 | :? OpenAI.Images.GeneratedImage as image ->

@@ -362,7 +362,7 @@ type LoopView =
                 | ValueNone -> ()
                 | ValueSome agentId ->
                     hook.ShowDialog(
-                        DialogOptions(MaxWidth = MaxWidth.Medium, FullWidth = true),
+                        DialogOptions(MaxWidth = MaxWidth.Medium, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = false),
                         fun ctx ->
                             AgentCard.Dialog(
                                 agentId,
@@ -384,15 +384,28 @@ type LoopView =
             }
         })
         adapt {
+            let! directPrompt = contentWrapper.DirectPrompt
             match! sourceContent with
-            | ValueSome x when x.Author <> contentWrapper.Author && x.AuthorRole <> LoopContentAuthorRole.User -> MudChip'' {
-                style {
-                    flexShrink 0
-                    whiteSpaceNowrap
+            | ValueSome x when x.Author <> contentWrapper.Author && x.AuthorRole <> LoopContentAuthorRole.User -> MudTooltip'' {
+                Arrow
+                Placement Placement.Top
+                TooltipContent(
+                    match directPrompt with
+                    | ValueSome(SafeString x) -> div {
+                        style { maxWidth 300 }
+                        x
+                      }
+                    | _ -> html.none
+                )
+                MudChip'' {
+                    style {
+                        flexShrink 0
+                        whiteSpaceNowrap
+                    }
+                    Size Size.Small
+                    "by "
+                    x.Author
                 }
-                Size Size.Small
-                "by "
-                x.Author
               }
             | _ -> ()
         }

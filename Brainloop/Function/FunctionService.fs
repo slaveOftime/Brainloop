@@ -53,7 +53,7 @@ type FunctionService
 
         httpClient
 
-    member private _.GetKernelPluginsAndSystemFunctions(ids: int seq, ?cancellationToken: CancellationToken) = valueTask {
+    member private _.GetKernelPluginsAndSystemFunctions(ids: int seq, ?agentId: int, ?cancellationToken: CancellationToken) = valueTask {
         let plugins = Collections.Generic.Dictionary<int, KernelPlugin>()
         let systemFunctions = Collections.Generic.Dictionary<int, KernelFunction>()
 
@@ -162,10 +162,32 @@ type FunctionService
                     systemFunctions[fn.Id] <-
                         serviceProvider.GetRequiredService<SystemGenerateImageFunc>().Create(fn, config, ?cancellationToken = cancellationToken)
                 | FunctionType.SystemCreateTaskForAgent ->
-                    systemFunctions[fn.Id] <- serviceProvider.GetRequiredService<SystemCreateTaskForAgentFunc>().Create(fn)
+                    let! func =
+                        serviceProvider
+                            .GetRequiredService<SystemCreateTaskForAgentFunc>()
+                            .Create(
+                                fn,
+                                excludedAgentIds = [
+                                    match agentId with
+                                    | None -> ()
+                                    | Some x -> x
+                                ]
+                            )
+                    systemFunctions[fn.Id] <- func
                 | FunctionType.SystemCreateScheduledTaskForAgent ->
-                    systemFunctions[fn.Id] <-
-                        serviceProvider.GetRequiredService<SystemCreateScheduledTaskForAgentFunc>().Create(fn, ?cancellationToken = cancellationToken)
+                    let! func =
+                        serviceProvider
+                            .GetRequiredService<SystemCreateScheduledTaskForAgentFunc>()
+                            .Create(
+                                fn,
+                                excludedAgentIds = [
+                                    match agentId with
+                                    | None -> ()
+                                    | Some x -> x
+                                ],
+                                ?cancellationToken = cancellationToken
+                            )
+                    systemFunctions[fn.Id] <- func
 
 
         return {| Plugins = plugins; SystemFunctions = systemFunctions |}
@@ -206,8 +228,8 @@ type FunctionService
             | _ -> failwith "Failed to update function"
         }
 
-        member _.GetKernelPlugins(ids, ?cancellationToken) = valueTask {
-            let! result = this.GetKernelPluginsAndSystemFunctions(ids, ?cancellationToken = cancellationToken)
+        member _.GetKernelPlugins(ids, ?agentId, ?cancellationToken) = valueTask {
+            let! result = this.GetKernelPluginsAndSystemFunctions(ids, ?agentId = agentId, ?cancellationToken = cancellationToken)
 
             let plugins = Collections.Generic.List<KernelPlugin>()
 

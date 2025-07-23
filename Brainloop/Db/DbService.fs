@@ -119,6 +119,7 @@ type DbService(appOptions: IOptions<AppOptions>, logger: ILogger<DbService>) =
                      e.Property(fun x -> x.Id).IsPrimary(true).IsIdentity(true)
                      e.Property(fun x -> x.Content).StringLength(-1)
                      e.Property(fun x -> x.ErrorMessage).StringLength(-1)
+                     e.Property(fun x -> x.DirectPrompt).StringLength(-1)
                      ()
                  )
                  .ConfigEntity<Notification>(fun e ->

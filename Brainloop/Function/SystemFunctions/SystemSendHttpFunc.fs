@@ -31,18 +31,18 @@ type SystemSendHttpFunc(logger: ILogger<SystemSendHttpFunc>, loggerFactory: ILog
 
     member _.Create(fn: Function, config: SystemSendHttpConfig) =
         KernelFunctionFactory.CreateFromMethod(
-            Func<SendHttpArgs, ValueTask<SendHttpResult | null>>(fun args -> valueTask {
+            Func<SendHttpArgs, ValueTask<SendHttpResult | null>>(fun arguments -> valueTask {
                 try
-                    logger.LogInformation("Sending http request to {url}", args.Url)
+                    logger.LogInformation("Sending http request to {url}", arguments.Url)
 
                     use request =
                         new HttpRequestMessage(
                             HttpMethod(
-                                match args.Method with
+                                match arguments.Method with
                                 | null -> "GET"
                                 | x -> x
                             ),
-                            new Uri(args.Url)
+                            new Uri(arguments.Url)
                         )
 
                     match config.Headers with
@@ -51,13 +51,13 @@ type SystemSendHttpFunc(logger: ILogger<SystemSendHttpFunc>, loggerFactory: ILog
                         for KeyValue(key, value) in headers do
                             request.Headers.Add(key, value)
 
-                    match args.Headers with
+                    match arguments.Headers with
                     | null -> ()
                     | headers ->
                         for KeyValue(key, value) in headers do
                             request.Headers.Add(key, value)
 
-                    match args.Body with
+                    match arguments.Body with
                     | null -> ()
                     | body -> request.Content <- new StringContent(body)
 

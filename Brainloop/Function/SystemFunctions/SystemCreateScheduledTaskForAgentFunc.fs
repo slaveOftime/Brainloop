@@ -1,12 +1,14 @@
 ﻿namespace Brainloop.Function.SystemFunctions
 
 open System
+open System.Text
 open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel
 open System.ComponentModel.DataAnnotations
 open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Caching.Memory
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.SemanticKernel
 open Quartz
@@ -48,8 +50,11 @@ and [<RequireQualifiedAccess>] ScheduleTrigger =
 
 
 type SystemScheduledTaskToCallAgentJob
-    (startChatLoopHandler: IChatCompletionForLoopHandler, addNotificationHandler: IAddNotificationHandler, logger: ILogger<SystemScheduledTaskToCallAgentJob>) as this
-    =
+    (
+        startChatLoopHandler: IChatCompletionForLoopHandler,
+        addNotificationHandler: IAddNotificationHandler,
+        logger: ILogger<SystemScheduledTaskToCallAgentJob>
+    ) =
     interface IJob with
         member _.Execute(context: IJobExecutionContext) = task {
             try
@@ -95,79 +100,102 @@ type SystemCreateScheduledTaskForAgentFunc
         loggerFactory: ILoggerFactory
     ) =
 
-    member _.Create(fn: Function, ?cancellationToken: CancellationToken) =
-        KernelFunctionFactory.CreateFromMethod(
-            Func<CreateScheduleTaskForAgentArgs, KernelArguments, ValueTask<unit>>(fun args kernelArgs -> valueTask {
-                try
-                    match kernelArgs.TryGetValue(Strings.ToolCallLoopId) with
-                    | true, (:? int64 as loopId) ->
-                        let! scheduler = schedulerFactory.GetScheduler()
+    member _.Create(fn: Function, ?excludedAgentIds: int seq, ?cancellationToken: CancellationToken) = valueTask {
+        let description =
+            StringBuilder()
+                .Append(fn.Name)
+                .Append(' ')
+                .AppendLine(fn.Description)
+                .AppendLine("You must specify SpecificTime or CronExpression accordingly. SpecificTime has higher priority if both are provided.")
+                .AppendLine("Below are the agents you can invoke: ")
+                .AppendLine()
 
-                        let sourceAgentId = kernelArgs.AgentId |> ValueOption.defaultValue args.AgentId
+        let agents = serviceProvider.GetRequiredService<IMemoryCache>().Get<Agent list>(Strings.AgentsMemoryCacheKey)
+        let excludedAgentIds = excludedAgentIds |> Option.defaultValue Seq.empty
+        match agents with
+        | null -> ()
+        | agents ->
+            for agent in agents |> Seq.filter (fun x -> Seq.contains x.Id excludedAgentIds |> not) do
+                description
+                    .Append("AgentId=")
+                    .Append(agent.Id)
+                    .Append(", AgentName=")
+                    .Append(agent.Name)
+                    .Append(", AgentDescription=")
+                    .AppendLine(agent.Description)
+                    .AppendLine()
+                |> ignore
 
-                        let agentName =
-                            dbService.DbContext.Queryable<Agent>().Where(fun (x: Agent) -> x.Id = sourceAgentId).First(fun (x: Agent) -> x.Name)
+        return
+            KernelFunctionFactory.CreateFromMethod(
+                Func<CreateScheduleTaskForAgentArgs, KernelArguments, ValueTask<unit>>(fun arguments kernelArgs -> valueTask {
+                    try
+                        match kernelArgs.TryGetValue(Strings.ToolCallLoopId) with
+                        | true, (:? int64 as loopId) ->
+                            let! scheduler = schedulerFactory.GetScheduler()
 
-                        let data = {
-                            Identity = args.Identity
-                            Author = agentName
-                            AgentId = args.AgentId
-                            LoopId = loopId
-                            Trigger =
-                                match args.CronExpression, args.SpecificTime.HasValue with
-                                | null, true -> ScheduleTrigger.DATIME args.SpecificTime.Value
-                                | SafeString x, _ -> ScheduleTrigger.CRON x
-                                | _ ->
-                                    failwith
-                                        $"Condition is not valid {nameof args.CronExpression}: {args.CronExpression} or {nameof args.SpecificTime}: {args.SpecificTime}"
-                            Prompt = args.Prompt
-                        }
+                            let sourceAgentId = kernelArgs.AgentId |> ValueOption.defaultValue arguments.AgentId
 
-                        let triggerBuilder = TriggerBuilder.Create().WithIdentity(args.Identity, Strings.SchedulerGroupForAgent)
+                            let agentName =
+                                dbService.DbContext.Queryable<Agent>().Where(fun (x: Agent) -> x.Id = sourceAgentId).First(fun (x: Agent) -> x.Name)
 
-                        let triggerBuilder =
-                            match data.Trigger with
-                            | ScheduleTrigger.CRON x -> triggerBuilder.WithCronSchedule(x)
-                            | ScheduleTrigger.DATIME x -> triggerBuilder.StartAt(x)
+                            let data = {
+                                Identity = arguments.Identity
+                                Author = agentName
+                                AgentId = arguments.AgentId
+                                LoopId = loopId
+                                Trigger =
+                                    match arguments.CronExpression, arguments.SpecificTime.HasValue with
+                                    | null, true -> ScheduleTrigger.DATIME arguments.SpecificTime.Value
+                                    | SafeString x, _ -> ScheduleTrigger.CRON x
+                                    | _ ->
+                                        failwith
+                                            $"Condition is not valid {nameof arguments.CronExpression}: {arguments.CronExpression} or {nameof arguments.SpecificTime}: {arguments.SpecificTime}"
+                                Prompt = arguments.Prompt
+                            }
 
-                        let trigger = triggerBuilder.Build()
+                            let triggerBuilder = TriggerBuilder.Create().WithIdentity(arguments.Identity, Strings.SchedulerGroupForAgent)
 
-                        let job =
-                            JobBuilder
-                                .Create<SystemScheduledTaskToCallAgentJob>()
-                                .WithIdentity(args.Identity, Strings.SchedulerGroupForAgent)
-                                .UsingJobData("data", JsonSerializer.Serialize(data, JsonSerializerOptions.createDefault ()))
-                                .Build()
+                            let triggerBuilder =
+                                match data.Trigger with
+                                | ScheduleTrigger.CRON x -> triggerBuilder.WithCronSchedule(x)
+                                | ScheduleTrigger.DATIME x -> triggerBuilder.StartAt(x)
 
-                        do! scheduler.ScheduleJob(job, trigger, ?cancellationToken = cancellationToken) |> Task.map ignore
+                            let trigger = triggerBuilder.Build()
 
-                        let addNotificationHandler = serviceProvider.GetRequiredService<IAddNotificationHandler>()
-                        do!
-                            addNotificationHandler.Handle(
-                                NotificationSource.SchedulerForAgent {
-                                    Name = args.Identity
-                                    Group = Strings.SchedulerGroupForAgent
-                                    Author = data.Author
-                                    AgentId = data.AgentId
-                                    LoopId = data.LoopId
-                                },
-                                $"Scheduled {args.Identity}"
-                            )
+                            let job =
+                                JobBuilder
+                                    .Create<SystemScheduledTaskToCallAgentJob>()
+                                    .WithIdentity(arguments.Identity, Strings.SchedulerGroupForAgent)
+                                    .UsingJobData("data", JsonSerializer.Serialize(data, JsonSerializerOptions.createDefault ()))
+                                    .Build()
 
-                    | _ ->
-                        logger.LogWarning("No loopId found in the arguments for scheduling task for agent {agentId}", args.AgentId)
-                        raise (ArgumentException("No loopId found in the arguments for scheduling task"))
+                            do! scheduler.ScheduleJob(job, trigger, ?cancellationToken = cancellationToken) |> Task.map ignore
 
-                with ex ->
-                    logger.LogError(ex, "Failed to schedule task for agent {agentId}", args.AgentId)
-                    raise ex
-            }),
-            JsonSerializerOptions.createDefault (),
-            functionName = SystemFunction.CreateScheduledTaskForAgent,
-            description =
-                fn.Name
-                + " "
-                + fn.Description
-                + "\nYou must specify SpecificTime or CronExpression accordingly. SpecificTime has higher priority if both are provided.",
-            loggerFactory = loggerFactory
-        )
+                            let addNotificationHandler = serviceProvider.GetRequiredService<IAddNotificationHandler>()
+                            do!
+                                addNotificationHandler.Handle(
+                                    NotificationSource.SchedulerForAgent {
+                                        Name = arguments.Identity
+                                        Group = Strings.SchedulerGroupForAgent
+                                        Author = data.Author
+                                        AgentId = data.AgentId
+                                        LoopId = data.LoopId
+                                    },
+                                    $"Scheduled {arguments.Identity}"
+                                )
+
+                        | _ ->
+                            logger.LogWarning("No loopId found in the arguments for scheduling task for agent {agentId}", arguments.AgentId)
+                            raise (ArgumentException("No loopId found in the arguments for scheduling task"))
+
+                    with ex ->
+                        logger.LogError(ex, "Failed to schedule task for agent {agentId}", arguments.AgentId)
+                        raise ex
+                }),
+                JsonSerializerOptions.createDefault (),
+                functionName = SystemFunction.CreateScheduledTaskForAgent,
+                description = description.ToString(),
+                loggerFactory = loggerFactory
+            )
+    }

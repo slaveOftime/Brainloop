@@ -221,6 +221,7 @@ type ChatCompletionHandler
                 transact (fun _ ->
                     targetContent.Items.Clear()
                     targetContent.Items.Add(LoopContentItem.Text stream) |> ignore
+                    targetContent.IncludedHistoryCount.Value <- Math.Max(0, contents.Count - 1)
                     targetContent.CancellationTokenSource.Value <- ValueSome wrapperCancellationTokenSource
                     targetContent.StreammingCount.Value <- 0
                     targetContent.ErrorMessage.Value <- ""
@@ -296,7 +297,7 @@ type ChatCompletionHandler
                                 | { Target = AgentFunctionTarget.Function id } -> Some id
                                 | _ -> None
                             )
-                        let! plugins = functionService.GetKernelPlugins(toolIds, cancellationToken = cancellationTokenSource.Token)
+                        let! plugins = functionService.GetKernelPlugins(toolIds, agentId = agentId, cancellationToken = cancellationTokenSource.Token)
                         kernel.Plugins.AddRange(plugins)
 
                     //let! aiContext = textSearchProvider.ModelInvokingAsync([||], cancellationToken = cancellationTokenSource.Token)
@@ -342,8 +343,8 @@ type ChatCompletionHandler
                                     }
                                     stream.Append(text) |> ignore
                                     transact (fun _ ->
-                                        if targetContent.InputTokens.Value <> 0 then
-                                            targetContent.InputTokens.Value <- targetContent.InputTokens.Value + int64 inputTokens
+                                        if targetContent.InputTokens.Value = 0 then
+                                            targetContent.InputTokens.Value <- int64 inputTokens
                                         targetContent.OutputTokens.Value <- targetContent.OutputTokens.Value + int64 outputTokens
                                     )
                                 }
@@ -415,7 +416,7 @@ type ChatCompletionHandler
                                 }
                                 stream.Append(text) |> ignore
                                 transact (fun _ ->
-                                    targetContent.InputTokens.Value <- targetContent.InputTokens.Value + int64 inputTokens
+                                    targetContent.InputTokens.Value <- int64 inputTokens
                                     targetContent.OutputTokens.Value <- targetContent.OutputTokens.Value + int64 outputTokens
                                 )
                             }
@@ -451,11 +452,7 @@ type ChatCompletionHandler
                 | :? TaskCanceledException as ex ->
                     logger.LogWarning("Complete chat cancelled with {name} {model}", model.Name, model.Model)
                     shouldContinue <- false
-                    transact (fun _ ->
-                        targetContent.ThinkDurationMs.Value <- oldThinkDurationMs
-                        targetContent.ErrorMessage.Value <- ex.Message
-                        targetContent.Items.Value <- IndexList.ofList oldItems
-                    )
+                    transact (fun _ -> targetContent.ErrorMessage.Value <- ex.Message)
                 | ex ->
                     logger.LogError(ex, "Complete chat failed with {name} {model}", model.Name, model.Model)
                     modelIndex <- modelIndex + 1
