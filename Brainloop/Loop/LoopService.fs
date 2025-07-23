@@ -66,8 +66,13 @@ type LoopService
             | ValueSome agent ->
                 let chatMessages = List<LoopContentWrapper>()
                 let! contents = loopContentService.GetOrCreateContentsCache(loopId)
-                if includeHistory then
-                    for item in contents |> AList.force |> _.TakeLast(Math.Max(0, agent.MaxHistory)) do
+                let historyToInclude = Math.Max(0, agent.MaxHistory)
+                if includeHistory && historyToInclude > 0 then
+                    let mutable previousCount = -1
+                    while historyToInclude > contents.Count && previousCount <> contents.Count do
+                        previousCount <- contents.Count
+                        do! loopContentService.LoadMoreContentsIntoCache(loopId)
+                    for item in contents |> AList.force |> _.TakeLast(historyToInclude) do
                         chatMessages.Add(item)
 
                 if inputContentId.IsNone then
@@ -108,7 +113,7 @@ type LoopService
 
 
         member _.Resend(loopId, loopContentId, ?modelId) = valueTask {
-            let! contents = loopContentService.GetOrCreateContentsCache(loopId) |> ValueTask.map AList.force
+            let! contents = loopContentService.GetOrCreateContentsCache(loopId)
             match contents |> Seq.tryFind (fun x -> x.Id = loopContentId) with
             | None -> failwith "No message found"
             | Some target ->
@@ -121,12 +126,24 @@ type LoopService
                         do! loopContentService.DeleteLoopContentsOfSource(loopId, loopContentId)
 
                         let chatMessages = List<LoopContentWrapper>()
-                        let includedHistoryCount =
+                        let historyToInclude =
                             match target.DirectPrompt.Value with
                             | ValueSome _ -> target.IncludedHistoryCount.Value
                             | ValueNone -> agent.MaxHistory
-                        for item in contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId) |> _.TakeLast(Math.Max(0, includedHistoryCount)) do
-                            chatMessages.Add(item)
+                            |> fun x -> Math.Max(0, x)
+
+                        let filterContents () = contents |> Seq.takeWhile (fun x -> x.Id <> loopContentId)
+
+                        let mutable previousCount = -1
+                        let mutable currentCount = filterContents () |> Seq.length
+                        while historyToInclude > currentCount && previousCount <> currentCount do
+                            previousCount <- currentCount
+                            do! loopContentService.LoadMoreContentsIntoCache(loopId)
+                            currentCount <- filterContents () |> Seq.length
+
+                        if historyToInclude > 0 then
+                            for item in filterContents () |> _.TakeLast(historyToInclude) do
+                                chatMessages.Add(item)
 
                         match target.DirectPrompt.Value with
                         | ValueSome(SafeString prompt) ->
