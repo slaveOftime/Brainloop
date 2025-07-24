@@ -158,6 +158,7 @@ type LoopContentView =
                                                 agentId = args.AgentId,
                                                 sourceLoopContentId = contentWrapper.Id,
                                                 ignoreInput = true,
+                                                includeHistory = false,
                                                 author = agent.Name,
                                                 role = LoopContentAuthorRole.Agent
                                             )
