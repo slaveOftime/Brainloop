@@ -197,12 +197,16 @@ type LoopService
                             | x -> x
                         )
 
-                    let! contents = loopContentService.GetOrCreateContentsCache(loopId) |> ValueTask.map AList.force
+                    let! contents = loopContentService.GetOrCreateContentsCache(loopId)
 
                     let chatMessages = List<ChatMessageContent>()
-                    for item in contents.Take(2) do
+
+                    let mutable index = 0
+                    while index < contents.Count && chatMessages.Count < 2 do
+                        let item = contents[index]
+                        index <- index + 1
                         let! content = loopContentService.ToChatMessageContent(item)
-                        chatMessages.Add(content)
+                        if content.Items.Count > 0 then chatMessages.Add(content)
 
                     if chatMessages.Count > 1 then
                         transact (fun _ ->

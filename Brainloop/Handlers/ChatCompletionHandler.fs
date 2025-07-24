@@ -310,7 +310,10 @@ type ChatCompletionHandler
                     let chatHistory = ChatHistory()
                     for content in contents do
                         let! chatMessage = loopContentService.ToChatMessageContent(content, model = model)
-                        chatHistory.Add(chatMessage)
+                        if chatMessage.Items.Count > 0 then
+                            chatHistory.Add(chatMessage)
+                        else
+                            logger.LogWarning("Chat message {contentId} has no items for chat", content.Id)
 
                     this.SetSystemPromptsForAgent(agent, chatHistory)
 
