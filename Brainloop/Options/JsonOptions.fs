@@ -1,16 +1,30 @@
 ﻿namespace System.Text.Json
 
 open System
+open System.Text
 open System.Text.Json
 open System.Text.Json.Nodes
 open System.Text.Json.Serialization
 open System.Text.Unicode
 open System.Text.Encodings.Web
-open System.Text
 
 
 [<RequireQualifiedAccess>]
 module JsonSerializerOptions =
+
+    type StringBooleanConverter() =
+        inherit JsonConverter<bool>()
+
+        override _.Read(reader: byref<Utf8JsonReader>, typeToConvert: Type, options: JsonSerializerOptions) =
+            match reader.TokenType with
+            | JsonTokenType.String ->
+                let success, value = Boolean.TryParse(reader.GetString())
+                if success then value else raise (JsonException("Cannot convert to bool."))
+            | JsonTokenType.True -> true
+            | JsonTokenType.False -> false
+            | _ -> raise (JsonException("Cannot convert to bool."))
+
+        override _.Write(writer: Utf8JsonWriter, value: bool, options: JsonSerializerOptions) = writer.WriteBooleanValue(value)
 
     let createDefault () =
         let options = JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -23,6 +37,8 @@ module JsonSerializerOptions =
         options.DefaultIgnoreCondition <- JsonIgnoreCondition.WhenWritingNull
         options.Encoder <- JavaScriptEncoder.Create UnicodeRanges.All
         options.WriteIndented <- true
+        options.Converters.Add(JsonStringEnumConverter())
+        options.Converters.Add(StringBooleanConverter())
         options
 
 
