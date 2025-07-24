@@ -25,7 +25,7 @@ type InvokeAgentArgs() =
     [<Description "If you want to get notification after the agent finish its task">]
     member val CallbackAfterFinish: bool = false with get, set
     [<Description "This is optional, when not provided it call the agent who triggered this tool/function">]
-    member val CallbackAgentId: Nullable<int> = Nullable() with get, set
+    member val CallbackAgentId: int = 0 with get, set
 
 
 type SystemInvokeAgentFunc
@@ -61,11 +61,10 @@ type SystemInvokeAgentFunc
 
                     if arguments.CallbackAfterFinish then
                         let nextAgentId =
-                            arguments.CallbackAgentId
-                            |> ValueOption.ofNullable
-                            |> function
-                                | ValueNone -> kernelArgs.AgentId
-                                | x -> x
+                            if arguments.CallbackAgentId > 0 then
+                                ValueSome arguments.CallbackAgentId
+                            else
+                                kernelArgs.AgentId
                         match nextAgentId with
                         | ValueNone -> ()
                         | ValueSome nextAgentId ->
@@ -81,7 +80,6 @@ type SystemInvokeAgentFunc
                                     includeHistory = true,
                                     cancellationToken = ct
                                 )
-
                 }
 
                 if arguments.WaitForFinish then do! task
