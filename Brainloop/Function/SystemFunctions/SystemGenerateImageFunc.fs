@@ -35,8 +35,9 @@ type SystemGenerateImageFunc
 
     member _.Create(fn: Function, config: SystemGenerateImageConfig, ?cancellationToken: CancellationToken) =
         KernelFunctionFactory.CreateFromMethod(
-            Func<GenerateImageArgs, KernelArguments, ValueTask<string>>(fun arguments kernelArgs -> valueTask {
+            Func<KernelArguments, ValueTask<string>>(fun kernelArgs -> valueTask {
                 try
+                    let arguments = kernelArgs.Get<GenerateImageArgs>()
                     logger.LogInformation("Generate image")
                     match config with
                     | SystemGenerateImageConfig.LLMModel config ->
@@ -103,5 +104,6 @@ type SystemGenerateImageFunc
             functionName = fn.Name,
             description = fn.Description,
             loggerFactory = loggerFactory,
+            parameters = KernelParameterMetadata.FromInstance(GenerateImageArgs()),
             returnParameter = KernelReturnParameterMetadata(Description = "Markdown string with image content", ParameterType = typeof<string>)
         )

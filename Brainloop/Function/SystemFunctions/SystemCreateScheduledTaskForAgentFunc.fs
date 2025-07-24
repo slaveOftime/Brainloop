@@ -128,7 +128,8 @@ type SystemCreateScheduledTaskForAgentFunc
 
         return
             KernelFunctionFactory.CreateFromMethod(
-                Func<CreateScheduleTaskForAgentArgs, KernelArguments, ValueTask<unit>>(fun arguments kernelArgs -> valueTask {
+                Func<KernelArguments, ValueTask<unit>>(fun kernelArgs -> valueTask {
+                    let arguments = kernelArgs.Get<CreateScheduleTaskForAgentArgs>()
                     try
                         match kernelArgs.TryGetValue(Strings.ToolCallLoopId) with
                         | true, (:? int64 as loopId) ->
@@ -196,6 +197,7 @@ type SystemCreateScheduledTaskForAgentFunc
                 JsonSerializerOptions.createDefault (),
                 functionName = SystemFunction.CreateScheduledTaskForAgent,
                 description = description.ToString(),
+                parameters = KernelParameterMetadata.FromInstance(CreateScheduleTaskForAgentArgs()),
                 loggerFactory = loggerFactory
             )
     }

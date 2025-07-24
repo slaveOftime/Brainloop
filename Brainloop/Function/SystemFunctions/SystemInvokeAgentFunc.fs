@@ -37,9 +37,10 @@ type SystemInvokeAgentFunc
         let functionName = $"call_agent_{agent.Id}"
 
         KernelFunctionFactory.CreateFromMethod(
-            Func<InvokeAgentArgs, KernelArguments, CancellationToken, Task<unit>>(fun arguments kernelArgs ct -> task {
+            Func<KernelArguments, CancellationToken, Task<unit>>(fun kernelArgs ct -> task {
                 logger.LogInformation("Call {agent} for help", agent.Name)
 
+                let arguments = kernelArgs.Get<InvokeAgentArgs>()
                 let sourceLoopContentId = kernelArgs.LoopContentId |> ValueOption.defaultValue sourceLoopContentId
 
                 let handler = serviceProvider.GetRequiredService<IChatCompletionForLoopHandler>()
@@ -88,6 +89,7 @@ type SystemInvokeAgentFunc
             JsonSerializerOptions.createDefault (),
             loggerFactory = loggerFactory,
             functionName = functionName,
+            parameters = KernelParameterMetadata.FromInstance(InvokeAgentArgs()),
             description =
                 $"AgentId={agent.Id}, AgentName={agentName}, AgentDescription={agent.Description}. This function will not return anything, you can specify some parameters to wait untill finish or ask for a callback if it is necessary."
         )

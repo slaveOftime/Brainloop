@@ -31,8 +31,9 @@ type SystemSendHttpFunc(logger: ILogger<SystemSendHttpFunc>, loggerFactory: ILog
 
     member _.Create(fn: Function, config: SystemSendHttpConfig) =
         KernelFunctionFactory.CreateFromMethod(
-            Func<SendHttpArgs, ValueTask<SendHttpResult | null>>(fun arguments -> valueTask {
+            Func<KernelArguments, ValueTask<SendHttpResult | null>>(fun args -> valueTask {
                 try
+                    let arguments = args.Get<SendHttpArgs>()
                     logger.LogInformation("Sending http request to {url}", arguments.Url)
 
                     use request =
@@ -94,5 +95,6 @@ type SystemSendHttpFunc(logger: ILogger<SystemSendHttpFunc>, loggerFactory: ILog
             JsonSerializerOptions.createDefault (),
             functionName = SystemFunction.SendHttp,
             description = fn.Name + " " + fn.Description,
+            parameters = KernelParameterMetadata.FromInstance(SendHttpArgs()),
             loggerFactory = loggerFactory
         )

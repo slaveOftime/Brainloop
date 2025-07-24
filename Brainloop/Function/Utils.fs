@@ -2,6 +2,9 @@
 module Brainloop.Function.Utils
 
 open System
+open System.Text.Json
+open System.ComponentModel
+open System.ComponentModel.DataAnnotations
 open Microsoft.SemanticKernel
 
 
@@ -64,3 +67,35 @@ type KernelArguments with
         match this.TryGetValue(Strings.ToolCallLoopContentId) with
         | true, (:? int64 as x) -> ValueSome x
         | _ -> ValueNone
+
+    member this.Get<'T>() =
+        this
+        |> toJson
+        |> fromJson<'T>
+        |> function
+            | ValueSome x -> x
+            | _ -> failwith $"Failed to get arguments {typeof<'T>}"
+
+
+type KernelParameterMetadata with
+    static member FromInstance(args: obj) = seq {
+        let argsType = args.GetType()
+        for prop in argsType.GetProperties() do
+            let defaultValue = prop.GetValue(args)
+            let isRequired =
+                match prop.PropertyType with
+                | _ when prop.GetCustomAttributes(typeof<RequiredAttribute>, ``inherit`` = true) |> Seq.isEmpty |> not -> true
+                | t when t.IsValueType -> false
+                | _ -> defaultValue <> null
+            KernelParameterMetadata(
+                prop.Name,
+                JsonSerializerOptions.createDefault (),
+                IsRequired = isRequired,
+                DefaultValue = defaultValue,
+                ParameterType = prop.PropertyType,
+                Description =
+                    match prop.GetCustomAttributes(typeof<DescriptionAttribute>, ``inherit`` = true) |> Seq.tryHead with
+                    | Some(:? DescriptionAttribute as x) -> x.Description
+                    | _ -> ""
+            )
+    }
