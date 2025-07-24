@@ -351,98 +351,9 @@ type LoopView =
               }
             | _ -> css { }
         }
-        html.inject (fun (hook: IComponentHook) -> MudButton'' {
-            style {
-                flexShrink 0
-                whiteSpaceNowrap
-            }
-            Size Size.Small
-            OnClick(fun _ ->
-                match contentWrapper.AgentId with
-                | ValueNone -> ()
-                | ValueSome agentId ->
-                    hook.ShowDialog(
-                        DialogOptions(MaxWidth = MaxWidth.Medium, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = false),
-                        fun ctx ->
-                            AgentCard.Dialog(
-                                agentId,
-                                fun _ ->
-                                    ctx.Close()
-                                    hook.StateHasChanged()
-                            )
-                    )
-            )
-            MudText'' {
-                Typo Typo.subtitle2
-                Color(
-                    if contentWrapper.AuthorRole = LoopContentAuthorRole.User then
-                        Color.Primary
-                    else
-                        Color.Default
-                )
-                contentWrapper.Author
-            }
-        })
-        adapt {
-            let! directPrompt = contentWrapper.DirectPrompt
-            match! sourceContent with
-            | ValueSome x when x.Author <> contentWrapper.Author && x.AuthorRole <> LoopContentAuthorRole.User -> MudTooltip'' {
-                Arrow
-                Placement Placement.Top
-                TooltipContent(
-                    match directPrompt with
-                    | ValueSome(SafeString x) -> div {
-                        style { maxWidth 300 }
-                        x
-                      }
-                    | _ -> html.none
-                )
-                MudChip'' {
-                    style {
-                        flexShrink 0
-                        whiteSpaceNowrap
-                    }
-                    Size Size.Small
-                    "by "
-                    x.Author
-                }
-              }
-            | _ -> ()
-        }
-        html.inject (fun (hook: IComponentHook, modelService: IModelService) -> adapt {
-            let! modelId = contentWrapper.ModelId
-            let! modelName =
-                match modelId with
-                | ValueNone -> AVal.constant ""
-                | ValueSome modelId ->
-                    modelService.TryGetModelWithCache(modelId)
-                    |> ValueTask.map (ValueOption.map _.Model >> ValueOption.defaultValue "")
-                    |> AVal.ofValueTask ""
-            if not (String.IsNullOrEmpty modelName) then
-                MudChip'' {
-                    style {
-                        flexShrink 0
-                        whiteSpaceNowrap
-                    }
-                    Size Size.Small
-                    OnClick(fun _ ->
-                        match contentWrapper.ModelId.Value with
-                        | ValueNone -> ()
-                        | ValueSome modelId ->
-                            hook.ShowDialog(
-                                DialogOptions(MaxWidth = MaxWidth.Medium, FullWidth = true),
-                                fun ctx ->
-                                    ModelCard.Dialog(
-                                        modelId,
-                                        fun _ ->
-                                            ctx.Close()
-                                            hook.StateHasChanged()
-                                    )
-                            )
-                    )
-                    modelName
-                }
-        })
+        LoopView.AuthorBtn(contentWrapper)
+        LoopView.SourceBtn(contentWrapper, sourceContent)
+        LoopView.ModelBtn(contentWrapper)
         LoopView.StopBtn(contentWrapper)
         LoopView.TokenUsage(contentWrapper)
         adapt {
@@ -553,7 +464,137 @@ type LoopView =
         LoopView.TokenUsage(contentWrapper)
     }
 
-    static member private RetryBtn(contentWrapper: LoopContentWrapper) : NodeRenderFragment =
+    static member private AuthorBtn(contentWrapper: LoopContentWrapper) : NodeRenderFragment =
+        html.inject (fun (hook: IComponentHook) -> MudButton'' {
+            style {
+                flexShrink 0
+                whiteSpaceNowrap
+            }
+            Size Size.Small
+            OnClick(fun _ ->
+                match contentWrapper.AgentId with
+                | ValueNone -> ()
+                | ValueSome agentId ->
+                    hook.ShowDialog(
+                        DialogOptions(MaxWidth = MaxWidth.Medium, FullWidth = true, BackdropClick = false, CloseOnEscapeKey = false),
+                        fun ctx ->
+                            AgentCard.Dialog(
+                                agentId,
+                                fun _ ->
+                                    ctx.Close()
+                                    hook.StateHasChanged()
+                            )
+                    )
+            )
+            MudText'' {
+                Typo Typo.subtitle2
+                Color(
+                    if contentWrapper.AuthorRole = LoopContentAuthorRole.User then
+                        Color.Primary
+                    else
+                        Color.Default
+                )
+                contentWrapper.Author
+            }
+        })
+
+    static member private SourceBtn(contentWrapper: LoopContentWrapper, sourceContent: LoopContentWrapper voption aval) : NodeRenderFragment = adapt {
+        match! sourceContent with
+        | ValueSome x when x.Author <> contentWrapper.Author && x.AuthorRole <> LoopContentAuthorRole.User ->
+            html.inject (fun (dialog: IDialogService) -> MudChip'' {
+                style {
+                    flexShrink 0
+                    whiteSpaceNowrap
+                }
+                Size Size.Small
+                OnClick(fun _ ->
+                    dialog.Show(
+                        DialogOptions(MaxWidth = MaxWidth.Small, FullWidth = true),
+                        fun ctx -> MudDialog'' {
+                            Header "Modify Prompt" ctx.Close
+                            DialogContent(
+                                adapt {
+                                    let! isStreaming = contentWrapper.IsStreaming
+                                    let! directPrompt, setDirectPrompt = contentWrapper.DirectPrompt.WithSetter()
+                                    match directPrompt with
+                                    | ValueSome x -> MudTextField'' {
+                                        FullWidth
+                                        Value x
+                                        ValueChanged(ValueSome >> setDirectPrompt)
+                                        Label "Prompt"
+                                        Lines 1
+                                        MaxLines 5
+                                        AutoGrow
+                                        AutoFocus
+                                        Required
+                                        ReadOnly isStreaming
+                                        Variant Variant.Outlined
+                                      }
+                                    | _ -> html.none
+                                }
+                            )
+                            DialogActions [| LoopView.RetryBtn(contentWrapper, onClicked = ctx.Close) |]
+                        }
+                    )
+                )
+                MudTooltip'' {
+                    Arrow
+                    Placement Placement.Top
+                    TooltipContent(
+                        adapt {
+                            let! directPrompt = contentWrapper.DirectPrompt
+                            match directPrompt with
+                            | ValueSome(SafeString x) -> div {
+                                style { maxWidth 300 }
+                                x
+                              }
+                            | _ -> html.none
+                        }
+                    )
+                    "by "
+                    x.Author
+                }
+            })
+        | _ -> ()
+    }
+
+    static member private ModelBtn(contentWrapper: LoopContentWrapper) : NodeRenderFragment =
+        html.inject (fun (hook: IComponentHook, modelService: IModelService) -> adapt {
+            let! modelId = contentWrapper.ModelId
+            let! modelName =
+                match modelId with
+                | ValueNone -> AVal.constant ""
+                | ValueSome modelId ->
+                    modelService.TryGetModelWithCache(modelId)
+                    |> ValueTask.map (ValueOption.map _.Model >> ValueOption.defaultValue "")
+                    |> AVal.ofValueTask ""
+            if not (String.IsNullOrEmpty modelName) then
+                MudChip'' {
+                    style {
+                        flexShrink 0
+                        whiteSpaceNowrap
+                    }
+                    Size Size.Small
+                    OnClick(fun _ ->
+                        match contentWrapper.ModelId.Value with
+                        | ValueNone -> ()
+                        | ValueSome modelId ->
+                            hook.ShowDialog(
+                                DialogOptions(MaxWidth = MaxWidth.Medium, FullWidth = true),
+                                fun ctx ->
+                                    ModelCard.Dialog(
+                                        modelId,
+                                        fun _ ->
+                                            ctx.Close()
+                                            hook.StateHasChanged()
+                                    )
+                            )
+                    )
+                    modelName
+                }
+        })
+
+    static member private RetryBtn(contentWrapper: LoopContentWrapper, ?onClicked: unit -> unit) : NodeRenderFragment =
         html.inject (fun (serviceProvider: IServiceProvider) ->
             let logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("LoopContentRegen")
             let JS = serviceProvider.GetRequiredService<IJSRuntime>()
@@ -599,7 +640,10 @@ type LoopView =
                             Icon Icons.Material.Filled.Repeat
                             Size Size.Small
                             Disabled(isSending || cancellationTokenSource.IsSome)
-                            OnClick(fun _ -> resend None)
+                            OnClick(fun _ ->
+                                onClicked |> Option.iter (fun fn -> fn ())
+                                resend None
+                            )
                         }
                         match agent with
                         | ValueSome agent when agent.AgentModels.Count > 1 -> MudMenu'' {
