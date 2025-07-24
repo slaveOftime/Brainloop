@@ -655,7 +655,10 @@ type LoopView =
                             adapt {
                                 for agentModel in agent.AgentModels |> Seq.sortBy _.Order do
                                     MudMenuItem'' {
-                                        OnClick(fun _ -> resend (Some agentModel.ModelId))
+                                        OnClick(fun _ ->
+                                            onClicked |> Option.iter (fun fn -> fn ())
+                                            resend (Some agentModel.ModelId)
+                                        )
                                         agentModel.Model.Name
                                     }
                             }

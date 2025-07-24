@@ -34,7 +34,7 @@ type SystemInvokeAgentFunc
     member _.Create(author: string, agentId: int, loopId: int64, sourceLoopContentId: int64) =
         let agent = dbService.DbContext.Queryable<Agent>().Where(fun (x: Agent) -> x.Id = agentId).First<Agent>()
         let agentName = if agent.Name.Contains " " then $"\"{agent.Name}\"" else agent.Name
-        let functionName = $"call_agent_{agent.Id}"
+        let functionName = $"call_agent_{agent.Id}_{agentName.KeepLetterAndDigits()}"
 
         KernelFunctionFactory.CreateFromMethod(
             Func<KernelArguments, CancellationToken, Task<unit>>(fun kernelArgs ct -> task {
