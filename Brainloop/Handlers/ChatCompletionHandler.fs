@@ -449,7 +449,7 @@ type ChatCompletionHandler
                         logger.LogError(ex, "Update used time failed for {model}", model.Name)
 
                 with
-                | :? TaskCanceledException as ex ->
+                | :? OperationCanceledException as ex ->
                     logger.LogWarning("Complete chat cancelled with {name} {model}", model.Name, model.Model)
                     shouldContinue <- false
                     transact (fun _ -> targetContent.ErrorMessage.Value <- ex.Message)

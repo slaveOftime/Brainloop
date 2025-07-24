@@ -116,7 +116,7 @@ type LoopSearcher =
                         for result in results do
                             transact (fun _ -> shareStore.SearchResults.Add(result) |> ignore)
                 with
-                | :? TaskCanceledException -> ()
+                | :? OperationCanceledException -> ()
                 | ex -> snackbar.ShowMessage(ex, logger)
 
                 transact (fun _ -> isSearching.Value <- false)
