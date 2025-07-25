@@ -343,30 +343,20 @@ type LoopsView =
                         dbService.DbContext
                             .Select<Loop>()
                             .Where(fun (x: Loop) -> x.LoopContents.Any(fun lc -> lc.Id = sourceLoopContentId))
-                            .FirstAsync(fun x -> x.Id, x.Description)
+                            .FirstAsync(fun x -> x.Id)
 
                     let sourceLoopContentId = loop.SourceLoopContentId.Value
-                    let! sourceLoopId, description = getSourceLoopId sourceLoopContentId
+                    let! sourceLoopId = getSourceLoopId sourceLoopContentId
 
                     if sourceLoopId > 0L then
                         return fragment {
-                            MudTooltip'' {
-                                Arrow
-                                Placement Placement.Left
-                                TooltipContent(
-                                    div {
-                                        style { maxWidth 300 }
-                                        description
-                                    }
+                            MudIconButton'' {
+                                Size Size.Small
+                                Icon Icons.Material.Filled.AdsClick
+                                OnClick(fun _ ->
+                                    transact (fun _ -> shareStore.LoopContentsFocusing[sourceLoopId] <- sourceLoopContentId)
+                                    hook.ToggleLoop(sourceLoopId, false)
                                 )
-                                MudIconButton'' {
-                                    Size Size.Small
-                                    Icon Icons.Material.Filled.AdsClick
-                                    OnClick(fun _ ->
-                                        transact (fun _ -> shareStore.LoopContentsFocusing[sourceLoopId] <- sourceLoopContentId)
-                                        hook.ToggleLoop(sourceLoopId, false)
-                                    )
-                                }
                             }
                         // TODO: Add a grapgh to display the relationship
                         //MudIconButton'' {
