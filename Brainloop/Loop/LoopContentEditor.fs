@@ -553,14 +553,13 @@ type LoopContentEditor =
     static member LockerView(contentWrapper: LoopContentWrapper, secret: string) : NodeRenderFragment =
         html.inject (fun (dialogService: IDialogService) -> MudPaper'' {
             style {
-                padding 20
+                padding 8
                 displayFlex
                 alignItemsCenter
                 justifyContentCenter
             }
             Elevation 5
             MudIconButton'' {
-                Size Size.Large
                 Icon Icons.Material.Filled.Lock
                 Color Color.Warning
                 OnClick(fun _ ->
