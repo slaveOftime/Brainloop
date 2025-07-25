@@ -1,6 +1,7 @@
 namespace Brainloop.Loop
 
 open System
+open System.Linq
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Microsoft.AspNetCore.Components.Web
@@ -103,7 +104,7 @@ type LoopsView =
                                 class' (if isLoading then "pulse" else "")
                                 Disabled isLoading
                                 Size Size.Small
-                                Icon Icons.Material.Filled.Refresh
+                                Icon Icons.Material.Filled.AutoFixHigh
                                 OnClick(fun _ -> task {
                                     try
                                         do! loopService.BuildTitle(activeLoop.Id)
@@ -137,9 +138,10 @@ type LoopsView =
                                 }
                             }
                         }
+                        LoopsView.SourceBtn(activeLoop)
                         MudIconButton'' {
                             Size Size.Small
-                            Icon Icons.Material.Filled.Close
+                            Icon Icons.Material.Outlined.DisabledByDefault
                             OnClick(fun _ -> hook.ToggleLoop(activeLoop.Id, true))
                         }
                     }
@@ -329,4 +331,108 @@ type LoopsView =
                         }
                     }
                 }
+        )
+
+
+    static member SourceBtn(loop: Loop) : NodeRenderFragment =
+        html.inject (
+            struct ("source-btn", loop),
+            fun (hook: IComponentHook, dbService: IDbService, shareStore: IShareStore, dialogService: IDialogService) -> task {
+                if loop.SourceLoopContentId.HasValue then
+                    let getSourceLoopId (sourceLoopContentId: int64) =
+                        dbService.DbContext
+                            .Select<Loop>()
+                            .Where(fun (x: Loop) -> x.LoopContents.Any(fun lc -> lc.Id = sourceLoopContentId))
+                            .FirstAsync(fun x -> x.Id, x.Description)
+
+                    let sourceLoopContentId = loop.SourceLoopContentId.Value
+                    let! sourceLoopId, description = getSourceLoopId sourceLoopContentId
+
+                    if sourceLoopId > 0L then
+                        return fragment {
+                            MudTooltip'' {
+                                Arrow
+                                Placement Placement.Left
+                                TooltipContent(
+                                    div {
+                                        style { maxWidth 300 }
+                                        description
+                                    }
+                                )
+                                MudIconButton'' {
+                                    Size Size.Small
+                                    Icon Icons.Material.Filled.AdsClick
+                                    OnClick(fun _ ->
+                                        transact (fun _ -> shareStore.LoopContentsFocusing[sourceLoopId] <- sourceLoopContentId)
+                                        hook.ToggleLoop(sourceLoopId, false)
+                                    )
+                                }
+                            }
+                        // TODO: Add a grapgh to display the relationship
+                        //MudIconButton'' {
+                        //    Size Size.Small
+                        //    Icon Icons.Material.Filled.Merge
+                        //    OnClick(fun _ -> task {
+                        //        let mutable sourceLoopId = sourceLoopId
+                        //        let mutable shouldContinue = true
+                        //        while shouldContinue do
+                        //            let! loopContentId =
+                        //                dbService.DbContext
+                        //                    .Select<Loop>()
+                        //                    .Where(fun (x: Loop) -> x.Id = sourceLoopId)
+                        //                    .FirstAsync(fun x -> x.SourceLoopContentId)
+                        //            let loopContentId = loopContentId.Value
+                        //            if loopContentId > 0L then
+                        //                let! loopId = getSourceLoopId loopContentId
+                        //                if loopId > 0L then sourceLoopId <- loopId else shouldContinue <- false
+                        //            else
+                        //                shouldContinue <- false
+
+                        //        let codeId = $"source-loop-mermaid-{sourceLoopId}"
+                        //        dialogService.Show(
+                        //            DialogOptions(MaxWidth = MaxWidth.ExtraLarge, FullWidth = true),
+                        //            fun ctx -> MudDialog'' {
+                        //                Header "Preview" ctx.Close
+                        //                DialogContent(
+                        //                    div {
+                        //                        style {
+                        //                            overflowHidden
+                        //                            height "calc(100vh - 200px)"
+                        //                        }
+                        //                        styleElt {
+                        //                            ruleset """pre[class*="language-"]""" {
+                        //                                overflowYAuto
+                        //                                height "100%"
+                        //                                maxHeight "100% !important"
+                        //                            }
+                        //                        }
+                        //                        pre { class' "mermaid" }
+                        //                        adapt {
+                        //                            let! isDarkMode = shareStore.IsDarkMode
+                        //                            script {
+                        //                                $$"""
+                        //                                mermaid.init(
+                        //                                    {
+                        //                                        securityLevel: 'loose',
+                        //                                        theme: '{{if isDarkMode then "dark" else "neutral"}}',
+                        //                                        deterministicIds: true,
+                        //                                        deterministicIDSeed: '{{CodeBlockRenderer.GetNextMermaidIdSeed()}}',
+                        //                                    },
+                        //                                    document.getElementById('{{codeId}}')
+                        //                                );
+                        //                                """
+                        //                            }
+                        //                        }
+                        //                    }
+                        //                )
+                        //            }
+                        //        )
+                        //    })
+                        //}
+                        }
+                    else
+                        return html.none
+                else
+                    return html.none
+            }
         )

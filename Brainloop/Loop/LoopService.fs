@@ -29,6 +29,26 @@ type LoopService
         logger: ILogger<LoopService>
     ) as this =
 
+    member _.AddSourceLoopContents(chatMessages: List<LoopContentWrapper>, loopId: int64, historyToInclude: int) =
+        if historyToInclude > chatMessages.Count then
+            let sourceLoopContentId =
+                dbService.DbContext.Select<Loop>().Where(fun (x: Loop) -> x.Id = loopId).First(fun x -> x.SourceLoopContentId)
+            if sourceLoopContentId.HasValue && sourceLoopContentId.Value > 0L then
+                let sourceLoopContentId = sourceLoopContentId.Value
+                let sourceLoopId =
+                    dbService.DbContext.Select<LoopContent>().Where(fun (x: LoopContent) -> x.Id = sourceLoopContentId).First(fun x -> x.LoopId)
+                if sourceLoopId >= 0L then
+                    let sourceContents =
+                        dbService.DbContext
+                            .Select<LoopContent>()
+                            .Where(fun (x: LoopContent) -> x.LoopId = sourceLoopId && x.Id <= sourceLoopContentId)
+                            .OrderBy(fun x -> x.Id)
+                            .Take(historyToInclude - chatMessages.Count)
+                            .ToList()
+                            .OrderByDescending(fun x -> x.Id)
+                    for item in sourceContents do
+                        chatMessages.Insert(0, LoopContentWrapper.FromLoopContent(item))
+                    this.AddSourceLoopContents(chatMessages, sourceLoopId, historyToInclude)
 
     interface ILoopService with
         member _.Send(loopId, message, ?agentId, ?modelId, ?author, ?role, ?includeHistory, ?ignoreInput, ?sourceLoopContentId, ?cancellationToken) = valueTask {
@@ -74,6 +94,7 @@ type LoopService
                         do! loopContentService.LoadMoreContentsIntoCache(loopId)
                     for item in contents |> AList.force |> _.TakeLast(historyToInclude) do
                         chatMessages.Add(item)
+                    this.AddSourceLoopContents(chatMessages, loopId, historyToInclude)
 
                 if inputContentId.IsNone then
                     chatMessages.Add(
@@ -144,6 +165,7 @@ type LoopService
                         if historyToInclude > 0 then
                             for item in filterContents () |> _.TakeLast(historyToInclude) do
                                 chatMessages.Add(item)
+                            this.AddSourceLoopContents(chatMessages, loopId, historyToInclude)
 
                         match target.DirectPrompt.Value with
                         | ValueSome(SafeString prompt) ->

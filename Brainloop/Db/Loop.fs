@@ -10,6 +10,7 @@ type Loop = {
     Description: string
     LoopContents: ICollection<LoopContent>
     Closed: bool
+    SourceLoopContentId: int64 Nullable
     CreatedAt: DateTime
     UpdatedAt: DateTime
 } with
@@ -19,6 +20,7 @@ type Loop = {
         Description = ""
         LoopContents = [||]
         Closed = false
+        SourceLoopContentId = Nullable()
         CreatedAt = DateTime.Now
         UpdatedAt = DateTime.Now
     }

@@ -460,6 +460,22 @@ type LoopView =
                 })
             | ValueNone -> ()
         }
+        html.inject (fun (hook: IComponentHook, dbService: IDbService) -> MudIconButton'' {
+            Size Size.Small
+            Icon Icons.Material.Filled.AirlineStops
+            OnClick(fun _ -> task {
+                let! id =
+                    dbService.DbContext
+                        .Insert<Loop>(
+                            {
+                                Loop.Default with
+                                    SourceLoopContentId = Nullable contentWrapper.Id
+                            }
+                        )
+                        .ExecuteIdentityAsync()
+                do! hook.ToggleLoop(id, false)
+            })
+        })
         LoopView.StopBtn(contentWrapper)
         LoopView.TokenUsage(contentWrapper)
     }

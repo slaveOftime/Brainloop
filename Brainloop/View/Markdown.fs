@@ -174,7 +174,7 @@ type CodeBlockRenderer() =
     static let mutable mermaidCount = 0
 
     // https://github.com/mermaid-js/mermaid/blob/develop/packages/mermaid/src/utils.ts#L755
-    static let getNextMermaidIdSeed () =
+    static member GetNextMermaidIdSeed() =
         lock
             mermaidCountLock
             (fun () ->
@@ -227,7 +227,7 @@ type CodeBlockRenderer() =
                                             securityLevel: 'loose',
                                             theme: '{{if isDarkMode then "dark" else "neutral"}}',
                                             deterministicIds: true, 
-                                            deterministicIDSeed: '{{getNextMermaidIdSeed ()}}',
+                                            deterministicIDSeed: '{{CodeBlockRenderer.GetNextMermaidIdSeed()}}',
                                         },
                                         document.getElementById('{{codeId}}')
                                     );
