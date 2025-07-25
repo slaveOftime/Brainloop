@@ -642,6 +642,7 @@ type LoopContentView =
                         | LoopContentItem.ToolCall x -> if not ignoreToolCall then LoopContentView.ToolCall(contentWrapper, x, index)
                         | LoopContentItem.File x -> LoopContentView.File(x)
                         | LoopContentItem.Excalidraw x -> LoopContentView.Excalidraw(contentWrapper, x)
+                        | LoopContentItem.Secret x -> LoopContentEditor.LockerView(contentWrapper, x)
                 }
 
                 let contentRawView = pre {
@@ -656,6 +657,7 @@ type LoopContentView =
                         for item in items do
                             match item with
                             | LoopContentItem.Text x -> html.text x.Text
+                            | LoopContentItem.Secret x -> html.text x
                             | LoopContentItem.File x -> LoopContentView.File(x)
                             | LoopContentItem.Excalidraw x -> LoopContentView.Excalidraw(contentWrapper, x)
                             | LoopContentItem.ToolCall x ->

@@ -417,26 +417,8 @@ type LoopView =
             | _ -> ()
         }
         LoopView.CopyBtn(contentWrapper)
-        html.inject (fun (JS: IJSRuntime) -> adapt {
-            let! isStreaming = contentWrapper.StreammingCount |> AVal.map (fun x -> x > -1)
-            if not isStreaming then
-                LoopView.DeleteBtn(contentWrapper)
-                MudIconButton'' {
-                    Size Size.Small
-                    Icon Icons.Material.Filled.Edit
-                    Disabled isStreaming
-                    OnClick(fun _ -> task {
-                        isEditing.Publish true
-                        do! Async.Sleep 100
-                        do!
-                            JS.ScrollToElementBottom(
-                                Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
-                                Strings.GetLoopContentContainerDomId(contentWrapper.Id),
-                                smooth = true
-                            )
-                    })
-                }
-        })
+        LoopView.EditBtn(contentWrapper, isEditing)
+        LoopView.LockBtn(contentWrapper, isEditing)
         region {
             match contentWrapper.AuthorRole with
             | LoopContentAuthorRole.System -> ()
@@ -574,6 +556,30 @@ type LoopView =
         | _ -> ()
     }
 
+    static member private EditBtn(contentWrapper: LoopContentWrapper, isEditing: bool cval) : NodeRenderFragment =
+        html.inject (fun (JS: IJSRuntime) -> adapt {
+            let! isEditing' = isEditing
+            let! isEncrypted = contentWrapper.IsEncrypted
+            let! isStreaming = contentWrapper.IsStreaming
+            if not isStreaming && not isEditing' && not isEncrypted then
+                LoopView.DeleteBtn(contentWrapper)
+                MudIconButton'' {
+                    Size Size.Small
+                    Icon Icons.Material.Filled.Edit
+                    Disabled isStreaming
+                    OnClick(fun _ -> task {
+                        isEditing.Publish true
+                        do! Async.Sleep 100
+                        do!
+                            JS.ScrollToElementBottom(
+                                Strings.GetLoopContentsContainerDomId(contentWrapper.LoopId),
+                                Strings.GetLoopContentContainerDomId(contentWrapper.Id),
+                                smooth = true
+                            )
+                    })
+                }
+        })
+
     static member private ModelBtn(contentWrapper: LoopContentWrapper) : NodeRenderFragment =
         html.inject (fun (hook: IComponentHook, modelService: IModelService) -> adapt {
             let! modelId = contentWrapper.ModelId
@@ -695,6 +701,24 @@ type LoopView =
           }
         | _ -> ()
     }
+
+    static member private LockBtn(contentWrapper: LoopContentWrapper, isEditing: bool aval) : NodeRenderFragment =
+        html.inject (fun (dialogService: IDialogService) -> adapt {
+            let! isEditing = isEditing
+            let! isEncrypted = contentWrapper.IsEncrypted
+            match isEditing, isEncrypted with
+            | false, false -> MudIconButton'' {
+                Size Size.Small
+                Icon Icons.Material.Filled.Lock
+                OnClick(fun _ ->
+                    dialogService.Show(
+                        DialogOptions(MaxWidth = MaxWidth.ExtraSmall, FullWidth = true),
+                        fun ctx -> LoopContentEditor.EncryptDialog(contentWrapper, ctx.Close)
+                    )
+                )
+              }
+            | _ -> ()
+        })
 
     static member private CopyBtn(contentWrapper: LoopContentWrapper) : NodeRenderFragment =
         html.inject (fun (serviceProvider: IServiceProvider) ->

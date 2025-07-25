@@ -39,6 +39,7 @@ type LoopContent = {
     ErrorMessage: string | null
     DirectPrompt: string | null
     IncludedHistoryCount: int Nullable
+    IsSecret: bool
     ThinkDurationMs: int
     TotalDurationMs: int
     CreatedAt: DateTime

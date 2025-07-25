@@ -103,6 +103,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AlwaysSecure" Version="0.0.1" />
 		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
 		<PackageReference Include="CliWrap" Version="3.9.0" />
 		<PackageReference Include="FreeSql.DbContext" Version="3.5.210" />

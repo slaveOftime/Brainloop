@@ -245,6 +245,7 @@ type LoopContentService
                 | LoopContentItem.File x -> do! handleFile x.Name
                 | LoopContentItem.Excalidraw x -> do! handleFile x.ImageFileName
                 | LoopContentItem.ToolCall x -> items.Add(TextContent $"Invoked tool: {x.FunctionName} {x.Description}")
+                | LoopContentItem.Secret _ -> ()
                 | LoopContentItem.Text x ->
                     for block in x.Blocks do
                         match block with

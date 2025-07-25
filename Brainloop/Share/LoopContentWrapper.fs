@@ -27,6 +27,7 @@ type LoopContentWrapper = {
     Items: LoopContentItem clist
     DirectPrompt: string voption cval
     IncludedHistoryCount: int cval
+    IsSecret: bool cval
     ErrorMessage: string cval
     ThinkDurationMs: int cval
     TotalDurationMs: int cval
@@ -50,6 +51,7 @@ type LoopContentWrapper = {
         Items = clist ()
         DirectPrompt = cval ValueNone
         IncludedHistoryCount = cval 0
+        IsSecret = cval false
         ErrorMessage = cval ""
         ThinkDurationMs = cval 0
         TotalDurationMs = cval 0
@@ -86,6 +88,7 @@ type LoopContentWrapper = {
                 | _ -> ValueNone
             )
         IncludedHistoryCount = cval (content.IncludedHistoryCount |> ValueOption.ofNullable |> ValueOption.defaultValue 0)
+        IsSecret = cval content.IsSecret
         CancellationTokenSource = cval ValueNone
         ErrorMessage = cval content.ErrorMessage
         ThinkDurationMs = cval content.ThinkDurationMs
@@ -109,6 +112,7 @@ type LoopContentWrapper = {
             | ValueSome(SafeString x) -> x
             | _ -> null
         IncludedHistoryCount = this.IncludedHistoryCount.Value |> Nullable
+        IsSecret = this.IsSecret.Value
         ErrorMessage =
             match this.ErrorMessage.Value with
             | SafeString x -> x
@@ -143,6 +147,7 @@ type LoopContentWrapper = {
             | LoopContentItem.Excalidraw _ -> sb.AppendLine("Excalidraw") |> ignore
             | LoopContentItem.ToolCall { Result = ValueSome result } -> sb.AppendLine().AppendLine(JsonSerializer.Prettier result) |> ignore
             | LoopContentItem.ToolCall _ -> ()
+            | LoopContentItem.Secret _ -> ()
 
         sb.ToString()
 
@@ -158,6 +163,14 @@ type LoopContentWrapper = {
 
     member this.IsStreaming = this.StreammingCount |> AVal.map (fun x -> x > -1)
 
+    member this.IsEncrypted =
+        this.Items
+        |> AList.tryFirst
+        |> AVal.map (
+            function
+            | Some(LoopContentItem.Secret _) when this.Items.Count = 1 -> true
+            | _ -> false
+        )
 
 [<RequireQualifiedAccess; Struct>]
 type ToolCallUserAction =
@@ -248,9 +261,11 @@ type LoopContentItem =
     | ToolCall of toolCall: LoopContentToolCall
     | File of file: LoopContentFile
     | Excalidraw of excalidraw: LoopContentExcalidraw
+    | Secret of string
 
     override this.ToString() : string =
         match this with
+        | LoopContentItem.Secret x -> x
         | LoopContentItem.Excalidraw x -> x.JsonData
         | LoopContentItem.Text x -> x.Text
         | LoopContentItem.File x -> "File: " + x.Name
