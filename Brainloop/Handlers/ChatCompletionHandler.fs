@@ -458,10 +458,21 @@ type ChatCompletionHandler
                     transact (fun _ -> targetContent.ErrorMessage.Value <- ex.Message)
                 | ex ->
                     logger.LogError(ex, "Complete chat failed with {name} {model}", model.Name, model.Model)
+                    
                     modelIndex <- modelIndex + 1
+
+                    let errorMsg =
+                        ex.Message
+                        + ". "
+                        + match ex with
+                          | :? HttpOperationException as ex ->
+                              logger.LogError("Chat completion failed with {content}", ex.ResponseContent)
+                              ex.ResponseContent
+                          | _ -> ""
+                    
                     transact (fun _ ->
                         targetContent.ThinkDurationMs.Value <- 0
-                        targetContent.ErrorMessage.Value <- ex.Message
+                        targetContent.ErrorMessage.Value <- errorMsg
                     )
 
             // Finish and wrapup
