@@ -221,8 +221,24 @@ type LoopToolCallView =
                                     MaxLines 10
                                     AutoGrow
                                   }
+                                | :? JsonElement as argValue when argKey <> "html" && argValue.ValueKind = JsonValueKind.String -> MudTextField'' {
+                                    Value(argValue.GetString())
+                                    ValueChanged(fun x -> toolCall.Arguments[argKey] <- x)
+                                    FullWidth
+                                    Margin Margin.Dense
+                                    Variant Variant.Outlined
+                                    ReadOnly isReadonly
+                                    Lines 1
+                                    MaxLines 10
+                                    AutoGrow
+                                  }
                                 | :? bool as argValue -> MudSwitch'' {
                                     Value argValue
+                                    ValueChanged(fun x -> toolCall.Arguments[argKey] <- x)
+                                    ReadOnly isReadonly
+                                  }
+                                | :? JsonElement as argValue when argValue.ValueKind = JsonValueKind.False || argValue.ValueKind = JsonValueKind.True -> MudSwitch'' {
+                                    Value(argValue.GetBoolean())
                                     ValueChanged(fun x -> toolCall.Arguments[argKey] <- x)
                                     ReadOnly isReadonly
                                   }
@@ -236,6 +252,14 @@ type LoopToolCallView =
                                   }
                                 | :? float as argValue -> MudNumericField'' {
                                     Value argValue
+                                    ValueChanged(fun x -> toolCall.Arguments[argKey] <- x)
+                                    FullWidth
+                                    Margin Margin.Dense
+                                    Variant Variant.Outlined
+                                    ReadOnly isReadonly
+                                  }
+                                | :? JsonElement as argValue when argValue.ValueKind = JsonValueKind.Number -> MudNumericField'' {
+                                    Value(argValue.GetDouble())
                                     ValueChanged(fun x -> toolCall.Arguments[argKey] <- x)
                                     FullWidth
                                     Margin Margin.Dense

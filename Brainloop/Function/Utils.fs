@@ -6,6 +6,7 @@ open System.Text.Json
 open System.ComponentModel
 open System.ComponentModel.DataAnnotations
 open Microsoft.SemanticKernel
+open Brainloop.Db
 
 
 [<RequireQualifiedAccess>]
@@ -99,3 +100,10 @@ type KernelParameterMetadata with
                     | _ -> ""
             )
     }
+
+
+type Function with
+
+    member fn.McpFunctionName = Function.MakeMcpFunctioName(fn.Id, fn.Name)
+
+    static member MakeMcpFunctioName(id: int, name: string) = name + "-" + string id

@@ -175,6 +175,7 @@ type FunctionCard =
                     gap 16
                 }
                 adapt {
+                    let! functionId = functionForm.UseFieldValue(fun x -> x.Id)
                     let! functionName = functionForm.UseFieldValue(fun x -> x.Name)
                     let! functionType, setFunctionType = functionForm.UseField(fun x -> x.Type)
                     match functionType with
@@ -402,7 +403,7 @@ type FunctionCard =
                                         )
                                 )
                             }
-                        McpToolsChecker.Create(functionName, functionConfig)
+                        McpToolsChecker.Create(Function.MakeMcpFunctioName(functionId, functionName), functionConfig)
                 }
             }
         }

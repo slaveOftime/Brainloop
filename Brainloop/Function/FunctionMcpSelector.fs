@@ -25,6 +25,7 @@ type McpToolsChecker =
                 let loadOrRefreshTools () = task {
                     isLoadingFunctions.Publish(true)
                     try
+                        config.ClearToolsCache(name, memoryCache)
                         let! fns = config.GetTools(name, memoryCache, loggerFactory)
                         tools <- fns
                         isOpen.Publish(true)
@@ -59,7 +60,7 @@ type McpToolsChecker =
                         let! isOpen' = isOpen
                         MudDialog'' {
                             Visible isOpen'
-                            Options(DialogOptions(BackdropClick = true, CloseOnEscapeKey = true))
+                            Options(DialogOptions(BackdropClick = true, CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true))
                             OnBackdropClick(fun _ -> isOpen.Publish(false))
                             TitleContent "MCP Tools"
                             DialogContent(

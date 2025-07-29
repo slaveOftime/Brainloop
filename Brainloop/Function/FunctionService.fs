@@ -73,7 +73,7 @@ type FunctionService
                         | McpConfig.STDIO _ -> None
                     let! fns =
                         config.GetTools(
-                            fn.Name + "-" + string fn.Id,
+                            fn.McpFunctionName,
                             memoryCache,
                             loggerFactory,
                             ?httpClient = httpClient,
