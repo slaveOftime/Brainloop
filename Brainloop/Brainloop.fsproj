@@ -106,10 +106,10 @@
 		<PackageReference Include="AlwaysSecure" Version="0.0.1" />
 		<PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
 		<PackageReference Include="CliWrap" Version="3.9.0" />
-		<PackageReference Include="FreeSql.DbContext" Version="3.5.210" />
-		<PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.210" />
-		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.210" />
-		<PackageReference Include="FreeSql.Provider.SqlServer" Version="3.5.210" />
+		<PackageReference Include="FreeSql.DbContext" Version="3.5.211" />
+		<PackageReference Include="FreeSql.Provider.PostgreSQL" Version="3.5.211" />
+		<PackageReference Include="FreeSql.Provider.Sqlite" Version="3.5.211" />
+		<PackageReference Include="FreeSql.Provider.SqlServer" Version="3.5.211" />
 		<PackageReference Include="FSharp.Control.FusionTasks" Version="2.6.0" />
 		<PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
 		<PackageReference Include="FSharp.Data.Adaptive" Version="1.2.24" />
@@ -122,20 +122,20 @@
 		<PackageReference Include="Fun.Blazor.MudBlazor" Version="8.7.0" />
 		<PackageReference Include="IcedTasks" Version="0.11.8" />
 		<PackageReference Include="Markdig" Version="0.41.3" />
-		<PackageReference Include="Microsoft.SemanticKernel" Version="1.60.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.60.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.60.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.60.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.60.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.60.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Milvus" Version="1.60.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Chroma" Version="1.60.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.60.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.60.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.60.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.60.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.60.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.60.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.61.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.61.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.61.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.61.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.61.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.61.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Milvus" Version="1.61.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Chroma" Version="1.61.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.61.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.61.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.61.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.61.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.61.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.61.0-alpha" />
 		<PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.3" />
 		<PackageReference Include="OllamaSharp" Version="5.3.3" />
 		<PackageReference Include="PdfPig" Version="0.1.10" />
