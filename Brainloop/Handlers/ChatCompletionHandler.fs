@@ -315,6 +315,7 @@ type ChatCompletionHandler
                     for content in contents do
                         let! chatMessage = loopContentService.ToChatMessageContent(content, model = model)
                         if chatMessage.Items.Count > 0 then
+                            chatMessage.Role <- if content.Author <> agent.Name then AuthorRole.User else AuthorRole.Assistant
                             chatHistory.Add(chatMessage)
                         else
                             logger.LogWarning("Chat message {contentId} has no items for chat", content.Id)

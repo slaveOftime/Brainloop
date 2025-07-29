@@ -228,6 +228,7 @@ type LoopService
                         let item = contents[index]
                         index <- index + 1
                         let! content = loopContentService.ToChatMessageContent(item)
+                        content.Role <- AuthorRole.User
                         if content.Items.Count > 0 then chatMessages.Add(content)
 
                     if chatMessages.Count > 1 then
