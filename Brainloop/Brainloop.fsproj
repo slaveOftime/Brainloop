@@ -78,6 +78,7 @@
 		<Compile Include="Loop\LoopService.fs" />
 		<Compile Include="Loop\Hooks.fs" />
 		<Compile Include="Loop\LoopContentEditor.fs" />
+		<Compile Include="Loop\LoopToolCallView.fs" />
 		<Compile Include="Loop\LoopContentView.fs" />
 		<Compile Include="Loop\LoopUserInput.fs" />
 		<Compile Include="Loop\LoopSearcher.fs" />

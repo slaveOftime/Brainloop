@@ -106,6 +106,10 @@ type ChatCompletionHandler
                     functionWatch.Start()
 
                     logger.LogInformation("Function {functionName} is invoking", functionName)
+
+                    for kv in toolCall.Arguments do
+                        context.Arguments[kv.Key] <- kv.Value
+
                     context.Arguments.Add(Strings.ToolCallAgentId, agent.Id)
                     context.Arguments.Add(Strings.ToolCallLoopId, targetContent.LoopId)
                     context.Arguments.Add(Strings.ToolCallLoopContentId, targetContent.Id)
@@ -458,7 +462,7 @@ type ChatCompletionHandler
                     transact (fun _ -> targetContent.ErrorMessage.Value <- ex.Message)
                 | ex ->
                     logger.LogError(ex, "Complete chat failed with {name} {model}", model.Name, model.Model)
-                    
+
                     modelIndex <- modelIndex + 1
 
                     let errorMsg =
@@ -469,7 +473,7 @@ type ChatCompletionHandler
                               logger.LogError("Chat completion failed with {content}", ex.ResponseContent)
                               ex.ResponseContent
                           | _ -> ""
-                    
+
                     transact (fun _ ->
                         targetContent.ThinkDurationMs.Value <- 0
                         targetContent.ErrorMessage.Value <- errorMsg
