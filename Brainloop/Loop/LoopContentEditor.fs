@@ -122,6 +122,25 @@ type LoopContentEditor =
                         "Delete"
                     }
                     adapt {
+                        match! contentWrapper.IsSecret with
+                        | true -> ()
+                        | false ->
+                            let! hasChanges = hasChanges
+                            MudButton'' {
+                                Size Size.Small
+                                Color Color.Primary
+                                Variant Variant.Outlined
+                                Disabled(not hasChanges)
+                                StartIcon Icons.Material.Filled.Lock
+                                OnClick(fun _ -> task {
+                                    onClose ()
+                                    contentWrapper.IsSecret.Publish(true)
+                                    do! saveChanges ()
+                                })
+                                "Save"
+                            }
+                    }
+                    adapt {
                         let! hasChanges = hasChanges
                         MudButton'' {
                             Size Size.Small
@@ -217,7 +236,7 @@ type LoopContentEditor =
                             Icon Icons.Material.Filled.Fullscreen
                             OnClick(fun _ ->
                                 dialog.Show(
-                                    DialogOptions(FullWidth = true, MaxWidth = MaxWidth.Large),
+                                    DialogOptions(FullWidth = true, MaxWidth = MaxWidth.Medium),
                                     fun ctx -> MudDialog'' {
                                         Header "Edit Loop Content" ctx.Close
                                         DialogContent(
@@ -417,38 +436,57 @@ type LoopContentEditor =
             let pass = cval ""
             let confirmPass = cval ""
 
+            let encrypt () = task {
+                if not (String.IsNullOrWhiteSpace pass.Value) && pass.Value = confirmPass.Value then
+                    try
+                        let secret = AlwaysSecure.aesEncrypt pass.Value (toJson contentWrapper.Items.Value)
+                        transact (fun _ ->
+                            contentWrapper.Items.Clear()
+                            contentWrapper.Items.Add(LoopContentItem.Secret secret) |> ignore
+                            contentWrapper.IsSecret.Value <- true
+                        )
+                        let! _ = loopContentService.UpsertLoopContent(contentWrapper)
+                        onClose ()
+                        onEncrypted |> Option.iter (fun fn -> fn ())
+                    with ex ->
+                        dialogService.ShowMessage("Failed to lock the content", ex.Message, severity = Severity.Error)
+            }
+
             MudDialog'' {
                 Header "Lock the content" onClose
                 DialogContent(
-                    div {
-                        style {
-                            displayFlex
-                            flexDirectionColumn
-                            gap 12
-                        }
-                        adapt {
-                            let! binding = pass.WithSetter()
-                            MudTextField'' {
-                                Label "Password"
-                                Value' binding
-                                Variant Variant.Outlined
-                                InputType InputType.Password
-                                FullWidth
-                                AutoFocus
-                                Adornment Adornment.Start
-                                AdornmentIcon Icons.Material.Filled.Password
+                    MudFocusTrap'' {
+                        div {
+                            style {
+                                displayFlex
+                                flexDirectionColumn
+                                gap 12
                             }
-                        }
-                        adapt {
-                            let! binding = confirmPass.WithSetter()
-                            MudTextField'' {
-                                Label "Confirm Password"
-                                Value' binding
-                                Variant Variant.Outlined
-                                InputType InputType.Password
-                                FullWidth
-                                Adornment Adornment.Start
-                                AdornmentIcon Icons.Material.Filled.Password
+                            adapt {
+                                let! binding = pass.WithSetter()
+                                MudTextField'' {
+                                    Label "Password"
+                                    Value' binding
+                                    Variant Variant.Outlined
+                                    InputType InputType.Password
+                                    FullWidth
+                                    AutoFocus
+                                    Adornment Adornment.Start
+                                    AdornmentIcon Icons.Material.Filled.Password
+                                }
+                            }
+                            adapt {
+                                let! binding = confirmPass.WithSetter()
+                                MudTextField'' {
+                                    Label "Confirm Password"
+                                    Value' binding
+                                    Variant Variant.Outlined
+                                    InputType InputType.Password
+                                    FullWidth
+                                    Adornment Adornment.Start
+                                    AdornmentIcon Icons.Material.Filled.Password
+                                    OnKeyUp(fun e -> task { if e.Key = "Enter" then do! encrypt () })
+                                }
                             }
                         }
                     }
@@ -461,20 +499,7 @@ type LoopContentEditor =
                             Color Color.Primary
                             Variant Variant.Filled
                             Disabled(String.IsNullOrWhiteSpace pass || pass <> confirmPass)
-                            OnClick(fun _ -> task {
-                                try
-                                    let secret = AlwaysSecure.aesEncrypt pass (toJson contentWrapper.Items.Value)
-                                    transact (fun _ ->
-                                        contentWrapper.Items.Clear()
-                                        contentWrapper.Items.Add(LoopContentItem.Secret secret) |> ignore
-                                        contentWrapper.IsSecret.Value <- true
-                                    )
-                                    let! _ = loopContentService.UpsertLoopContent(contentWrapper)
-                                    onClose ()
-                                    onEncrypted |> Option.iter (fun fn -> fn ())
-                                with ex ->
-                                    dialogService.ShowMessage("Failed to lock the content", ex.Message, severity = Severity.Error)
-                            })
+                            OnClick(ignore >> encrypt)
                             "Lock"
                         }
                     }
@@ -490,20 +515,47 @@ type LoopContentEditor =
                 let pass = cval ""
                 let turnOffSecret = cval false
 
+                let decrypt () =
+                    try
+                        let content = AlwaysSecure.aesDecrypt pass.Value secret
+                        let items = fromJson<LoopContentItem[]> content |> ValueOption.defaultValue [||]
+                        transact (fun _ ->
+                            contentWrapper.Items.Clear()
+                            contentWrapper.Items.AddRange(items)
+                            contentWrapper.IsSecret.Value <- not turnOffSecret.Value
+                        )
+                        onClose ()
+                        if not turnOffSecret.Value then
+                            valueTask {
+                                do! Async.Sleep(60_000 * 2)
+                                // After some times, if the content is not changed and the secret is still on, we should restore it to original value
+                                if content = (contentWrapper.Items |> AList.force |> Seq.toList |> toJson) then
+                                    transact (fun _ ->
+                                        contentWrapper.Items.Clear()
+                                        contentWrapper.Items.Add(LoopContentItem.Secret secret) |> ignore
+                                    )
+                            }
+                            |> ignore
+                    with ex ->
+                        dialogService.ShowMessage("Failed to unlock the content", ex.Message, severity = Severity.Error)
+
                 MudDialog'' {
                     Header "Unlock the content" onClose
                     DialogContent(
-                        adapt {
-                            let! binding = pass.WithSetter()
-                            MudTextField'' {
-                                Label "Password"
-                                Value' binding
-                                InputType InputType.Password
-                                Variant Variant.Outlined
-                                FullWidth
-                                AutoFocus
-                                Adornment Adornment.Start
-                                AdornmentIcon Icons.Material.Filled.Password
+                        MudFocusTrap'' {
+                            adapt {
+                                let! binding = pass.WithSetter()
+                                MudTextField'' {
+                                    Label "Password"
+                                    Value' binding
+                                    InputType InputType.Password
+                                    Variant Variant.Outlined
+                                    FullWidth
+                                    AutoFocus
+                                    Adornment Adornment.Start
+                                    AdornmentIcon Icons.Material.Filled.Password
+                                    OnKeyUp(fun e -> if e.Key = "Enter" then decrypt ())
+                                }
                             }
                         }
                     )
@@ -519,30 +571,7 @@ type LoopContentEditor =
                         MudButton'' {
                             Color Color.Primary
                             Variant Variant.Filled
-                            OnClick(fun _ ->
-                                try
-                                    let content = AlwaysSecure.aesDecrypt pass.Value secret
-                                    let items = fromJson<LoopContentItem[]> content |> ValueOption.defaultValue [||]
-                                    transact (fun _ ->
-                                        contentWrapper.Items.Clear()
-                                        contentWrapper.Items.AddRange(items)
-                                        contentWrapper.IsSecret.Value <- not turnOffSecret.Value
-                                    )
-                                    onClose ()
-                                    if not turnOffSecret.Value then
-                                        valueTask {
-                                            do! Async.Sleep(60_000 * 2)
-                                            // After some times, if the content is not changed and the secret is still on, we should restore it to original value
-                                            if content = (contentWrapper.Items |> AList.force |> Seq.toList |> toJson) then
-                                                transact (fun _ ->
-                                                    contentWrapper.Items.Clear()
-                                                    contentWrapper.Items.Add(LoopContentItem.Secret secret) |> ignore
-                                                )
-                                        }
-                                        |> ignore
-                                with ex ->
-                                    dialogService.ShowMessage("Failed to unlock the content", ex.Message, severity = Severity.Error)
-                            )
+                            OnClick(ignore >> decrypt)
                             "Unlock"
                         }
                     |]

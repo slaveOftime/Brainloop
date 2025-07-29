@@ -709,7 +709,7 @@ type LoopView =
             match isEditing, isEncrypted with
             | false, false -> MudIconButton'' {
                 Size Size.Small
-                Icon Icons.Material.Filled.Lock
+                Icon Icons.Material.Outlined.Lock
                 OnClick(fun _ ->
                     dialogService.Show(
                         DialogOptions(MaxWidth = MaxWidth.ExtraSmall, FullWidth = true),
