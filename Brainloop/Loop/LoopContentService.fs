@@ -220,24 +220,24 @@ type LoopContentService
                     | Some { CanHandleImage = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(ImageContent(bytes, mimeType = $"image/{ext}"))
-                    | _ -> ()
+                    | _ -> items.Add(TextContent $"File: {fileName}")
                 | AUDIO ->
                     match model with
                     | None
                     | Some { CanHandleAudio = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(AudioContent(bytes, mimeType = $"audio/{ext}"))
-                    | _ -> ()
+                    | _ -> items.Add(TextContent $"File: {fileName}")
                 | VIDEO ->
                     match model with
                     | None
                     | Some { CanHandleVideo = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(BinaryContent(bytes, mimeType = $"video/{ext}"))
-                    | _ -> ()
+                    | _ -> items.Add(TextContent $"File: {fileName}")
                 | _ ->
                     let! text = documentService.ReadAsText(file)
-                    items.Add(TextContent(text))
+                    items.Add(TextContent($"File: {fileName}\n" + text))
             }
 
             for content in content.Items |> AList.force do

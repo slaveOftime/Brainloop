@@ -147,7 +147,7 @@ type LoopContentWrapper = {
             | LoopContentItem.Excalidraw _ -> sb.AppendLine("Excalidraw") |> ignore
             | LoopContentItem.ToolCall { Result = ValueSome result } -> sb.AppendLine().AppendLine(JsonSerializer.Prettier result) |> ignore
             | LoopContentItem.ToolCall _ -> ()
-            | LoopContentItem.Secret _ -> ()
+            | LoopContentItem.Secret _ -> sb.AppendLine("secret") |> ignore
 
         sb.ToString()
 
