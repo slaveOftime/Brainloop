@@ -45,7 +45,7 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
         })
 
     override _.Render() = fragment {
-        PageTitle'' { "Brain Loops" }
+        PageTitle'' { "Brainloop" }
         SectionContent'' {
             SectionName Strings.NavActionsSectionName
             LoopSearcher.Create()
