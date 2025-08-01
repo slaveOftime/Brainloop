@@ -44,6 +44,9 @@ module Strings =
     [<Literal>]
     let SchedulerGroupForAgent = "agent-scheduler"
 
+    [<Literal>]
+    let DocumentApi = "/api/memory/document/"
+
 
 type Strings =
 

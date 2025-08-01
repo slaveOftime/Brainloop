@@ -70,7 +70,6 @@ type FunctionCard =
                         | FunctionType.SystemSearchMemory _ -> "System: search memory"
                         | FunctionType.SystemReadDocumentAsText -> "System: read document as text"
                         | FunctionType.SystemExecuteCommand _ -> "System: execute command"
-                        | FunctionType.SystemGenerateImage _ -> "System: generate image"
                         | FunctionType.SystemCreateTaskForAgent -> "System: create task for agent"
                         | FunctionType.SystemCreateScheduledTaskForAgent -> "System: create scheduled task for agent"
                     )
@@ -82,7 +81,6 @@ type FunctionCard =
                             FunctionType.SystemSearchMemory SystemSearchMemoryConfig.Default
                             FunctionType.SystemReadDocumentAsText
                             FunctionType.SystemExecuteCommand SystemExecuteCommandConfig.Default
-                            FunctionType.SystemGenerateImage SystemGenerateImageConfig.Default
                             FunctionType.SystemCreateTaskForAgent
                             FunctionType.SystemCreateScheduledTaskForAgent
                             FunctionType.Mcp McpConfig.Default
@@ -155,7 +153,6 @@ type FunctionCard =
                     | FunctionType.SystemSearchMemory _
                     | FunctionType.SystemReadDocumentAsText
                     | FunctionType.SystemExecuteCommand _
-                    | FunctionType.SystemGenerateImage _
                     | FunctionType.SystemCreateTaskForAgent
                     | FunctionType.SystemCreateScheduledTaskForAgent -> false
                 if isProxySupported then
@@ -279,20 +276,6 @@ type FunctionCard =
                                     )
                             )
                         }
-
-                    | FunctionType.SystemGenerateImage(SystemGenerateImageConfig.LLMModel config) ->
-                        ModelSelector.Create(
-                            AVal.constant (
-                                config.ModelId,
-                                (fun x ->
-                                    { config with ModelId = x }
-                                    |> SystemGenerateImageConfig.LLMModel
-                                    |> FunctionType.SystemGenerateImage
-                                    |> functionForm.UseFieldSetter(fun x -> x.Type)
-                                )
-                            ),
-                            filter = fun x -> x.CanHandleImage
-                        )
 
                     | FunctionType.OpenApi config ->
                         MudTextField'' {

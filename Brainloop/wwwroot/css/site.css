@@ -226,6 +226,10 @@ pre[class*="language-"] {
     margin-bottom: 0;
 }
 
+.markdown-body img
+.markdown-body video {
+    width: 100%;
+}
 
 .highlight-fst-menu-item .mud-menu-item:first-child {
     background-color: var(--mud-palette-action-default-hover);

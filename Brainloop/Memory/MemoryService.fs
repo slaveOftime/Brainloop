@@ -529,7 +529,7 @@ type MemoryService
                     match item.Result with
                     | MemorySearchResult.File x ->
                         let! content = documentService.ReadAsText(x.FileName)
-                        TextSearchResult(content, Name = nameof MemoryEmbeddingSource.File, Link = $"/api/memory/document/{x.FileName}")
+                        TextSearchResult(content, Name = nameof MemoryEmbeddingSource.File, Link = $"{Strings.DocumentApi}{x.FileName}")
                     | MemorySearchResult.Loop x when String.IsNullOrEmpty x.Description |> not ->
                         TextSearchResult(x.Description, Name = nameof MemoryEmbeddingSource.Loop, Link = $"/loops/{x.Id}")
                     | MemorySearchResult.Loop _ -> ()

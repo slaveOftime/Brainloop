@@ -202,7 +202,6 @@ type FunctionsPage(functionService: IFunctionService, snackbar: ISnackbar, dialo
                             | FunctionType.SystemSearchMemory _
                             | FunctionType.SystemReadDocumentAsText
                             | FunctionType.SystemExecuteCommand _
-                            | FunctionType.SystemGenerateImage _
                             | FunctionType.SystemCreateTaskForAgent
                             | FunctionType.SystemCreateScheduledTaskForAgent -> "System"
                             | FunctionType.Mcp(McpConfig.STDIO _) -> "MCP"

@@ -321,7 +321,7 @@ type LoopSearcher =
                                         Color Color.Info
                                         Underline Underline.Always
                                         Target "_blank"
-                                        Href $"/api/memory/document/{fileName}#page={pageNumber}"
+                                        Href $"{Strings.DocumentApi}{fileName}#page={pageNumber}"
                                         fileName
                                         MudChip'' {
                                             Size Size.Small
@@ -345,19 +345,19 @@ type LoopSearcher =
                                     Color Color.Info
                                     Underline Underline.Always
                                     Target "_blank"
-                                    Href $"/api/memory/document/{file.FileName}"
+                                    Href $"{Strings.DocumentApi}{file.FileName}"
                                     file.FileName
                                 }
                                 match file.FileName with
                                 | IMAGE -> MudImage'' {
                                     Fluid
-                                    Src $"/api/memory/document/{file.FileName}"
+                                    Src $"{Strings.DocumentApi}{file.FileName}"
                                   }
                                 | AUDIO -> audio {
                                     controls
                                     source {
                                         type' $"audio/*"
-                                        src $"/api/memory/document/{file.FileName}"
+                                        src $"{Strings.DocumentApi}{file.FileName}"
                                     }
                                   }
                                 | VIDEO -> video {
@@ -365,7 +365,7 @@ type LoopSearcher =
                                     style { width "100%" }
                                     source {
                                         type' $"video/*"
-                                        src $"/api/memory/document/{file.FileName}"
+                                        src $"{Strings.DocumentApi}{file.FileName}"
                                     }
                                   }
                                 | _ -> ()

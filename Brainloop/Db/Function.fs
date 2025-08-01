@@ -11,7 +11,6 @@ type FunctionType =
     | SystemSearchMemory of SystemSearchMemoryConfig
     | SystemReadDocumentAsText
     | SystemExecuteCommand of SystemExecuteCommandConfig
-    | SystemGenerateImage of SystemGenerateImageConfig
     | SystemCreateTaskForAgent
     | SystemCreateScheduledTaskForAgent
     | Mcp of McpConfig
@@ -28,7 +27,6 @@ module FunctionType =
         | FunctionType.SystemSearchMemory _
         | FunctionType.SystemReadDocumentAsText
         | FunctionType.SystemExecuteCommand _
-        | FunctionType.SystemGenerateImage _
         | FunctionType.SystemCreateTaskForAgent
         | FunctionType.SystemCreateScheduledTaskForAgent -> true
         | FunctionType.Mcp _
@@ -153,11 +151,3 @@ type SystemExecuteCommandConfig = {
         Environments = Map.empty
         SensitiveEnvironments = None
     }
-
-[<RequireQualifiedAccess>]
-type SystemGenerateImageConfig =
-    | LLMModel of GenerateImageByLLMModelConfig
-
-    static member Default = LLMModel { ModelId = 0 }
-
-type GenerateImageByLLMModelConfig = { ModelId: int }

@@ -62,7 +62,6 @@ type FunctionDIExtensions =
         services.AddScoped<IFunctionService, FunctionService>()
 
         services.AddScoped<SystemSendHttpFunc>()
-        services.AddScoped<SystemGenerateImageFunc>()
         services.AddScoped<SystemInvokeAgentFunc>()
         services.AddScoped<SystemExecuteCommandFunc>()
         services.AddScoped<SystemCreateTaskForAgentFunc>()

@@ -158,9 +158,6 @@ type FunctionService
                 | FunctionType.SystemExecuteCommand config ->
                     systemFunctions[fn.Id] <-
                         serviceProvider.GetRequiredService<SystemExecuteCommandFunc>().Create(fn, config, ?cancellationToken = cancellationToken)
-                | FunctionType.SystemGenerateImage config ->
-                    systemFunctions[fn.Id] <-
-                        serviceProvider.GetRequiredService<SystemGenerateImageFunc>().Create(fn, config, ?cancellationToken = cancellationToken)
                 | FunctionType.SystemCreateTaskForAgent ->
                     let! func =
                         serviceProvider

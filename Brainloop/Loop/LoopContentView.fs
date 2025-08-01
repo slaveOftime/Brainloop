@@ -104,13 +104,13 @@ type LoopContentView =
             match loopContentFile.Name with
             | IMAGE -> MudImage'' {
                 Fluid
-                Src $"/api/memory/document/{loopContentFile.Name}"
+                Src $"{Strings.DocumentApi}{loopContentFile.Name}"
               }
             | AUDIO -> audio {
                 controls
                 source {
                     type' $"audio/{loopContentFile.Extension}"
-                    src $"/api/memory/document/{loopContentFile.Name}"
+                    src $"{Strings.DocumentApi}{loopContentFile.Name}"
                 }
               }
             | VIDEO -> video {
@@ -118,7 +118,7 @@ type LoopContentView =
                 style { width "100%" }
                 source {
                     type' $"video/{loopContentFile.Extension}"
-                    src $"/api/memory/document/{loopContentFile.Name}"
+                    src $"{Strings.DocumentApi}{loopContentFile.Name}"
                 }
               }
             | _ -> ()
@@ -140,7 +140,7 @@ type LoopContentView =
                 Typo Typo.body2
                 Underline Underline.Always
                 Target "_blank"
-                Href $"/api/memory/document/{loopContentFile.Name}"
+                Href $"{Strings.DocumentApi}{loopContentFile.Name}"
                 loopContentFile.Name
             }
             MudChip'' {
@@ -162,8 +162,8 @@ type LoopContentView =
                     Fluid
                     Src(
                         match isDarkMode, excalidraw.DarkImageFileName with
-                        | true, Some imageFileName -> $"/api/memory/document/{imageFileName}"
-                        | _ -> $"/api/memory/document/{excalidraw.ImageFileName}"
+                        | true, Some imageFileName -> $"{Strings.DocumentApi}{imageFileName}"
+                        | _ -> $"{Strings.DocumentApi}{excalidraw.ImageFileName}"
                     )
                     onclick (fun _ ->
                         hook.ShowDialog(

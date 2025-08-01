@@ -205,7 +205,7 @@ type LoopContentService
 
         member _.ToChatMessageContent(content, ?model) = valueTask {
             let items = ChatMessageContentItemCollection()
-            let documentPattern = RegularExpressions.Regex @"/api/memory/document/([\w\s\.\-]*)[\)""]"
+            let documentPattern = RegularExpressions.Regex @$"{Strings.DocumentApi}([\w\s\.\-]*)[\)""]"
 
             let handleFile (fileName) = valueTask {
                 let file = Path.Combine(documentService.RootDir, fileName)
@@ -213,6 +213,7 @@ type LoopContentService
                     match Path.GetExtension(file) with
                     | null -> "*"
                     | x -> x.Substring(1)
+                let addFileNameOnly () = items.Add(TextContent $"File: \"{Strings.DocumentApi}{fileName}\"")
                 match file with
                 | IMAGE ->
                     match model with
@@ -220,24 +221,25 @@ type LoopContentService
                     | Some { CanHandleImage = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(ImageContent(bytes, mimeType = $"image/{ext}"))
-                    | _ -> items.Add(TextContent $"File: {fileName}")
+                    | _ -> addFileNameOnly ()
                 | AUDIO ->
                     match model with
                     | None
                     | Some { CanHandleAudio = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(AudioContent(bytes, mimeType = $"audio/{ext}"))
-                    | _ -> items.Add(TextContent $"File: {fileName}")
+                    | _ -> addFileNameOnly ()
                 | VIDEO ->
                     match model with
                     | None
                     | Some { CanHandleVideo = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(BinaryContent(bytes, mimeType = $"video/{ext}"))
-                    | _ -> items.Add(TextContent $"File: {fileName}")
+                    | _ -> addFileNameOnly ()
                 | _ ->
                     let! text = documentService.ReadAsText(file)
-                    items.Add(TextContent($"File: {fileName}\n" + text))
+                    addFileNameOnly ()
+                    items.Add(TextContent(text))
             }
 
             for content in content.Items |> AList.force do

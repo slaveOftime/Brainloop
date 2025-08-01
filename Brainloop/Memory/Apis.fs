@@ -18,7 +18,7 @@ type DocumentFileApis =
     static member MapMemoryApis(endpoint: IEndpointRouteBuilder) =
 
         endpoint.MapGet(
-            "/api/memory/document/{fileName}",
+            $"{Strings.DocumentApi}{{fileName}}",
             Func<string, HttpContext, IDocumentService, ValueTask<IResult>>(fun fileName httpContext documentService -> valueTask {
                 let file = Path.Combine(documentService.RootDir, fileName)
                 if File.Exists file then

@@ -203,7 +203,7 @@ type LoopContentEditor =
                             class' "disable-zoom"
                             style { cursorPointer }
                             Fluid
-                            Src $"/api/memory/document/{x.ImageFileName}"
+                            Src $"{Strings.DocumentApi}{x.ImageFileName}"
                             onclick (fun _ ->
                                 hook.ShowDialog(
                                     DialogOptions(FullScreen = true, FullWidth = true, CloseOnEscapeKey = false),
