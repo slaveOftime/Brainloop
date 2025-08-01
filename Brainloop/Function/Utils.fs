@@ -88,17 +88,24 @@ type KernelParameterMetadata with
                 | _ when prop.GetCustomAttributes(typeof<RequiredAttribute>, ``inherit`` = true) |> Seq.isEmpty |> not -> true
                 | t when t.IsValueType -> false
                 | _ -> defaultValue <> null
-            KernelParameterMetadata(
-                prop.Name,
-                JsonSerializerOptions.createDefault (),
-                IsRequired = isRequired,
-                DefaultValue = defaultValue,
-                ParameterType = prop.PropertyType,
-                Description =
-                    match prop.GetCustomAttributes(typeof<DescriptionAttribute>, ``inherit`` = true) |> Seq.tryHead with
-                    | Some(:? DescriptionAttribute as x) -> x.Description
-                    | _ -> ""
-            )
+            let description =
+                match prop.GetCustomAttributes(typeof<DescriptionAttribute>, ``inherit`` = true) |> Seq.tryHead with
+                | Some(:? DescriptionAttribute as x) -> x.Description
+                | _ -> ""
+            let meta =
+                KernelParameterMetadata(
+                    prop.Name,
+                    JsonSerializerOptions.createDefault (),
+                    IsRequired = isRequired,
+                    DefaultValue = defaultValue,
+                    ParameterType = prop.PropertyType,
+                    Description = description
+                )
+
+            if prop.PropertyType = typeof<bool> then
+                meta.Schema <- KernelJsonSchema.Parse($$"""{"type": "boolean", "description": "{{description}}" }""")
+
+            meta
     }
 
 

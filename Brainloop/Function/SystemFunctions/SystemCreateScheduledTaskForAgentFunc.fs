@@ -31,7 +31,7 @@ type CreateScheduleTaskForAgentArgs() =
     [<Description "Complete context for an agent to finish its task">]
     member val Prompt: string = "" with get, set
     [<Description "Give a specific time like: 2025/7/13 12:28:38">]
-    member val SpecificTime: DateTime Nullable = Nullable() with get, set
+    member val SpecificTime: string | null = null with get, set
     [<Description "CRON expression for the scheduler. Support for specifying both a day-of-week and a day-of-month value is not complete (you must currently use the ? character in one of these fields). For example, at 08:00 AM everyday should be: 0 0 8 * * ?">]
     member val CronExpression: string | null = null with get, set
 
@@ -146,8 +146,8 @@ type SystemCreateScheduledTaskForAgentFunc
                                 AgentId = arguments.AgentId
                                 LoopId = loopId
                                 Trigger =
-                                    match arguments.CronExpression, arguments.SpecificTime.HasValue with
-                                    | null, true -> ScheduleTrigger.DATIME arguments.SpecificTime.Value
+                                    match arguments.CronExpression, arguments.SpecificTime with
+                                    | null, DATETIME x -> ScheduleTrigger.DATIME x
                                     | SafeString x, _ -> ScheduleTrigger.CRON x
                                     | _ ->
                                         failwith

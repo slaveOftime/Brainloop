@@ -1,5 +1,6 @@
 ﻿namespace Brainloop.Function
 
+open System.Text.Json
 open FSharp.Control
 open FSharp.Data.Adaptive
 open Microsoft.Extensions.Logging
@@ -81,11 +82,37 @@ type McpToolsChecker =
                                                 MudChipSet'' {
                                                     Size Size.Small
                                                     for props in kernelFunction.Metadata.Parameters do
+                                                        let toolTipCodeId = $"tooltip-schema-{props.GetHashCode()}"
                                                         MudTooltip'' {
                                                             Arrow
                                                             Placement Placement.Top
-                                                            Text props.Description
-                                                            MudChip'' { props.Name }
+                                                            Inline
+                                                            TooltipContent(
+                                                                match JsonSerializer.Prettier(props.Schema) with
+                                                                | null -> html.none
+                                                                | schema -> pre {
+                                                                    style {
+                                                                        maxWidth 300
+                                                                        maxHeight 600
+                                                                        overflowYAuto
+                                                                        overflowXHidden
+                                                                        whiteSpaceNormal
+                                                                    }
+                                                                    code {
+                                                                        id toolTipCodeId
+                                                                        class' "language-json"
+                                                                        schema
+                                                                    }
+                                                                    script { $"Prism.highlightElement(document.getElementById('{toolTipCodeId}'))" }
+                                                                    styleElt {
+                                                                        ruleset $"#{toolTipCodeId}" { whiteSpacePreWrap }
+                                                                    }
+                                                                  }
+                                                            )
+                                                            MudChip'' {
+                                                                Color(if props.IsRequired then Color.Warning else Color.Default)
+                                                                props.Name
+                                                            }
                                                         }
                                                 }
                                         }

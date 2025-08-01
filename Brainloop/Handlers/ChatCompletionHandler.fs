@@ -268,7 +268,19 @@ type ChatCompletionHandler
                         logger.LogInformation("Add tools for {model}", model.Model)
                         targetContent.ProgressMessage.Publish "Adding tools"
 
-                        chatOptions.FunctionChoiceBehavior <- FunctionChoiceBehavior.Auto(autoInvoke = true)
+                        chatOptions.FunctionChoiceBehavior <-
+                            FunctionChoiceBehavior.Auto(
+                                autoInvoke = true,
+                                options =
+                                    FunctionChoiceBehaviorOptions(
+                                        AllowParallelCalls = true,
+                                        AllowConcurrentInvocation = true,
+#if DEBUG
+                                        AllowStrictSchemaAdherence = true,
+#endif
+                                        RetainArgumentTypes = true
+                                    )
+                            )
 
                         let! plugins = agentService.GetKernelPlugins(agentId, cancellationToken = cancellationTokenSource.Token)
                         kernel.Plugins.AddRange(plugins)
