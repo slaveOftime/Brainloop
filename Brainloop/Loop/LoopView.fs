@@ -664,7 +664,7 @@ type LoopView =
                             Disabled(isSending || cancellationTokenSource.IsSome)
                             OnClick(fun _ ->
                                 onClicked |> Option.iter (fun fn -> fn ())
-                                resend None
+                                resend (contentWrapper.ModelId.Value |> ValueOption.toOption)
                             )
                         }
                         match agent with
