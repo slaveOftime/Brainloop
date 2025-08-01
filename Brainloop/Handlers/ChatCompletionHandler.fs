@@ -270,38 +270,7 @@ type ChatCompletionHandler
 
                         chatOptions.FunctionChoiceBehavior <- FunctionChoiceBehavior.Auto(autoInvoke = true)
 
-                        let agentIds =
-                            agent.AgentFunctions
-                            |> Seq.choose (
-                                function
-                                | { Target = AgentFunctionTarget.Agent id } -> Some id
-                                | _ -> None
-                            )
-                        let agents =
-                            if agent.EnableAgentCall then
-                                agents |> Seq.filter (fun x -> (agent.EnableSelfCall && x.Id = agent.Id) || agentIds.Contains x.Id)
-                            else
-                                Seq.empty
-
-                        kernel.Plugins.AddFromFunctions(
-                            Strings.AgentPluginName,
-                            functions =
-                                (agents
-                                 |> Seq.map (fun ag ->
-                                     functionService.CreateInvokeAgentFunc(agent.Name, ag.Id, targetContent.LoopId, targetContent.Id)
-                                 )),
-                            description = "Call other agents for help according to their capability and definitions"
-                        )
-                        |> ignore
-
-                        let toolIds =
-                            agent.AgentFunctions
-                            |> Seq.choose (
-                                function
-                                | { Target = AgentFunctionTarget.Function id } -> Some id
-                                | _ -> None
-                            )
-                        let! plugins = functionService.GetKernelPlugins(toolIds, agentId = agentId, cancellationToken = cancellationTokenSource.Token)
+                        let! plugins = agentService.GetKernelPlugins(agentId, cancellationToken = cancellationTokenSource.Token)
                         kernel.Plugins.AddRange(plugins)
 
                     //let! aiContext = textSearchProvider.ModelInvokingAsync([||], cancellationToken = cancellationTokenSource.Token)

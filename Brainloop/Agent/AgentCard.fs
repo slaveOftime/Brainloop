@@ -160,7 +160,10 @@ type AgentCard =
                     Severity Severity.Error
                     error.ToString()
                 })
-                AgentCard.PromptEditor(agentForm.UseField(fun x -> x.Prompt))
+                adapt {
+                    let! agentId = agentForm.UseFieldValue(fun x -> x.Id)
+                    AgentCard.PromptEditor(agentId, agentForm.UseField(fun x -> x.Prompt))
+                }
             }
         }
         MudItem'' {
@@ -592,14 +595,18 @@ type AgentCard =
         })
 
 
-    static member private PromptEditor(prompt: aval<string * (string -> unit)>) : NodeRenderFragment =
+    static member private PromptEditor(agentId: int, prompt: aval<string * (string -> unit)>) : NodeRenderFragment =
         html.inject (
-            prompt,
+            struct (agentId, prompt),
             fun (hook: IComponentHook, shareStore: IShareStore) ->
                 let mutable hasChanges = false
                 let mutable inputRef: StandaloneCodeEditor | null = null
 
-                hook.RegisterAutoCompleteForAddAgents((fun _ -> inputRef), (ignore >> ValueTask.singleton))
+                hook.RegisterAutoCompleteForAddAgents(
+                    (fun _ -> inputRef),
+                    (ignore >> ValueTask.singleton),
+                    getAgentId = (fun _ -> if agentId > 0 then ValueSome agentId else ValueNone)
+                )
 
                 adapt {
                     let! isDarkMode = shareStore.IsDarkMode

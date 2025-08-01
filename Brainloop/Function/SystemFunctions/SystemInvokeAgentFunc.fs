@@ -31,7 +31,7 @@ type InvokeAgentArgs() =
 type SystemInvokeAgentFunc
     (dbService: IDbService, logger: ILogger<SystemInvokeAgentFunc>, serviceProvider: IServiceProvider, loggerFactory: ILoggerFactory) =
 
-    member _.Create(author: string, agentId: int, loopId: int64, sourceLoopContentId: int64) =
+    member _.Create(author: string, agentId: int) =
         let agent = dbService.DbContext.Queryable<Agent>().Where(fun (x: Agent) -> x.Id = agentId).First<Agent>()
         let agentName = if agent.Name.Contains " " then $"\"{agent.Name}\"" else agent.Name
         let functionName = $"call_agent_{agent.Id}_{agentName.KeepLetterAndDigits()}"
@@ -40,8 +40,10 @@ type SystemInvokeAgentFunc
             Func<KernelArguments, CancellationToken, Task<unit>>(fun kernelArgs ct -> task {
                 logger.LogInformation("Call {agent} for help", agent.Name)
 
+                let loopId = kernelArgs.LoopId |> ValueOption.defaultWith (fun _ -> failwith "LoopId is required")
+                let sourceLoopContentId =
+                    kernelArgs.LoopContentId |> ValueOption.defaultWith (fun _ -> failwith "LoopContentId is required")
                 let arguments = kernelArgs.Get<InvokeAgentArgs>()
-                let sourceLoopContentId = kernelArgs.LoopContentId |> ValueOption.defaultValue sourceLoopContentId
 
                 let handler = serviceProvider.GetRequiredService<IChatCompletionForLoopHandler>()
 

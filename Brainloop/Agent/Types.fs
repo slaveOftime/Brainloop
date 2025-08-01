@@ -1,6 +1,8 @@
 ﻿namespace Brainloop.Agent
 
+open System.Threading
 open System.Threading.Tasks
+open Microsoft.SemanticKernel
 open Brainloop.Db
 
 
@@ -10,7 +12,7 @@ type IAgentService =
     abstract member TryGetAgentWithCache: id: int -> ValueTask<Agent voption>
 
     abstract member GetTitleBuilderAgent: unit -> ValueTask<Agent | null>
-    
+
     abstract member UpsertAgent: agent: Agent -> ValueTask<unit>
     abstract member DeleteAgent: id: int -> ValueTask<unit>
     abstract member UpdateUsedTime: id: int -> ValueTask<unit>
@@ -21,3 +23,5 @@ type IAgentService =
 
     abstract member AddFunctionIntoSet: agentId: int * target: AgentFunctionTarget -> ValueTask<unit>
     abstract member RemoveFunctionFromSet: agentId: int * target: AgentFunctionTarget -> ValueTask<unit>
+
+    abstract member GetKernelPlugins: agentId: int * ?cancellationToken: CancellationToken -> ValueTask<KernelPlugin list>

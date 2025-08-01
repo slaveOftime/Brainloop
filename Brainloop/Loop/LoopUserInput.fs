@@ -146,10 +146,13 @@ type LoopUserInput =
                 }
 
 
-                hook.RegisterAutoCompleteForAddAgents((fun _ -> inputRef), (fun x -> valueTask { selectedAgent.Publish(Option.toValueOption x) }))
+                hook.RegisterAutoCompleteForAddAgents(
+                    (fun _ -> inputRef),
+                    (fun x -> valueTask { selectedAgent.Publish(Option.toValueOption x) }),
+                    getAgentId = (fun _ -> selectedAgent.Value |> ValueOption.map _.Id)
+                )
 
                 hook.AddFirstAfterRenderTask(fun _ -> task {
-
                     selectedAgent.AddLazyCallback(fun agent ->
                         if agent.IsSome then
                             match inputRef with

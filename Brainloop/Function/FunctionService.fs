@@ -237,5 +237,5 @@ type FunctionService
             return Seq.toList plugins
         }
 
-        member _.CreateInvokeAgentFunc(author, agentId, loopId, sourceLoopContentId) =
-            serviceProvider.GetRequiredService<SystemInvokeAgentFunc>().Create(author, agentId, loopId, sourceLoopContentId)
+        member _.CreateInvokeAgentFunc(author, agentId) =
+            serviceProvider.GetRequiredService<SystemInvokeAgentFunc>().Create(author, agentId)

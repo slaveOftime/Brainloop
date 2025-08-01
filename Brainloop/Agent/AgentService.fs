@@ -1,13 +1,17 @@
 ﻿namespace Brainloop.Agent
 
 open System
+open System.Linq
 open Microsoft.Extensions.Caching.Memory
+open Microsoft.Extensions.DependencyInjection
+open Microsoft.SemanticKernel
 open IcedTasks
 open Fun.Result
 open Brainloop.Db
+open Brainloop.Function
 
 
-type AgentService(dbService: IDbService, memoryCache: IMemoryCache) as this =
+type AgentService(dbService: IDbService, serviceProvider: IServiceProvider, memoryCache: IMemoryCache) as this =
 
     interface IAgentService with
 
@@ -144,4 +148,47 @@ type AgentService(dbService: IDbService, memoryCache: IMemoryCache) as this =
             with
             | 1 -> ()
             | _ -> failwith "Failed to remove function from set"
+        }
+
+
+        member _.GetKernelPlugins(agentId, ?cancellationToken) = valueTask {
+            let! agent = (this :> IAgentService).TryGetAgentWithCache(agentId)
+            match agent with
+            | ValueNone -> return []
+            | ValueSome agent ->
+                let! agents = (this :> IAgentService).GetAgentsWithCache()
+
+                let agentIds =
+                    agent.AgentFunctions
+                    |> Seq.choose (
+                        function
+                        | { Target = AgentFunctionTarget.Agent id } -> Some id
+                        | _ -> None
+                    )
+
+                let agents =
+                    if agent.EnableAgentCall then
+                        agents |> Seq.filter (fun x -> (agent.EnableSelfCall && x.Id = agent.Id) || agentIds.Contains x.Id)
+                    else
+                        Seq.empty
+
+                let toolIds =
+                    agent.AgentFunctions
+                    |> Seq.choose (
+                        function
+                        | { Target = AgentFunctionTarget.Function id } -> Some id
+                        | _ -> None
+                    )
+
+                let functionService = serviceProvider.GetRequiredService<IFunctionService>()
+                let! plugins = functionService.GetKernelPlugins(toolIds, agentId = agentId, ?cancellationToken = cancellationToken)
+
+                return [
+                    KernelPluginFactory.CreateFromFunctions(
+                        Strings.AgentPluginName,
+                        functions = (agents |> Seq.map (fun ag -> functionService.CreateInvokeAgentFunc(agent.Name, ag.Id))),
+                        description = "Call other agents for help according to their capability and definitions"
+                    )
+                    yield! plugins
+                ]
         }
