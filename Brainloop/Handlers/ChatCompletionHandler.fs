@@ -394,7 +394,7 @@ type ChatCompletionHandler
                                             let text = string content
                                             do! appendTextToStreamAndIncreaseCount text
                                 }
-                                //do! Task.Delay 1 // So UI can have chance to accept events
+                                do! Task.Delay 1 // So UI can have chance to accept events
                                 // Try parse reasoning data first
                                 if hasReasoningContent then
                                     try
