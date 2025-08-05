@@ -2,9 +2,7 @@
 
 open System
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.JSInterop
 open FSharp.Data.Adaptive
-open IcedTasks
 open MudBlazor
 open Fun.Result
 open Fun.Blazor
@@ -17,7 +15,7 @@ type AgentSelector =
     static member Create(selectedAgent: ValueOption<Agent> cval, selectedModel: ValueOption<Model> cval) =
         html.inject (
             "agents-selector",
-            fun (serviceProvider: IServiceProvider, JS: IJSRuntime) ->
+            fun (serviceProvider: IServiceProvider) ->
                 let agentService = serviceProvider.GetRequiredService<IAgentService>()
 
                 let mutable menuRef: MudMenu | null = null
@@ -39,6 +37,10 @@ type AgentSelector =
                     transact (fun _ ->
                         agents.Clear()
                         agents.AddRange results
+                        agentsFilter.Value <-
+                            match agentsFilter.Value, selectedAgent.Value with
+                            | NullOrEmptyString, ValueSome { Name = name } -> name
+                            | x, _ -> x
                     )
                 }
 
