@@ -16,6 +16,7 @@ open Microsoft.SemanticKernel.ChatCompletion
 open Microsoft.SemanticKernel.Connectors
 open Microsoft.SemanticKernel.Data
 open IcedTasks
+open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
 open Brainloop.Model
@@ -182,6 +183,58 @@ type ChatCompletionHandler
         chatMessages.Insert(0, ChatMessageContent(AuthorRole.System, sb.ToString()))
 
 
+    member private _.GetInputTokens(metadata: Collections.Generic.IReadOnlyDictionary<string, obj | null> | null) =
+        match metadata with
+        | null -> ValueNone
+        | metadata ->
+            match metadata.TryGetValue "PromptTokenCount" with
+            | true, x ->
+                match string x with
+                | INT64 x -> ValueSome x
+                | _ -> ValueNone
+            | _ -> ValueNone
+
+    member private _.GetOutputTokens(metadata: Collections.Generic.IReadOnlyDictionary<string, obj | null> | null) =
+        match metadata with
+        | null -> ValueNone
+        | metadata ->
+            match metadata.TryGetValue "CandidatesTokenCount" with
+            | true, x ->
+                match string x with
+                | INT64 x -> ValueSome x
+                | _ -> ValueNone
+            | _ -> ValueNone
+
+    member private _.GetInputOutputTokens(contents: ChatMessageContent, message: string, currentOutputCount: int64) = valueTask {
+        match contents.InnerContent with
+        | :? OpenAI.Chat.ChatCompletion as x when x.Usage <> null ->
+            return int64 x.Usage.InputTokenCount, currentOutputCount + int64 x.Usage.OutputTokenCount
+        | :? Google.GeminiChatMessageContent as x when x.Metadata <> null ->
+            return int64 x.Metadata.PromptTokenCount, int64 x.Metadata.CandidatesTokenCount
+        | _ ->
+            let inputTokens = this.GetInputTokens contents.Metadata |> ValueOption.defaultValue 0L
+            let! outputTokens =
+                match this.GetOutputTokens contents.Metadata with
+                | ValueSome x -> ValueTask.singleton x
+                | _ -> modelService.CountTokens(message) |> ValueTask.map (int64 >> (+) currentOutputCount)
+            return inputTokens, outputTokens
+    }
+    member private _.GetInputOutputTokens(result: StreamingChatMessageContent, message: string, currentOutputCount: int64) = valueTask {
+        match result.InnerContent with
+        | :? OpenAI.Chat.StreamingChatCompletionUpdate as x when x.Usage <> null ->
+            return int64 x.Usage.InputTokenCount, currentOutputCount + int64 x.Usage.OutputTokenCount
+        | :? Google.GeminiStreamingChatMessageContent as x when x.Metadata <> null ->
+            return int64 x.Metadata.PromptTokenCount, int64 x.Metadata.CandidatesTokenCount
+        | _ ->
+            let inputTokens = this.GetInputTokens result.Metadata |> ValueOption.defaultValue 0L
+            let! outputTokens =
+                match this.GetOutputTokens result.Metadata with
+                | ValueSome x -> ValueTask.singleton x
+                | _ -> modelService.CountTokens(message) |> ValueTask.map (int64 >> (+) currentOutputCount)
+            return inputTokens, outputTokens
+    }
+
+
     interface IChatCompletionHandler with
         member _.Handle(agentId, contents, targetContent, ?modelId, ?cancellationToken) = valueTask {
             let! agents = agentService.GetAgentsWithCache()
@@ -320,21 +373,12 @@ type ChatCompletionHandler
 
                             if result <> null then
                                 let appendTextToStreamAndIncreaseCount (text) = valueTask {
-                                    let! inputTokens, outputTokens = valueTask {
-                                        match result.InnerContent with
-                                        | :? OpenAI.Chat.StreamingChatCompletionUpdate as x when x.Usage <> null ->
-                                            return x.Usage.InputTokenCount, x.Usage.OutputTokenCount
-                                        | :? Google.GeminiStreamingChatMessageContent as x when x.Metadata <> null ->
-                                            return x.Metadata.PromptTokenCount, x.Metadata.CandidatesTokenCount
-                                        | _ ->
-                                            let! count = modelService.CountTokens(text)
-                                            return 0, count
-                                    }
+                                    let! inputTokens, outputTokens = this.GetInputOutputTokens(result, text, targetContent.OutputTokens.Value)
                                     stream.Append(text) |> ignore
                                     transact (fun _ ->
                                         if targetContent.InputTokens.Value = 0 then
-                                            targetContent.InputTokens.Value <- int64 inputTokens
-                                        targetContent.OutputTokens.Value <- targetContent.OutputTokens.Value + int64 outputTokens
+                                            targetContent.InputTokens.Value <- inputTokens
+                                        targetContent.OutputTokens.Value <- outputTokens
                                     )
                                 }
 
@@ -350,7 +394,7 @@ type ChatCompletionHandler
                                             let text = string content
                                             do! appendTextToStreamAndIncreaseCount text
                                 }
-                                do! Task.Delay 1 // So UI can have chance to accept events
+                                //do! Task.Delay 1 // So UI can have chance to accept events
                                 // Try parse reasoning data first
                                 if hasReasoningContent then
                                     try
@@ -393,20 +437,11 @@ type ChatCompletionHandler
 
                         for contents in result do
                             let appendTextToStreamAndIncreaseCount (text) = valueTask {
-                                let! inputTokens, outputTokens = valueTask {
-                                    match contents.InnerContent with
-                                    | :? OpenAI.Chat.ChatCompletion as x when x.Usage <> null ->
-                                        return x.Usage.InputTokenCount, x.Usage.OutputTokenCount
-                                    | :? Google.GeminiChatMessageContent as x when x.Metadata <> null ->
-                                        return x.Metadata.PromptTokenCount, x.Metadata.CandidatesTokenCount
-                                    | _ ->
-                                        let! count = modelService.CountTokens(text)
-                                        return 0, count
-                                }
+                                let! inputTokens, outputTokens = this.GetInputOutputTokens(contents, text, targetContent.OutputTokens.Value)
                                 stream.Append(text) |> ignore
                                 transact (fun _ ->
-                                    targetContent.InputTokens.Value <- int64 inputTokens
-                                    targetContent.OutputTokens.Value <- targetContent.OutputTokens.Value + int64 outputTokens
+                                    targetContent.InputTokens.Value <- inputTokens
+                                    targetContent.OutputTokens.Value <- outputTokens
                                 )
                             }
                             for content in contents.Items do
