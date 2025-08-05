@@ -4,6 +4,8 @@ module Fun.Blazor.Form
 open System
 open FSharp.Data.Adaptive
 open Microsoft.AspNetCore.Components
+open BlazorMonaco
+open BlazorMonaco.Editor
 open MudBlazor.DslInternals
 open MudBlazor
 open Fun.Result
@@ -117,4 +119,71 @@ type KeyValueField =
                         ValueChanged(fun k -> kvs |> Map.add k "" |> setKvs)
                     }
                 }
+        }
+
+
+type MonacoField =
+
+    static member Create
+        (
+            label: string,
+            textContent: string,
+            ?setTextContent: string -> unit,
+            ?language: string,
+            ?classIdentifier: string,
+            ?monacoStyle: Fun.Css.Internal.CombineKeyValue
+        ) =
+        let classIdentifier = defaultArg classIdentifier $"monaco-editor-field-{Random.Shared.Next()}"
+        MudField'' {
+            Label label
+            Variant Variant.Outlined
+            div {
+                class' classIdentifier
+                html.inject (
+                    textContent,
+                    fun (shareStore: IShareStore) ->
+                        let mutable hasChanges = false
+                        let mutable inputRef: StandaloneCodeEditor | null = null
+                        adapt {
+                            let! isDarkMode = shareStore.IsDarkMode
+                            StandaloneCodeEditor'' {
+                                key textContent
+                                ConstructionOptions(fun _ ->
+                                    StandaloneEditorConstructionOptions(
+                                        Value = textContent,
+                                        FontSize = 16,
+                                        Language = defaultArg language "markdown",
+                                        AutomaticLayout = true,
+                                        ReadOnly = setTextContent.IsNone,
+                                        GlyphMargin = false,
+                                        Folding = false,
+                                        LineDecorationsWidth = 0,
+                                        LineNumbers = "off",
+                                        WordWrap = "on",
+                                        Minimap = EditorMinimapOptions(Enabled = false),
+                                        AcceptSuggestionOnEnter = "on",
+                                        FixedOverflowWidgets = true,
+                                        Theme = if isDarkMode then "vs-dark" else "vs-light"
+                                    )
+                                )
+                                OnDidChangeModelContent(fun _ -> hasChanges <- true)
+                                OnDidBlurEditorWidget(fun _ -> task {
+                                    if hasChanges then
+                                        match inputRef with
+                                        | null -> ()
+                                        | ref ->
+                                            let! text = ref.GetValue()
+                                            setTextContent |> Option.iter (fun fn -> fn text)
+                                })
+                                ref (fun x -> inputRef <- x)
+                            }
+                        }
+                )
+                styleElt {
+                    ruleset $".{classIdentifier} .monaco-editor-container" {
+                        height "300px"
+                        defaultArg monacoStyle (Fun.Css.Internal.CombineKeyValue(fun x -> x))
+                    }
+                }
+            }
         }

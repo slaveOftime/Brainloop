@@ -209,6 +209,10 @@ type ModelsPage(modelService: IModelService, snackbar: ISnackbar, dialog: IDialo
                                             Id = 0
                                             Name = model.Name + " (Copy)"
                                             CreatedAt = DateTime.Now
+                                            UpdatedAt = DateTime.Now
+                                            LastUsedAt = Nullable()
+                                            InputTokens = Nullable()
+                                            OutputTokens = Nullable()
                                     }
                                     false
                             )

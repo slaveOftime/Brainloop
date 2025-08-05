@@ -21,6 +21,8 @@ type Model = {
     Api: string
     ApiKey: string
     ApiProps: ModelApiProps voption
+    // Add or override request properties before sending to the model provider
+    Request: string | null
     Proxy: string
     CreatedAt: DateTime
     UpdatedAt: DateTime
@@ -45,6 +47,7 @@ type Model = {
         Api = ""
         ApiKey = ""
         ApiProps = ValueNone
+        Request = null
         Proxy = ""
         CreatedAt = DateTime.Now
         UpdatedAt = DateTime.Now

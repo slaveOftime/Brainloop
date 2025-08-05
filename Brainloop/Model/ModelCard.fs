@@ -1,6 +1,7 @@
 ﻿namespace Brainloop.Model
 
 open System
+open System.Text.Json
 open Microsoft.Extensions.Logging
 open FSharp.Data.Adaptive
 open IcedTasks
@@ -8,6 +9,8 @@ open MudBlazor
 open Fun.Blazor
 open Fun.Result
 open Brainloop.Db
+open BlazorMonaco
+open BlazorMonaco.Editor
 
 
 type ModelCard =
@@ -104,6 +107,25 @@ type ModelCard =
                     )
                 }
             }
+        }
+        MudItem'' {
+            xs 12
+            html.injectWithNoKey (fun (dialog: IDialogService) -> adapt {
+                let! request, setRequest = modelForm.UseField(fun x -> x.Request)
+                MonacoField.Create(
+                    "Request enrich or override",
+                    request,
+                    (fun text ->
+                        try
+                            fromJson<Nodes.JsonObject> text |> ignore
+                            setRequest text
+                        with ex ->
+                            dialog.ShowMessage("Error", $"Invalid JSON: {ex.Message}", severity = Severity.Error)
+                    ),
+                    language = "json",
+                    monacoStyle = css { height 200 }
+                )
+            })
         }
         MudItem'' {
             xs 12

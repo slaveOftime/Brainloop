@@ -53,6 +53,30 @@ module JsonUtils =
         | x -> ValueSome x
 
 
+    let mergeJson (json1: string) (json2: string) =
+        let rec loop (obj1: JsonObject) (obj2: JsonObject) =
+            for kvp in obj2 do
+                match kvp.Value, obj1.TryGetPropertyValue(kvp.Key) with
+                // Object into object
+                | (:? JsonObject as newValue), (true, (:? JsonObject as existingValue)) ->
+                    obj1[kvp.Key] <- loop existingValue (newValue.DeepClone() :?> JsonObject)
+                // Array mrege into array
+                | (:? JsonArray as newArray), (true, (:? JsonArray as existingArray)) ->
+                    for item in newArray do
+                        existingArray.Add(item.DeepClone())
+                // If the key does not exist, add it
+                | _ -> obj1[kvp.Key] <- kvp.Value.DeepClone()
+
+            obj1
+
+        let options = JsonSerializerOptions.createDefault ()
+
+        let mergeObj =
+            loop (JsonSerializer.Deserialize<JsonObject>(json1, options)) (JsonSerializer.Deserialize<JsonObject>(json2, options))
+
+        mergeObj.ToJsonString(options)
+
+
     type JsonSerializer with
 
         // For any json string, we try to parse it to JsonNode for better formatting

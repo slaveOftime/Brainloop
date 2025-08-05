@@ -27,7 +27,8 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
             ?headers = (model.ApiProps |> ValueOption.map _.Headers |> ValueOption.toOption),
             baseUrl = model.Api,
             proxy = model.Proxy,
-            ?timeoutMs = timeoutMs
+            ?timeoutMs = timeoutMs,
+            ?addtionalRequestBody = Option.ofObj model.Request
         )
 
     member _.CreateHttpClient(model: Model, ?timeoutMs: int) =
