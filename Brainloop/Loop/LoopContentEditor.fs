@@ -230,7 +230,7 @@ type LoopContentEditor =
                             gap 8
                             padding 8 0
                         }
-                        styleElt { ruleset ".loop-content-editor .monaco-editor-container" { height "200px" } }
+                        styleElt { ruleset ".loop-content-editor .monaco-editor-container" { height (if items.Count <= 1 then 500 else 300) } }
                         MudIconButton'' {
                             Size Size.Small
                             Icon Icons.Material.Filled.Fullscreen
