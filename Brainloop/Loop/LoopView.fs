@@ -521,7 +521,7 @@ type LoopView =
                                         ValueChanged(ValueSome >> setDirectPrompt)
                                         Label "Prompt"
                                         Lines 1
-                                        MaxLines 5
+                                        MaxLines 30
                                         AutoGrow
                                         AutoFocus
                                         Required
