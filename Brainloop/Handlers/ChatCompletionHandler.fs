@@ -326,8 +326,8 @@ type ChatCompletionHandler
                                 autoInvoke = true,
                                 options =
                                     FunctionChoiceBehaviorOptions(
-                                        AllowParallelCalls = true,
-                                        AllowConcurrentInvocation = true,
+                                        AllowParallelCalls = false,
+                                        AllowConcurrentInvocation = false,
 #if DEBUG
                                         AllowStrictSchemaAdherence = true,
 #endif
