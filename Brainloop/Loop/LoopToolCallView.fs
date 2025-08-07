@@ -173,8 +173,7 @@ type LoopToolCallView =
                     "arguments:"
                 }
                 for index, KeyValue(argKey, argValue) in Seq.indexed toolCall.Arguments do
-                    let codeId = $"{codeId}-{argKey}"
-                    adaptiview (key = codeId) {
+                    adapt {
                         let! isExpanded, setIsExpanded = cval((index = 0)).WithSetter()
                         let! isReadonly =
                             toolCall.UserAction
@@ -190,24 +189,7 @@ type LoopToolCallView =
                             Dense
                             Expanded isExpanded
                             ExpandedChanged setIsExpanded
-                            TitleContent(
-                                div {
-                                    style {
-                                        displayFlex
-                                        alignItemsCenter
-                                        gap 12
-                                        paddingRight 12
-                                    }
-                                    argKey
-                                    MudSpacer''
-                                    MudIconButton'' {
-                                        key "copy"
-                                        Size Size.Small
-                                        Icon Icons.Material.Outlined.ContentCopy
-                                        OnClick(fun _ -> task { do! JS.CopyInnerText(codeId) })
-                                    }
-                                }
-                            )
+                            TitleContent argKey
                             if isExpanded then
                                 match argValue with
                                 | :? string as argValue when argKey <> "html" -> MudTextField'' {
@@ -266,24 +248,39 @@ type LoopToolCallView =
                                     Variant Variant.Outlined
                                     ReadOnly isReadonly
                                   }
-                                | _ -> pre {
-                                    code {
-                                        id codeId
-                                        class' (
-                                            if SystemFunction.isRenderInIframe toolCall.FunctionName && argKey = "html" then
-                                                "language-html"
-                                            else
-                                                "language-json"
-                                        )
-                                        match JsonSerializer.Prettier(argValue) with
-                                        | null -> "null"
-                                        | x -> x
+                                | _ ->
+                                    let codeId = $"{codeId}-{argKey}"
+                                    pre {
+                                        style { positionRelative }
+                                        code {
+                                            id codeId
+                                            class' (
+                                                if SystemFunction.isRenderInIframe toolCall.FunctionName && argKey = "html" then
+                                                    "language-html"
+                                                else
+                                                    "language-json"
+                                            )
+                                            match JsonSerializer.Prettier(argValue) with
+                                            | null -> "null"
+                                            | x -> x
+                                        }
+                                        MudIconButton'' {
+                                            style {
+                                                positionAbsolute
+                                                top 12
+                                                right 6
+                                                zIndex 1
+                                            }
+                                            key "copy"
+                                            Size Size.Small
+                                            Icon Icons.Material.Outlined.ContentCopy
+                                            OnClick(fun _ -> task { do! JS.CopyInnerText(codeId) })
+                                        }
+                                        script {
+                                            key toolCall.Arguments
+                                            $"Prism.highlightElement(document.getElementById('{codeId}'))"
+                                        }
                                     }
-                                    script {
-                                        key toolCall.Arguments
-                                        $"Prism.highlightElement(document.getElementById('{codeId}'))"
-                                    }
-                                  }
                         }
                     }
         })
