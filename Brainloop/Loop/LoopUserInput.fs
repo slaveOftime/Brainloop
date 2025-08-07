@@ -241,7 +241,7 @@ type LoopUserInput =
                             OnClick(fun _ -> task {
                                 hook.ShowDialog(
                                     DialogOptions(FullScreen = true, FullWidth = true, CloseOnEscapeKey = false),
-                                    fun ctx -> LoopContentEditor.ExcalidrawDialog(loopId, onClose = ctx.Close)
+                                    fun ctx -> LoopContentExcalidrawer.Create(loopId, onClose = ctx.Close)
                                 )
                             })
                         }

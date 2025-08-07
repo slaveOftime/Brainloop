@@ -169,7 +169,7 @@ type LoopContentView =
                         hook.ShowDialog(
                             DialogOptions(FullScreen = true, FullWidth = true, CloseOnEscapeKey = false),
                             fun ctx ->
-                                LoopContentEditor.ExcalidrawDialog(
+                                LoopContentExcalidrawer.Create(
                                     contentWrapper.LoopId,
                                     contentWrapper = contentWrapper,
                                     excalidraw = excalidraw,
@@ -229,7 +229,7 @@ type LoopContentView =
                         | LoopContentItem.ToolCall x -> if not ignoreToolCall then LoopToolCallView.Create(contentWrapper, x, index)
                         | LoopContentItem.File x -> LoopContentView.File(x)
                         | LoopContentItem.Excalidraw x -> LoopContentView.Excalidraw(contentWrapper, x)
-                        | LoopContentItem.Secret x -> LoopContentEditor.LockerView(contentWrapper, x)
+                        | LoopContentItem.Secret x -> LoopContentSensitive.LockerView(contentWrapper, x)
                 }
 
                 let contentRawView = pre {

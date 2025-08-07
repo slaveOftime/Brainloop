@@ -713,7 +713,7 @@ type LoopView =
                 OnClick(fun _ ->
                     dialogService.Show(
                         DialogOptions(MaxWidth = MaxWidth.ExtraSmall, FullWidth = true),
-                        fun ctx -> LoopContentEditor.EncryptDialog(contentWrapper, ctx.Close)
+                        fun ctx -> LoopContentSensitive.EncryptDialog(contentWrapper, ctx.Close)
                     )
                 )
               }

@@ -76,6 +76,8 @@
 		<Compile Include="Loop\LoopContentService.fs" />
 		<Compile Include="Loop\LoopService.fs" />
 		<Compile Include="Loop\Hooks.fs" />
+		<Compile Include="Loop\LoopContentSensitive.fs" />
+		<Compile Include="Loop\LoopContentExcalidrawer.fs" />
 		<Compile Include="Loop\LoopContentEditor.fs" />
 		<Compile Include="Loop\LoopToolCallView.fs" />
 		<Compile Include="Loop\LoopContentView.fs" />
