@@ -141,13 +141,14 @@ type LoopContentWrapper = {
                 |> Seq.iter (
                     function
                     | LoopContentTextBlock.Think _ -> ()
-                    | LoopContentTextBlock.Content text -> sb.AppendLine(text) |> ignore
+                    | LoopContentTextBlock.Content text -> sb.AppendLine(text).AppendLine() |> ignore
                 )
-            | LoopContentItem.File x -> sb.AppendLine().Append("File: ").Append(x.Name) |> ignore
-            | LoopContentItem.Excalidraw _ -> sb.AppendLine("Excalidraw") |> ignore
-            | LoopContentItem.ToolCall { Result = ValueSome result } -> sb.AppendLine().AppendLine(JsonSerializer.Prettier result) |> ignore
+            | LoopContentItem.File x -> sb.AppendLine().Append("File: ").AppendLine(x.Name).AppendLine() |> ignore
+            | LoopContentItem.Excalidraw _ -> sb.AppendLine().AppendLine("Excalidraw").AppendLine() |> ignore
+            | LoopContentItem.ToolCall { FunctionName = name; Result = ValueSome result } ->
+                sb.AppendLine().Append(name).AppendLine(" result:").AppendLine(JsonSerializer.Prettier result).AppendLine() |> ignore
             | LoopContentItem.ToolCall _ -> ()
-            | LoopContentItem.Secret _ -> sb.AppendLine("secret") |> ignore
+            | LoopContentItem.Secret _ -> sb.AppendLine().AppendLine("secret").AppendLine() |> ignore
 
         sb.ToString()
 

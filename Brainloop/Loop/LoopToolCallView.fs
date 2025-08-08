@@ -364,7 +364,7 @@ type LoopToolCallView =
     static member Create(contentWrapper: LoopContentWrapper, toolCall: LoopContentToolCall, index: int) =
         html.inject (
             toolCall,
-            fun (dbService: IDbService, JS: IJSRuntime, dialogService: IDialogService) ->
+            fun (dbService: IDbService, JS: IJSRuntime) ->
                 let isExpanded =
                     cval (
                         toolCall.UserAction.IsSome
@@ -437,7 +437,7 @@ type LoopToolCallView =
                     match toolCall.UserAction with
                     | ValueNone -> ()
                     | ValueSome userAction -> adapt {
-                        let! userAction, setuserAction = userAction.WithSetter()
+                        let! userAction, setUserAction = userAction.WithSetter()
                         if userAction = ToolCallUserAction.Accepted then
                             MudProgressCircular'' {
                                 Size Size.Small
@@ -453,7 +453,7 @@ type LoopToolCallView =
                                     Size Size.Small
                                     Variant Variant.Outlined
                                     Icon Icons.Material.Filled.Stop
-                                    OnClick(fun _ -> setuserAction ToolCallUserAction.Declined)
+                                    OnClick(fun _ -> setUserAction ToolCallUserAction.Declined)
                                 }
                                 MudIconButton'' {
                                     class' "pulse"
@@ -461,7 +461,7 @@ type LoopToolCallView =
                                     Color Color.Warning
                                     Variant Variant.Filled
                                     Icon Icons.Material.Filled.PlayArrow
-                                    OnClick(fun _ -> setuserAction ToolCallUserAction.Accepted)
+                                    OnClick(fun _ -> setUserAction ToolCallUserAction.Accepted)
                                 }
                             }
                       }

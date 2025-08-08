@@ -50,6 +50,14 @@ type MemoryService
         | "SqlLite" -> typeof<string>
         | _ -> typeof<Guid>
 
+    let distanceFunction =
+        match appOptions.Value.VectorDbProvider with
+        | "Qdrant"
+        | "PostgreSQL" -> DistanceFunction.CosineSimilarity
+        | "SqlLite"
+        | "MsSqlServer" -> DistanceFunction.CosineDistance
+        | _ -> failwithf "Unsupported vector db provider: %s" appOptions.Value.VectorDbProvider
+
     let createNewKey () : obj =
         match appOptions.Value.VectorDbProvider with
         | "SqlLite" -> Guid.NewGuid().ToString()
@@ -78,7 +86,7 @@ type MemoryService
     member _.GetMemoryCollection(dimensions: int) : ValueTask<MemoryCollection> = valueTask {
         if dimensions <= 0 then failwith "Invalid embedding dimentions"
 
-        let contentVectorDefinition = MemoryEmbedding.GetVectorDefinition(keyType, dimensions)
+        let contentVectorDefinition = MemoryEmbedding.GetVectorDefinition(keyType, dimensions, distanceFunction)
 
         let collection =
             vectoreStore.GetDynamicCollection($"{appOptions.Value.VectorCollectionName}_{dimensions}", contentVectorDefinition)
@@ -306,15 +314,14 @@ type MemoryService
             else
 
                 do! this.DeleteMemory(MemoryEmbeddingSource.Loop id, collection)
-
-                for index, text in
+                let chunks =
                     TextChunker.SplitPlainTextParagraphs(
                         [ summary ],
                         settings.TokensOfChunk,
                         overlapTokens = settings.TokensOfChunkOverlap,
                         tokenCounter = tokenCounter
                     )
-                    |> Seq.indexed do
+                for index, text in Seq.indexed chunks do
                     let! vector = embeddingService.GenerateVectorAsync(text)
                     let embedding = {
                         Source = MemoryEmbeddingSource.Loop id
@@ -418,7 +425,12 @@ type MemoryService
                 let uniqueCheckes = List()
                 for result in results do
                     try
-                        let score = if result.Score.HasValue then result.Score.Value else 0
+                        let score =
+                            match result.Score.HasValue, distanceFunction with
+                            | true, DistanceFunction.CosineSimilarity -> result.Score.Value * 100. |> int
+                            | true, DistanceFunction.CosineDistance -> (float 1 - result.Score.Value) * 100. |> int
+                            | true, _ -> failwithf "Unsupported distance function: %A" distanceFunction
+                            | _ -> 0
                         let record = MemoryEmbedding.FromVectorDictionary(result.Record)
                         match result.Record["SourceId"] with
                         | null -> ()

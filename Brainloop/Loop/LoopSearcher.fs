@@ -2,7 +2,6 @@
 
 open System
 open System.Threading
-open System.Threading.Tasks
 open FSharp.Control
 open FSharp.Data.Adaptive
 open Microsoft.Extensions.Logging
@@ -95,7 +94,7 @@ type LoopSearcher =
                         shareStore.SearchResults.AddRange(
                             loops
                             |> Seq.map (fun x -> {
-                                Score = 0.
+                                Score = 100.
                                 Text = ""
                                 Result = MemorySearchResult.Loop x
                             })
@@ -179,7 +178,7 @@ type LoopSearcher =
                             }
                             adapt {
                                 let! results = shareStore.SearchResults
-                                for i, result in results |> Seq.sortBy _.Score |> Seq.indexed do
+                                for i, result in results |> Seq.sortByDescending _.Score |> Seq.indexed do
                                     LoopSearcher.SearchResultCard(result, onClose = onClose, index = i)
                             }
                         }
@@ -388,20 +387,17 @@ type LoopSearcher =
                                 }
                               }
                         }
-                        region {
-                            if result.Score <> 0 then
-                                div {
-                                    style {
-                                        positionAbsolute
-                                        top 0
-                                        right 0
-                                    }
-                                    MudChip'' {
-                                        Size Size.Small
-                                        int ((1. - result.Score) * 100.0)
-                                        "%"
-                                    }
-                                }
+                        div {
+                            style {
+                                positionAbsolute
+                                top 0
+                                right 0
+                            }
+                            MudChip'' {
+                                Size Size.Small
+                                result.Score
+                                "%"
+                            }
                         }
                     }
                 }

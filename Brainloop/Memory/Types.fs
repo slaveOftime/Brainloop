@@ -50,7 +50,7 @@ type MemoryEmbedding = {
 } with
 
     // With this, it will be easier to support different vector store, as different vectore store has different limitation on id type or other property types
-    static member GetVectorDefinition(idType: Type, dimensions: int) =
+    static member GetVectorDefinition(idType: Type, dimensions: int, distanceFunction: string) =
         VectorStoreCollectionDefinition(
             Properties = [|
                 VectorStoreKeyProperty("Id", idType)
@@ -64,7 +64,7 @@ type MemoryEmbedding = {
                 VectorStoreDataProperty("ChunkReferenceId", typeof<string>, IsIndexed = true)
                 VectorStoreDataProperty("ChunkReferenceIndex", typeof<string>, IsIndexed = true)
                 VectorStoreDataProperty("ChunkText", typeof<string>, IsFullTextIndexed = true)
-                VectorStoreVectorProperty("ChunkEmbedding", typeof<ReadOnlyMemory<float32>>, dimensions)
+                VectorStoreVectorProperty("ChunkEmbedding", typeof<ReadOnlyMemory<float32>>, dimensions, DistanceFunction = distanceFunction)
             |]
         )
 
@@ -134,7 +134,12 @@ type MemoryEmbeddingSource =
 type MemoryEmbeddingReference = LoopContent of int64
 
 
-type MemorySearchResultItem = { Score: float; Text: string; Result: MemorySearchResult }
+type MemorySearchResultItem = {
+    // In percentage, 0.0 to 100.0
+    Score: float
+    Text: string
+    Result: MemorySearchResult
+}
 
 [<RequireQualifiedAccess; Struct>]
 type MemorySearchResult =
