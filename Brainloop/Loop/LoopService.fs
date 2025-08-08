@@ -126,10 +126,10 @@ type LoopService
 
                 do! chatCompletionHandler.Handle(agent.Id, chatMessages, outputContent, ?modelId = modelId, ?cancellationToken = cancellationToken)
 
-                let! _ = loopContentService.UpsertLoopContent({ outputContent with Id = outputContentId })
+                do! loopContentService.UpsertLoopContent({ outputContent with Id = outputContentId }) |> ValueTask.map ignore
 
-                if chatMessages.Count = 1 then
-                    (this :> ILoopService).BuildTitle(loopId) |> ignore
+            let! contents = loopContentService.GetOrCreateContentsCache(loopId)
+            if contents.Count <= 2 then (this :> ILoopService).BuildTitle(loopId) |> ignore
         }
 
 
@@ -181,8 +181,7 @@ type LoopService
 
                         let! _ = loopContentService.UpsertLoopContent(target)
 
-                        if chatMessages.Count = 1 then
-                            (this :> ILoopService).BuildTitle(loopId) |> ignore
+                        if contents.Count <= 2 then (this :> ILoopService).BuildTitle(loopId) |> ignore
         }
 
 
@@ -231,7 +230,7 @@ type LoopService
                         content.Role <- AuthorRole.User
                         if content.Items.Count > 0 then chatMessages.Add(content)
 
-                    if chatMessages.Count > 1 then
+                    if chatMessages.Count > 0 then
                         transact (fun _ ->
                             let summary =
                                 globalStore.LoopTitles.Value
@@ -246,17 +245,6 @@ type LoopService
                         let! result = buildTitleHandler.Handle(agent.Id, chatMessages)
                         do! updateTitle result
 
-                    else if contents.Count > 0 then
-                        let text =
-                            contents.[0].Items.Value
-                            |> Seq.tryPick (
-                                function
-                                | LoopContentItem.Text x -> Some(String.Concat(x))
-                                | _ -> None
-                            )
-                        match text with
-                        | Some text -> do! updateTitle text
-                        | _ -> failwith "Contents are not valid for summarizing"
                     else
                         failwith "Contents are not enough for summarizing"
 
