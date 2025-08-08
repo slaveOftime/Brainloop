@@ -123,7 +123,20 @@ type MemoryService
     member _.UpsertMemory(collection: MemoryCollection, record: Dictionary<_, _>) = valueTask {
         do! upsertLocker.WaitAsync()
         try
-            do! collection.UpsertAsync(record)
+            let maxRetry = 5
+            let mutable retryCount = 0
+            while retryCount < maxRetry do
+                try
+                    do! collection.UpsertAsync(record)
+                    retryCount <- maxRetry
+                with ex ->
+                    retryCount <- retryCount + 1
+                    if retryCount >= maxRetry then
+                        logger.LogError(ex, "Upsert memory failed")
+                        raise ex
+                    else
+                        logger.LogWarning("Upsert memory failed, will retry later ({count}/{maxCount}): {message}", retryCount, maxRetry, ex.Message)
+                        do! Task.Delay(1000)
         finally
             upsertLocker.Release() |> ignore
     }
