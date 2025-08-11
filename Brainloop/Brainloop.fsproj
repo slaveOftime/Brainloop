@@ -139,10 +139,10 @@
 		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.61.0-alpha" />
 		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.61.0-alpha" />
 		<PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.3" />
-		<PackageReference Include="OllamaSharp" Version="5.3.3" />
+		<PackageReference Include="OllamaSharp" Version="5.3.4" />
 		<PackageReference Include="PdfPig" Version="0.1.10" />
-		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
-		<PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.14.0" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.15.0" />
+		<PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.15.0" />
 		<PackageReference Include="ReverseMarkdown" Version="4.7.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 		<PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
