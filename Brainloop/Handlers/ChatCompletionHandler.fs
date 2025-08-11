@@ -237,7 +237,12 @@ type ChatCompletionHandler
 
 
     interface IChatCompletionHandler with
-        member _.Handle(agentId, contents, targetContent, ?modelId, ?cancellationToken) = valueTask {
+        member _.Handle(agentId, contents, targetContent, ?modelId, ?functions, ?cancellationToken) = valueTask {
+            let hasSpecificFunctions =
+                match functions with
+                | Some fns -> Seq.isEmpty fns |> not
+                | None -> false
+
             let! agents = agentService.GetAgentsWithCache()
 
             let agent =
@@ -298,7 +303,7 @@ type ChatCompletionHandler
                     targetContent.ProgressMessage.Publish $"Building kernel for model {model.Model}"
                     let! kernel = modelService.GetKernel(model.Id, timeoutMs = Math.Max(600_000, agent.MaxTimeoutMs))
 
-                    let chatWithFunctions = agent.EnableTools && model.CanHandleFunctions
+                    let chatWithFunctions = (agent.EnableTools || hasSpecificFunctions) && model.CanHandleFunctions
                     let chatOptions = this.GetPromptExecutionSettings(agent, model, chatWithFunctions)
 
                     if chatWithFunctions then
@@ -319,9 +324,6 @@ type ChatCompletionHandler
                             )
                         )
 
-                        logger.LogInformation("Add tools for {model}", model.Model)
-                        targetContent.ProgressMessage.Publish "Adding tools"
-
                         chatOptions.FunctionChoiceBehavior <-
                             FunctionChoiceBehavior.Auto(
                                 autoInvoke = true,
@@ -336,8 +338,17 @@ type ChatCompletionHandler
                                     )
                             )
 
-                        let! plugins = agentService.GetKernelPlugins(agentId, cancellationToken = cancellationTokenSource.Token)
-                        kernel.Plugins.AddRange(plugins)
+                        match functions with
+                        | Some fns ->
+                            kernel.Plugins.Add(
+                                KernelPluginFactory.CreateFromFunctions("userFunctions", functions = fns, description = "Functions provided by user")
+                            )
+                            |> ignore
+                        | None ->
+                            logger.LogInformation("Add tools for {model}", model.Model)
+                            targetContent.ProgressMessage.Publish "Adding tools"
+                            let! plugins = agentService.GetKernelPlugins(agentId, cancellationToken = cancellationTokenSource.Token)
+                            kernel.Plugins.AddRange(plugins)
 
                     //let! aiContext = textSearchProvider.ModelInvokingAsync([||], cancellationToken = cancellationTokenSource.Token)
                     //kernel.Plugins.AddFromAIContext(aiContext, "system_memory_rag")

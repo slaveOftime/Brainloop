@@ -37,6 +37,7 @@ type ILoopService =
         ?includeHistory: bool *
         ?ignoreInput: bool *
         ?sourceLoopContentId: int64 *
+        ?functions: KernelFunction seq *
         ?cancellationToken: CancellationToken ->
             ValueTask<unit>
 

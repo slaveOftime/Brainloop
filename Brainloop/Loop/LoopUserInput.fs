@@ -9,6 +9,7 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Web
 open Microsoft.AspNetCore.Components.Forms
+open Microsoft.SemanticKernel
 open FSharp.Data.Adaptive
 open IcedTasks
 open MudBlazor
@@ -19,6 +20,8 @@ open Fun.Blazor
 open Brainloop.Db
 open Brainloop.Share
 open Brainloop.Memory
+open Brainloop.Model
+open Brainloop.Function
 open Brainloop.Agent
 
 
@@ -35,6 +38,7 @@ type LoopUserInput =
                 let snackbar = serviceProvider.GetRequiredService<ISnackbar>()
                 let loopService = serviceProvider.GetRequiredService<ILoopService>()
                 let loopContentService = serviceProvider.GetRequiredService<ILoopContentService>()
+                let functionService = serviceProvider.GetRequiredService<IFunctionService>()
 
                 let mutable inputRef: StandaloneCodeEditor | null = null
                 let mutable fileUploadRef: MudFileUpload<IReadOnlyList<IBrowserFile>> | null = null
@@ -43,10 +47,12 @@ type LoopUserInput =
                 let inputVisible = cval false
                 let inputFocused = cval false
                 let isInProgress = cval false
+                let isLoadingTool = cval false
                 let isDragging = cval false
                 let hasInput = cval false
                 let selectedAgent = cval ValueOption<Agent>.ValueNone
                 let selectedModel = cval ValueOption<Model>.ValueNone
+                let selectedFunctions = clist<KernelFunction> ()
 
                 let send () = task {
                     isInProgress.Publish true
@@ -62,7 +68,8 @@ type LoopUserInput =
                                     loopId,
                                     message,
                                     ?agentId = (selectedAgent.Value |> ValueOption.map _.Id |> ValueOption.toOption),
-                                    ?modelId = (selectedModel.Value |> ValueOption.map _.Id |> ValueOption.toOption)
+                                    ?modelId = (selectedModel.Value |> ValueOption.map _.Id |> ValueOption.toOption),
+                                    ?functions = (if selectedFunctions.Count = 0 then None else Some selectedFunctions)
                                 )
                         with ex ->
                             snackbar.ShowMessage(ex, logger)
@@ -145,11 +152,47 @@ type LoopUserInput =
                             )
                 }
 
+                let parseFunction (txt: string) = task {
+                    match txt with
+                    | SafeString label when label.StartsWith("[") && label.EndsWith("]") ->
+                        let parts = label.Trim('[', ']').Split(" -> ")
+                        if parts.Length = 2 then
+                            try
+                                let pluginName = parts.[0]
+                                let functionName = parts.[1]
+                                let! fns = functionService.GetFunctions() |> ValueTask.map (Seq.map _.Id)
+                                let! plugins = functionService.GetKernelPlugins(fns)
+                                let fn =
+                                    plugins
+                                    |> Seq.tryPick (fun p ->
+                                        if p.Name = pluginName then
+                                            p |> Seq.tryFind (fun f -> f.Name = functionName)
+                                        else
+                                            None
+                                    )
+                                match fn with
+                                | None -> ()
+                                | Some f ->
+                                    transact (fun _ ->
+                                        if selectedFunctions |> Seq.exists (fun x -> x.Name = f.Name && x.PluginName = f.PluginName) |> not then
+                                            selectedFunctions.Add f |> ignore
+                                    )
+                            with _ ->
+                                ()
+                    | _ -> ()
+                }
+
 
                 hook.RegisterAutoCompleteForAddAgents(
                     (fun _ -> inputRef),
                     (fun x -> valueTask { selectedAgent.Publish(Option.toValueOption x) }),
                     getAgentId = (fun _ -> selectedAgent.Value |> ValueOption.map _.Id)
+                )
+
+                hook.RegisterAutoCompleteForAddFunction(
+                    (fun _ -> inputRef),
+                    startLoading = (fun _ -> isLoadingTool.Publish true),
+                    loadingFinished = (fun _ -> isLoadingTool.Publish false)
                 )
 
                 hook.AddFirstAfterRenderTask(fun _ -> task {
@@ -201,7 +244,11 @@ type LoopUserInput =
                                 )
                             )
                             OnDidInit(ignore >> registerActionsForEditor)
-                            OnDidChangeModelContent(fun _ -> hasInput.Publish true)
+                            OnDidChangeModelContent(fun e -> task {
+                                hasInput.Publish true
+                                for change in e.Changes do
+                                    do! parseFunction change.Text
+                            })
                             OnDidPaste(fun _ -> task { do! uploadPasteImage () })
                             OnDidFocusEditorWidget(fun _ -> inputFocused.Publish true)
                             OnDidBlurEditorWidget(fun _ -> inputFocused.Publish false)
@@ -218,10 +265,12 @@ type LoopUserInput =
                     style {
                         displayFlex
                         alignItemsCenter
+                        flexWrapWrap
                         gap 4
-                        margin 0 -16 -12 -14
                     }
-                    AgentSelector.Create(selectedAgent, selectedModel)
+                    AgentSelector.Create(selectedAgent, selectedModel, hideModelName = true)
+                    ModelSelector.CreateMenu(selectedModel)
+                    FunctionSelector.Create(selectedFunctions, isLoading = isLoadingTool)
                     div {
                         MudFileUpload'' {
                             ondragenter (fun _ -> isDragging.Publish true)

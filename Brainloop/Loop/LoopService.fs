@@ -51,86 +51,97 @@ type LoopService
                     this.AddSourceLoopContents(chatMessages, sourceLoopId, historyToInclude)
 
     interface ILoopService with
-        member _.Send(loopId, message, ?agentId, ?modelId, ?author, ?role, ?includeHistory, ?ignoreInput, ?sourceLoopContentId, ?cancellationToken) = valueTask {
-            let author = author |> Option.defaultValue "ME"
-            let role = role |> Option.defaultValue LoopContentAuthorRole.User
-            let ignoreInput = ignoreInput |> Option.defaultValue false
-            let includeHistory = includeHistory |> Option.defaultValue true
+        member _.Send
+            (loopId, message, ?agentId, ?modelId, ?author, ?role, ?includeHistory, ?ignoreInput, ?sourceLoopContentId, ?functions, ?cancellationToken)
+            =
+            valueTask {
+                let author = author |> Option.defaultValue "ME"
+                let role = role |> Option.defaultValue LoopContentAuthorRole.User
+                let ignoreInput = ignoreInput |> Option.defaultValue false
+                let includeHistory = includeHistory |> Option.defaultValue true
 
-            let! agent =
-                match agentId with
-                | Some agentId -> agentService.TryGetAgentWithCache(agentId)
-                | None -> ValueTask.fromResult (ValueNone)
+                let! agent =
+                    match agentId with
+                    | Some agentId -> agentService.TryGetAgentWithCache(agentId)
+                    | None -> ValueTask.fromResult (ValueNone)
 
-            let message =
-                match agent, message with
-                | ValueSome x, NullOrEmptyString -> if x.Name.Contains(' ') then $"@\"{x.Name}\"" else $"@{x.Name}"
-                | _ -> message
+                let message =
+                    match agent, message with
+                    | ValueSome x, NullOrEmptyString -> if x.Name.Contains(' ') then $"@\"{x.Name}\"" else $"@{x.Name}"
+                    | _ -> message
 
-            let mutable inputContentId = ValueNone
+                let mutable inputContentId = ValueNone
 
-            if not ignoreInput && String.IsNullOrEmpty message |> not then
-                let inputContent = {
-                    LoopContentWrapper.Default(loopId) with
-                        Items = clist [ LoopContentItem.Text(LoopContentText message) ]
-                        Author = author
-                        AuthorRole = role
-                        SourceLoopContentId = sourceLoopContentId |> Option.toValueOption
-                }
+                if not ignoreInput && String.IsNullOrEmpty message |> not then
+                    let inputContent = {
+                        LoopContentWrapper.Default(loopId) with
+                            Items = clist [ LoopContentItem.Text(LoopContentText message) ]
+                            Author = author
+                            AuthorRole = role
+                            SourceLoopContentId = sourceLoopContentId |> Option.toValueOption
+                    }
 
-                let! id = loopContentService.AddContentToCacheAndUpsert(inputContent)
-                inputContentId <- ValueSome id
+                    let! id = loopContentService.AddContentToCacheAndUpsert(inputContent)
+                    inputContentId <- ValueSome id
 
-            match agent with
-            | ValueNone -> logger.LogInformation("No agent is specified")
-            | ValueSome agent ->
-                let chatMessages = List<LoopContentWrapper>()
+                match agent with
+                | ValueNone -> logger.LogInformation("No agent is specified")
+                | ValueSome agent ->
+                    let chatMessages = List<LoopContentWrapper>()
+                    let! contents = loopContentService.GetOrCreateContentsCache(loopId)
+                    let historyToInclude = Math.Max(0, agent.MaxHistory)
+                    if includeHistory && historyToInclude > 0 then
+                        let mutable previousCount = -1
+                        while historyToInclude > contents.Count && previousCount <> contents.Count do
+                            previousCount <- contents.Count
+                            do! loopContentService.LoadMoreContentsIntoCache(loopId)
+                        for item in contents |> AList.force |> _.TakeLast(historyToInclude) do
+                            chatMessages.Add(item)
+                        this.AddSourceLoopContents(chatMessages, loopId, historyToInclude)
+
+                    if inputContentId.IsNone then
+                        chatMessages.Add(
+                            {
+                                LoopContentWrapper.Default loopId with
+                                    Author = author
+                                    AuthorRole = role
+                                    Items = clist [ LoopContentItem.Text(LoopContentText message) ]
+                            }
+                        )
+
+                    let outputContent = {
+                        LoopContentWrapper.Default(loopId) with
+                            Items = clist ()
+                            DirectPrompt =
+                                (match ignoreInput, message with
+                                 | true, SafeString x -> cval (ValueSome x)
+                                 | _ -> cval ValueNone)
+                            Author = agent.Name
+                            AuthorRole = LoopContentAuthorRole.Agent
+                            AgentId = ValueSome agent.Id
+                            SourceLoopContentId =
+                                match inputContentId with
+                                | ValueSome _ -> inputContentId
+                                | _ -> sourceLoopContentId |> Option.toValueOption
+                    }
+                    let! outputContentId = loopContentService.AddContentToCacheAndUpsert(outputContent)
+                    let outputContent = { outputContent with Id = outputContentId }
+
+                    do!
+                        chatCompletionHandler.Handle(
+                            agent.Id,
+                            chatMessages,
+                            outputContent,
+                            ?modelId = modelId,
+                            ?functions = functions,
+                            ?cancellationToken = cancellationToken
+                        )
+
+                    do! loopContentService.UpsertLoopContent({ outputContent with Id = outputContentId }) |> ValueTask.map ignore
+
                 let! contents = loopContentService.GetOrCreateContentsCache(loopId)
-                let historyToInclude = Math.Max(0, agent.MaxHistory)
-                if includeHistory && historyToInclude > 0 then
-                    let mutable previousCount = -1
-                    while historyToInclude > contents.Count && previousCount <> contents.Count do
-                        previousCount <- contents.Count
-                        do! loopContentService.LoadMoreContentsIntoCache(loopId)
-                    for item in contents |> AList.force |> _.TakeLast(historyToInclude) do
-                        chatMessages.Add(item)
-                    this.AddSourceLoopContents(chatMessages, loopId, historyToInclude)
-
-                if inputContentId.IsNone then
-                    chatMessages.Add(
-                        {
-                            LoopContentWrapper.Default loopId with
-                                Author = author
-                                AuthorRole = role
-                                Items = clist [ LoopContentItem.Text(LoopContentText message) ]
-                        }
-                    )
-
-                let outputContent = {
-                    LoopContentWrapper.Default(loopId) with
-                        Items = clist ()
-                        DirectPrompt =
-                            (match ignoreInput, message with
-                             | true, SafeString x -> cval (ValueSome x)
-                             | _ -> cval ValueNone)
-                        Author = agent.Name
-                        AuthorRole = LoopContentAuthorRole.Agent
-                        AgentId = ValueSome agent.Id
-                        SourceLoopContentId =
-                            match inputContentId with
-                            | ValueSome _ -> inputContentId
-                            | _ -> sourceLoopContentId |> Option.toValueOption
-                }
-                let! outputContentId = loopContentService.AddContentToCacheAndUpsert(outputContent)
-                let outputContent = { outputContent with Id = outputContentId }
-
-                do! chatCompletionHandler.Handle(agent.Id, chatMessages, outputContent, ?modelId = modelId, ?cancellationToken = cancellationToken)
-
-                do! loopContentService.UpsertLoopContent({ outputContent with Id = outputContentId }) |> ValueTask.map ignore
-
-            let! contents = loopContentService.GetOrCreateContentsCache(loopId)
-            if contents.Count <= 2 then (this :> ILoopService).BuildTitle(loopId) |> ignore
-        }
+                if contents.Count <= 2 then (this :> ILoopService).BuildTitle(loopId) |> ignore
+            }
 
 
         member _.Resend(loopId, loopContentId, ?modelId) = valueTask {

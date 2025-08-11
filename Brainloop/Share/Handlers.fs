@@ -8,7 +8,8 @@ open Brainloop.Db
 
 
 type ICreateTitleHandler =
-    abstract member Handle: agentId: int * chatMessages: IReadOnlyList<ChatMessageContent> * ?cancellationToken: CancellationToken -> ValueTask<string>
+    abstract member Handle:
+        agentId: int * chatMessages: IReadOnlyList<ChatMessageContent> * ?cancellationToken: CancellationToken -> ValueTask<string>
 
 
 type IGetTextFromImageHandler =
@@ -29,6 +30,7 @@ type IChatCompletionHandler =
         contents: IReadOnlyList<LoopContentWrapper> *
         targetContent: LoopContentWrapper *
         ?modelId: int *
+        ?functions: KernelFunction seq *
         ?cancellationToken: CancellationToken ->
             ValueTask<unit>
 

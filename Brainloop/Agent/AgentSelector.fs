@@ -12,10 +12,11 @@ open Brainloop.Agent
 
 type AgentSelector =
 
-    static member Create(selectedAgent: ValueOption<Agent> cval, selectedModel: ValueOption<Model> cval) =
+    static member Create(selectedAgent: ValueOption<Agent> cval, selectedModel: ValueOption<Model> cval, ?hideModelName: bool) =
         html.inject (
             "agents-selector",
             fun (serviceProvider: IServiceProvider) ->
+                let hideModelName = hideModelName |> Option.defaultValue false
                 let agentService = serviceProvider.GetRequiredService<IAgentService>()
 
                 let mutable menuRef: MudMenu | null = null
@@ -66,14 +67,12 @@ type AgentSelector =
                             )
                         )
 
-                div {
-                    style {
-                        displayFlex
-                        alignItemsCenter
-                    }
-                    adapt {
-                        let! selectedAgent, setSelectedAgent = selectedAgent.WithSetter()
-                        let! selectedModel, setSelectedModel = selectedModel.WithSetter()
+                adapt {
+                    let! selectedAgent, setSelectedAgent = selectedAgent.WithSetter()
+                    let! selectedModel, setSelectedModel = selectedModel.WithSetter()
+                    MudButtonGroup'' {
+                        Size Size.Small
+                        Variant Variant.Outlined
                         MudMenu'' {
                             AnchorOrigin Origin.TopLeft
                             TransformOrigin Origin.BottomLeft
@@ -89,11 +88,12 @@ type AgentSelector =
                                     Variant Variant.Text
                                     StartIcon Icons.Material.Filled.AlternateEmail
                                     agent.Name
-                                    match selectedModel with
-                                    | ValueNone -> ()
-                                    | ValueSome model ->
-                                        " - "
-                                        model.Name
+                                    if not hideModelName then
+                                        match selectedModel with
+                                        | ValueNone -> ()
+                                        | ValueSome model ->
+                                            " - "
+                                            model.Name
                                   }
                             )
                             ref (fun x -> menuRef <- x)

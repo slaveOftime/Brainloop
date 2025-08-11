@@ -60,7 +60,9 @@
 		<Compile Include="Function\SystemFunctions\SystemCreateTaskForAgentFunc.fs" />
 		<Compile Include="Function\SystemFunctions\SystemCreateScheduledTaskForAgentFunc.fs" />
 		<Compile Include="Function\FunctionService.fs" />
+		<Compile Include="Function\Hooks.fs" />
 		<Compile Include="Function\FunctionMcpSelector.fs" />
+		<Compile Include="Function\FunctionSelector.fs" />
 		<Compile Include="Function\FunctionCard.fs" />
 		<Compile Include="Function\FunctionsPage.fs" />
 		<Compile Include="Function\DIExtensions.fs" />
