@@ -111,9 +111,10 @@ type ChatCompletionHandler
                     for kv in toolCall.Arguments do
                         context.Arguments[kv.Key] <- kv.Value
 
-                    context.Arguments.Add(Strings.ToolCallAgentId, agent.Id)
-                    context.Arguments.Add(Strings.ToolCallLoopId, targetContent.LoopId)
-                    context.Arguments.Add(Strings.ToolCallLoopContentId, targetContent.Id)
+                    if context.Function.PluginName = SystemFunction.PluginName then
+                        context.Arguments.Add(Strings.ToolCallAgentId, agent.Id)
+                        context.Arguments.Add(Strings.ToolCallLoopId, targetContent.LoopId)
+                        context.Arguments.Add(Strings.ToolCallLoopContentId, targetContent.Id)
 
                     onFunctionStarted ()
                     targetContent.StreammingCount.Publish((+) 1)
