@@ -8,10 +8,8 @@ open Microsoft.AspNetCore.Components.Web
 type Index() as this =
     inherit FunComponent()
 
-    member _.MapAsset(x) = base.Assets[x]
-
     override _.Render() =
-        let iconUrl = base.Assets["favicon.png"]
+        let iconUrl = this.MapAsset "favicon.png"
         fragment {
             doctype "html"
             html' {

@@ -182,7 +182,7 @@ type MonacoField =
                 styleElt {
                     ruleset $".{classIdentifier} .monaco-editor-container" {
                         height "300px"
-                        defaultArg monacoStyle (Fun.Css.Internal.CombineKeyValue(fun x -> x))
+                        defaultArg monacoStyle html.emptyCss
                     }
                 }
             }
