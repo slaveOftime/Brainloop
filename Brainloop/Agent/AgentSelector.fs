@@ -70,129 +70,134 @@ type AgentSelector =
                 adapt {
                     let! selectedAgent, setSelectedAgent = selectedAgent.WithSetter()
                     let! selectedModel, setSelectedModel = selectedModel.WithSetter()
-                    MudButtonGroup'' {
-                        Size Size.Small
-                        Variant Variant.Outlined
-                        MudMenu'' {
-                            AnchorOrigin Origin.TopLeft
-                            TransformOrigin Origin.BottomLeft
-                            ActivatorContent(
-                                match selectedAgent with
-                                | ValueNone -> MudIconButton'' {
-                                    OnClick(ignore >> openAgentsSelector)
-                                    Icon Icons.Material.Filled.AlternateEmail
-                                  }
-                                | ValueSome agent -> MudButton'' {
-                                    OnClick(ignore >> openAgentsSelector)
-                                    Color Color.Primary
-                                    Variant Variant.Text
-                                    StartIcon Icons.Material.Filled.AlternateEmail
-                                    agent.Name
-                                    if not hideModelName then
-                                        match selectedModel with
-                                        | ValueNone -> ()
-                                        | ValueSome model ->
-                                            " - "
-                                            model.Name
-                                  }
-                            )
-                            ref (fun x -> menuRef <- x)
-                            div {
-                                class' "highlight-fst-menu-item"
-                                style {
-                                    minWidth 250
-                                    maxWidth 400
-                                    maxHeight 500
-                                    overflowYAuto
+                    MudMenu'' {
+                        AnchorOrigin Origin.TopLeft
+                        TransformOrigin Origin.BottomLeft
+                        ActivatorContent(
+                            MudButtonGroup'' {
+                                Size Size.Small
+                                Color(if selectedAgent.IsSome then Color.Primary else Color.Default)
+                                Variant(if selectedAgent.IsSome then Variant.Outlined else Variant.Filled)
+                                region {
+                                    match selectedAgent with
+                                    | ValueNone -> MudIconButton'' {
+                                        OnClick(ignore >> openAgentsSelector)
+                                        Icon Icons.Material.Filled.AlternateEmail
+                                      }
+                                    | ValueSome agent -> MudButton'' {
+                                        OnClick(ignore >> openAgentsSelector)
+                                        Color Color.Primary
+                                        Variant Variant.Text
+                                        StartIcon Icons.Material.Filled.AlternateEmail
+                                        agent.Name
+                                        if not hideModelName then
+                                            match selectedModel with
+                                            | ValueNone -> ()
+                                            | ValueSome model ->
+                                                " - "
+                                                model.Name
+                                      }
                                 }
-                                adapt {
-                                    let! agents = agents
-                                    let! agentsFilter = agentsFilter
-                                    let gropedAgents = filterAgents agentsFilter agents |> Seq.groupBy _.Group |> Seq.sortBy fst
-                                    for g, agents in gropedAgents do
-                                        match g with
-                                        | NullOrEmptyString -> ()
-                                        | SafeString g ->
-                                            MudDivider''
-                                            div {
-                                                style {
-                                                    displayFlex
-                                                    alignItemsCenter
-                                                    justifyContentCenter
-                                                    gap 8
-                                                    marginTop 4
-                                                    marginBottom 4
-                                                    opacity 0.75
-                                                }
-                                                MudText'' {
-                                                    Typo Typo.body2
-                                                    g
-                                                }
-                                                MudIcon'' {
-                                                    Size Size.Small
-                                                    Icon Icons.Material.Filled.KeyboardArrowDown
-                                                }
-                                            }
-                                        for agent in agents do
-                                            MudMenuItem'' {
-                                                key agent.Id
-                                                OnClick(fun _ -> selectAgent (ValueSome agent))
-                                                MudText'' { agent.Name }
-                                                MudText'' {
-                                                    Typo Typo.body2
-                                                    agent.Description
-                                                }
-                                                MudChipSet'' {
-                                                    if agent.EnableTools then
-                                                        MudChip'' {
-                                                            Size Size.Small
-                                                            Color Color.Info
-                                                            "Tools"
-                                                        }
-                                                    for model in agent.AgentModels |> Seq.sortBy (fun x -> x.Order) do
-                                                        MudChip'' {
-                                                            stopPropagation "onclick" true
-                                                            Size Size.Small
-                                                            OnClick(fun _ -> task {
-                                                                do! selectAgent (ValueSome agent)
-                                                                setSelectedModel (ValueSome model.Model)
-                                                            })
-                                                            model.Model.Name
-                                                        }
-                                                }
-                                            }
+                                region {
+                                    match selectedAgent with
+                                    | ValueSome _ -> MudIconButton'' {
+                                        Size Size.Small
+                                        Variant Variant.Text
+                                        Icon Icons.Material.Filled.Close
+                                        OnClick(fun _ ->
+                                            setSelectedAgent ValueNone
+                                            setSelectedModel ValueNone
+                                        )
+                                      }
+                                    | _ -> ()
                                 }
                             }
-                            MudDivider''
-                            div {
-                                style { padding 8 }
-                                adapt {
-                                    let! v, setV = agentsFilter.WithSetter()
-                                    MudTextField'' {
-                                        Value v
-                                        ValueChanged setV
-                                        Placeholder "Filter agents"
-                                        AutoFocus
-                                        DebounceInterval 400
-                                        OnKeyUp(fun e -> task {
-                                            if e.Key = "Enter" then
-                                                do! agents.Value |> filterAgents v |> Seq.tryHead |> ValueOption.ofOption |> selectAgent
-                                        })
-                                    }
+                        )
+                        ref (fun x -> menuRef <- x)
+                        div {
+                            class' "highlight-fst-menu-item"
+                            style {
+                                minWidth 250
+                                maxWidth 400
+                                maxHeight 500
+                                overflowYAuto
+                            }
+                            adapt {
+                                let! agents = agents
+                                let! agentsFilter = agentsFilter
+                                let gropedAgents = filterAgents agentsFilter agents |> Seq.groupBy _.Group |> Seq.sortBy fst
+                                for g, agents in gropedAgents do
+                                    match g with
+                                    | NullOrEmptyString -> ()
+                                    | SafeString g ->
+                                        MudDivider''
+                                        div {
+                                            style {
+                                                displayFlex
+                                                alignItemsCenter
+                                                justifyContentCenter
+                                                gap 8
+                                                marginTop 4
+                                                marginBottom 4
+                                                opacity 0.75
+                                            }
+                                            MudText'' {
+                                                Typo Typo.body2
+                                                g
+                                            }
+                                            MudIcon'' {
+                                                Size Size.Small
+                                                Icon Icons.Material.Filled.KeyboardArrowDown
+                                            }
+                                        }
+                                    for agent in agents do
+                                        MudMenuItem'' {
+                                            key agent.Id
+                                            OnClick(fun _ -> selectAgent (ValueSome agent))
+                                            MudText'' { agent.Name }
+                                            MudText'' {
+                                                Typo Typo.body2
+                                                agent.Description
+                                            }
+                                            MudChipSet'' {
+                                                if agent.EnableTools then
+                                                    MudChip'' {
+                                                        Size Size.Small
+                                                        Color Color.Info
+                                                        "Tools"
+                                                    }
+                                                for model in agent.AgentModels |> Seq.sortBy (fun x -> x.Order) do
+                                                    MudChip'' {
+                                                        stopPropagation "onclick" true
+                                                        Size Size.Small
+                                                        OnClick(fun _ -> task {
+                                                            do! selectAgent (ValueSome agent)
+                                                            setSelectedModel (ValueSome model.Model)
+                                                        })
+                                                        model.Model.Name
+                                                    }
+                                            }
+                                        }
+                            }
+                        }
+                        MudDivider''
+                        div {
+                            style { padding 8 }
+                            adapt {
+                                let! v, setV = agentsFilter.WithSetter()
+                                MudTextField'' {
+                                    Value v
+                                    ValueChanged setV
+                                    Placeholder "Filter agents"
+                                    AutoFocus
+                                    DebounceInterval 400
+                                    OnKeyUp(fun e -> task {
+                                        if e.Key = "Enter" then
+                                            do! agents.Value |> filterAgents v |> Seq.tryHead |> ValueOption.ofOption |> selectAgent
+                                    })
                                 }
                             }
                         }
-                        match selectedAgent with
-                        | ValueSome _ -> MudIconButton'' {
-                            Size Size.Small
-                            Variant Variant.Text
-                            Icon Icons.Material.Filled.Close
-                            OnClick(fun _ ->
-                                setSelectedAgent ValueNone
-                                setSelectedModel ValueNone
-                            )
-                          }
-                        | _ -> ()
                     }
                 }
         )

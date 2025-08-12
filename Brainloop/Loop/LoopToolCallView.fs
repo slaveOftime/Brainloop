@@ -479,6 +479,7 @@ type LoopToolCallView =
                             TitleContent titleView
                             if isExpanded then
                                 MudText'' {
+                                    style { textOverflowWithMaxLines 5 }
                                     Typo Typo.body2
                                     toolCall.Description
                                 }

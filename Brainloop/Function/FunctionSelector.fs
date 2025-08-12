@@ -108,15 +108,21 @@ type FunctionSelector =
                                     let! functions = functions
                                     let! functionFilter = functionsFilter
                                     for fns in functions do
-                                        let hasMatches =
+                                        let isPluginMatch =
                                             fns.Name.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
                                             || fns.Description.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
-                                            || (fns
-                                                |> Seq.exists (fun y ->
-                                                    y.Name.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
-                                                    || y.Description.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
-                                                ))
-                                        if hasMatches then
+                                        let filteredFunctions =
+                                            fns
+                                            |> Seq.filter (fun y ->
+                                                y.Name.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
+                                                || y.Description.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
+                                            )
+                                            |> Seq.toList
+                                        let availableFunctions =
+                                            match filteredFunctions with
+                                            | [] -> fns :> seq<KernelFunction>
+                                            | x -> x
+                                        if String.IsNullOrEmpty functionFilter || isPluginMatch || filteredFunctions.Length > 0 then
                                             MudDivider''
                                             div {
                                                 style {
@@ -137,36 +143,32 @@ type FunctionSelector =
                                                     Icon Icons.Material.Filled.KeyboardArrowDown
                                                 }
                                             }
-                                            for fn in fns do
-                                                let hasMatch =
-                                                    fn.Name.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
-                                                    || fn.Description.Contains(functionFilter, StringComparison.OrdinalIgnoreCase)
-                                                if hasMatch then
-                                                    match firstMatchFunction with
-                                                    | null -> firstMatchFunction <- fn
-                                                    | _ -> ()
+                                            for fn in availableFunctions do
+                                                match firstMatchFunction with
+                                                | null -> firstMatchFunction <- fn
+                                                | _ -> ()
 
-                                                    let color' =
-                                                        if
-                                                            selectedFunctions
-                                                            |> Seq.exists (fun x -> x.Name = fn.Name && x.PluginName = fn.PluginName)
-                                                        then
-                                                            Color.Primary
-                                                        else
-                                                            Color.Default
+                                                let color' =
+                                                    if
+                                                        selectedFunctions |> Seq.exists (fun x -> x.Name = fn.Name && x.PluginName = fn.PluginName)
+                                                    then
+                                                        Color.Primary
+                                                    else
+                                                        Color.Default
 
-                                                    MudMenuItem'' {
-                                                        OnClick(fun _ -> selectFunction fn)
-                                                        MudText'' {
-                                                            Color color'
-                                                            fn.Name
-                                                        }
-                                                        MudText'' {
-                                                            Typo Typo.body2
-                                                            Color color'
-                                                            fn.Description
-                                                        }
+                                                MudMenuItem'' {
+                                                    OnClick(fun _ -> selectFunction fn)
+                                                    MudText'' {
+                                                        Color color'
+                                                        fn.Name
                                                     }
+                                                    MudText'' {
+                                                        style { textOverflowWithMaxLines 3 }
+                                                        Typo Typo.body2
+                                                        Color color'
+                                                        fn.Description
+                                                    }
+                                                }
                                 }
                             }
                             MudDivider''

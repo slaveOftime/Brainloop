@@ -116,10 +116,6 @@ type ModelSelector =
                     transact (fun _ ->
                         models.Clear()
                         models.AddRange results
-                        modelsFilter.Value <-
-                            match modelsFilter.Value, selectedModel.Value with
-                            | NullOrEmptyString, ValueSome { Name = name } -> name
-                            | x, _ -> x
                     )
                 }
 

@@ -203,6 +203,11 @@ html {
     }
 }
 
+.mud-tooltip {
+    max-width: 400px;
+}
+
+
 pre[class*="language-"] {
     max-height: 500px !important;
     min-width: 250px !important;

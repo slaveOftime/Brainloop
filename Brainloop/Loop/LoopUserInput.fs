@@ -265,46 +265,58 @@ type LoopUserInput =
                     style {
                         displayFlex
                         alignItemsCenter
-                        flexWrapWrap
-                        gap 4
+                        gap 32
                     }
-                    AgentSelector.Create(selectedAgent, selectedModel, hideModelName = true)
-                    ModelSelector.CreateMenu(selectedModel)
-                    FunctionSelector.Create(selectedFunctions, isLoading = isLoadingTool)
                     div {
-                        MudFileUpload'' {
-                            ondragenter (fun _ -> isDragging.Publish true)
-                            ondragleave (fun _ -> isDragging.Publish false)
-                            ondrop (fun _ -> isDragging.Publish false)
-                            ondragend (fun _ -> isDragging.Publish false)
-                            OnFilesChanged uploadFiles
-                            ref (fun x -> fileUploadRef <- x)
+                        style {
+                            displayFlex
+                            alignItemsCenter
+                            flexWrapWrap
+                            gap 8
+                            width "100%"
                         }
-                        fileUploader
-                    }
-                    adapt {
-                        let! isExcalidrawReady = JS.IsExcalidrawReady() |> AVal.ofValueTask false
-                        MudIconButton'' {
-                            Icon Icons.Material.Filled.Draw
-                            Disabled(not isExcalidrawReady)
-                            OnClick(fun _ -> task {
-                                hook.ShowDialog(
-                                    DialogOptions(FullScreen = true, FullWidth = true, CloseOnEscapeKey = false),
-                                    fun ctx -> LoopContentExcalidrawer.Create(loopId, onClose = ctx.Close)
-                                )
-                            })
+                        AgentSelector.Create(selectedAgent, selectedModel, hideModelName = true)
+                        adapt {
+                            match! selectedAgent with
+                            | ValueNone -> ()
+                            | ValueSome _ ->
+                                ModelSelector.CreateMenu(selectedModel)
+                                FunctionSelector.Create(selectedFunctions, isLoading = isLoadingTool)
+                        }
+                        div {
+                            MudFileUpload'' {
+                                ondragenter (fun _ -> isDragging.Publish true)
+                                ondragleave (fun _ -> isDragging.Publish false)
+                                ondrop (fun _ -> isDragging.Publish false)
+                                ondragend (fun _ -> isDragging.Publish false)
+                                OnFilesChanged uploadFiles
+                                ref (fun x -> fileUploadRef <- x)
+                            }
+                            fileUploader
+                        }
+                        adapt {
+                            let! isExcalidrawReady = JS.IsExcalidrawReady() |> AVal.ofValueTask false
+                            MudIconButton'' {
+                                Icon Icons.Material.Filled.Draw
+                                Disabled(not isExcalidrawReady)
+                                OnClick(fun _ -> task {
+                                    hook.ShowDialog(
+                                        DialogOptions(FullScreen = true, FullWidth = true, CloseOnEscapeKey = false),
+                                        fun ctx -> LoopContentExcalidrawer.Create(loopId, onClose = ctx.Close)
+                                    )
+                                })
+                            }
+                        }
+                        adapt {
+                            match! isInProgress with
+                            | true -> MudProgressCircular'' {
+                                Size Size.Small
+                                Color Color.Primary
+                                Indeterminate
+                              }
+                            | _ -> ()
                         }
                     }
-                    adapt {
-                        match! isInProgress with
-                        | true -> MudProgressCircular'' {
-                            Size Size.Small
-                            Color Color.Primary
-                            Indeterminate
-                          }
-                        | _ -> ()
-                    }
-                    MudSpacer''
                     adapt {
                         let! hasInput = hasInput
                         let! selectedAgent = selectedAgent
