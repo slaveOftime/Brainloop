@@ -387,17 +387,21 @@ type LoopSearcher =
                                 }
                               }
                         }
-                        div {
-                            style {
-                                positionAbsolute
-                                top 0
-                                right 0
-                            }
-                            MudChip'' {
-                                Size Size.Small
-                                result.Score
-                                "%"
-                            }
+                        adapt {
+                            match! shareStore.SearchQuery with
+                            | NullOrEmptyString -> ()
+                            | _ -> div {
+                                style {
+                                    positionAbsolute
+                                    top 0
+                                    right 0
+                                }
+                                MudChip'' {
+                                    Size Size.Small
+                                    result.Score
+                                    "%"
+                                }
+                              }
                         }
                     }
                 }
