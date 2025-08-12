@@ -43,7 +43,7 @@ type LoopContentExcalidrawer =
                 use! image = Image.LoadAsync(previewStream)
 
                 let processedStream =
-                    let maxWidth = 720
+                    let maxWidth = 1080
                     if image.Width > maxWidth then
                         let stream = new MemoryStream()
                         // Resize the image to a maximum width while maintaining aspect ratio
