@@ -29,8 +29,6 @@ open Brainloop.Loop
 type ChatCompletionHandler
     (
         modelService: IModelService,
-        textSearch: ITextSearch,
-        functionService: IFunctionService,
         agentService: IAgentService,
         loopContentService: ILoopContentService,
         logger: ILogger<ChatCompletionHandler>
@@ -253,25 +251,27 @@ type ChatCompletionHandler
                     | None -> failwith $"Agent with ID {agentId} not found"
 
             let chatWatch = Stopwatch.StartNew()
-            let textSearchProvider = new TextSearchProvider(textSearch)
-            let oldItems = targetContent.Items.Value |> Seq.toList
-            let oldThinkDurationMs = targetContent.ThinkDurationMs.Value
 
             let modelsCount =
                 match modelId with
-                | Some id when agent.AgentModels |> Seq.exists (fun x -> x.ModelId = id) -> 1
-                | Some _ -> 0
+                | Some _ -> 1
                 | None -> agent.AgentModels.Count
 
             let mutable shouldContinue = true
             let mutable modelIndex = 0
             while shouldContinue && modelIndex < modelsCount do
                 // Try use model with specified order untill success
-                let agentModel =
+                let! model = valueTask {
                     match modelId with
-                    | Some id -> agent.AgentModels |> Seq.find (fun x -> x.ModelId = id)
-                    | _ -> agent.AgentModels |> Seq.sortBy (fun x -> x.Order) |> Seq.item modelIndex
-                let model = agentModel.Model
+                    | Some id -> return! modelService.GetModel(id)
+                    | None ->
+                        let agentModel =
+                            match modelId with
+                            | Some id -> agent.AgentModels |> Seq.find (fun x -> x.ModelId = id)
+                            | _ -> agent.AgentModels |> Seq.sortBy (fun x -> x.Order) |> Seq.item modelIndex
+                        return agentModel.Model
+                }
+
                 let mutable stream = LoopContentText()
 
                 let wrapperCancellationTokenSource = new CancellationTokenSource()
