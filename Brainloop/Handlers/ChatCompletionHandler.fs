@@ -27,12 +27,8 @@ open Brainloop.Loop
 
 
 type ChatCompletionHandler
-    (
-        modelService: IModelService,
-        agentService: IAgentService,
-        loopContentService: ILoopContentService,
-        logger: ILogger<ChatCompletionHandler>
-    ) as this =
+    (modelService: IModelService, agentService: IAgentService, loopContentService: ILoopContentService, logger: ILogger<ChatCompletionHandler>) as this
+    =
 
     member private _.CreateFunctionFilter
         (agent: Agent, targetContent: LoopContentWrapper, onFunctionStarted: unit -> unit, cancellationToken: CancellationToken)
@@ -240,6 +236,18 @@ type ChatCompletionHandler
                 match functions with
                 | Some fns -> Seq.isEmpty fns |> not
                 | None -> false
+
+            let oldItems = targetContent.Items |> Seq.toList
+
+            let trryRestoreOldItems () =
+                if
+                    targetContent.Items.IsEmpty
+                    || (targetContent.Items.Count = 1
+                        && match targetContent.Items[0] with
+                           | LoopContentItem.Text x -> x.Length = 0
+                           | _ -> false)
+                then
+                    targetContent.Items.AddRange(oldItems) |> ignore
 
             let! agents = agentService.GetAgentsWithCache()
 
@@ -488,7 +496,10 @@ type ChatCompletionHandler
                 | :? OperationCanceledException as ex ->
                     logger.LogWarning("Complete chat cancelled with {name} {model}", model.Name, model.Model)
                     shouldContinue <- false
-                    transact (fun _ -> targetContent.ErrorMessage.Value <- ex.Message)
+                    transact (fun _ ->
+                        targetContent.ErrorMessage.Value <- ex.Message
+                        trryRestoreOldItems ()
+                    )
                 | ex ->
                     logger.LogError(ex, "Complete chat failed with {name} {model}", model.Name, model.Model)
 
@@ -506,6 +517,7 @@ type ChatCompletionHandler
                     transact (fun _ ->
                         targetContent.ThinkDurationMs.Value <- 0
                         targetContent.ErrorMessage.Value <- errorMsg
+                        trryRestoreOldItems ()
                     )
 
             // Finish and wrapup

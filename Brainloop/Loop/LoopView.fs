@@ -617,7 +617,7 @@ type LoopView =
         })
 
     static member private RetryBtn(contentWrapper: LoopContentWrapper, ?onClicked: unit -> unit) : NodeRenderFragment =
-        html.inject (fun (serviceProvider: IServiceProvider) ->
+        html.inject (fun (hook: IComponentHook, serviceProvider: IServiceProvider) ->
             let logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("LoopContentRegen")
             let JS = serviceProvider.GetRequiredService<IJSRuntime>()
             let snackbar = serviceProvider.GetRequiredService<ISnackbar>()
@@ -626,6 +626,7 @@ type LoopView =
 
             let isSending = cval false
             let refreshAgentsListCount = cval 0
+            let selectedModel = cval ValueOption<Model>.None
 
             let resend modelId = task {
                 isSending.Publish true
@@ -640,6 +641,15 @@ type LoopView =
                     snackbar.ShowMessage(ex, logger)
                 isSending.Publish false
             }
+
+            hook.AddDispose(
+                selectedModel.AddLazyCallback(fun model ->
+                    match model with
+                    | ValueSome x -> resend (Some x.Id) |> ignore
+                    | _ -> ()
+                    selectedModel.Publish ValueNone
+                )
+            )
 
             region {
                 match contentWrapper.AgentId with
@@ -667,26 +677,8 @@ type LoopView =
                                 resend (contentWrapper.ModelId.Value |> ValueOption.toOption)
                             )
                         }
-                        match agent with
-                        | ValueSome agent when agent.AgentModels.Count > 1 -> MudMenu'' {
-                            Size Size.Small
-                            Modal false
-                            Icon Icons.Material.Filled.ArrowDropDown
-                            Disabled(isSending || cancellationTokenSource.IsSome)
-                            OpenChanged(fun _ -> refreshAgentsListCount.Publish((+) 1))
-                            adapt {
-                                for agentModel in agent.AgentModels |> Seq.sortBy _.Order do
-                                    MudMenuItem'' {
-                                        OnClick(fun _ ->
-                                            onClicked |> Option.iter (fun fn -> fn ())
-                                            resend (Some agentModel.ModelId)
-                                        )
-                                        agentModel.Model.Name
-                                    }
-                            }
-                          }
-                        | _ -> ()
                     }
+                    ModelSelector.CreateMenu(selectedModel)
                   }
             }
         )
