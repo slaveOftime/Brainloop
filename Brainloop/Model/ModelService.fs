@@ -194,9 +194,10 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
 
 
         member _.GetModelsFromSource(model, ?cancellationToken) = valueTask {
-            use httpClient = this.CreateHttpClient(model, timeoutMs = 10_000)
+            let model = { model with Request = null }
             match model.Provider with
             | ModelProvider.Ollama ->
+                use httpClient = this.CreateHttpClient(model, timeoutMs = 10_000)
                 let ollamaClient = new OllamaApiClient(httpClient)
                 return!
                     ollamaClient.ListLocalModelsAsync(?cancellationToken = cancellationToken)
@@ -211,6 +212,7 @@ type ModelService(dbService: IDbService, memoryCache: IMemoryCache) as this =
 
             | ModelProvider.MistralAI
             | ModelProvider.OpenAI ->
+                use httpClient = this.CreateHttpClient(model, timeoutMs = 10_000)
                 return!
                     OpenAIClient(
                         ApiKeyCredential(model.ApiKey),

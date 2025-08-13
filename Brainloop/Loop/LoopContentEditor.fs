@@ -227,7 +227,7 @@ type LoopContentEditor =
                         }
                         styleElt {
                             ruleset ".loop-content-editor .monaco-editor-container" {
-                                height (if items.Count <= 1 then "calc(100vh - 400px)" else "250px")
+                                height (if items.Count <= 1 then "calc(100vh - 450px)" else "250px")
                             }
                         }
                         MudIconButton'' {
