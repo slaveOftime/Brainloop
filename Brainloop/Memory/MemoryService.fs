@@ -12,11 +12,11 @@ open Microsoft.Extensions.Logging
 open Microsoft.Extensions.VectorData
 open Microsoft.Extensions.Caching.Memory
 open Microsoft.SemanticKernel.Data
-open Microsoft.SemanticKernel.Text
 open UglyToad.PdfPig
 open UglyToad.PdfPig.Content
 open UglyToad.PdfPig.DocumentLayoutAnalysis.PageSegmenter
 open UglyToad.PdfPig.DocumentLayoutAnalysis.WordExtractor
+open SemanticChunkerNET
 open IcedTasks
 open FSharp.Control
 open Fun.Result
@@ -42,8 +42,6 @@ type MemoryService
     ) as this =
 
     static let upsertLocker = new SemaphoreSlim(1, 1)
-
-    let tokenCounter = TextChunker.TokenCounter(fun x -> modelService.CountTokens(x).Result)
 
     let keyType =
         match appOptions.Value.VectorDbProvider with
@@ -169,20 +167,14 @@ type MemoryService
     }
 
 
-    member _.GetPdfPageParagraphs(pdfPage: Page, tokensPerChunk, tokensOfChunkOverlap) =
+    member _.GetPdfPageParagraphs(pdfPage: Page) =
         let letters = pdfPage.Letters
         let words = NearestNeighbourWordExtractor.Instance.GetWords(letters)
         let textBlocks = DocstrumBoundingBoxes.Instance.GetBlocks(words)
 
-        let pageText =
-            textBlocks
-            |> Seq.map (fun t -> t.Text.ReplaceLineEndings(" "))
-            |> String.concat (Environment.NewLine + Environment.NewLine)
-
-        TextChunker
-            .SplitPlainTextParagraphs([ pageText ], tokensPerChunk, overlapTokens = tokensOfChunkOverlap, tokenCounter = tokenCounter)
-            .Select(fun text index -> pdfPage.Number, index, text)
-
+        textBlocks
+        |> Seq.map (fun t -> t.Text.ReplaceLineEndings(" "))
+        |> String.concat (Environment.NewLine + Environment.NewLine)
 
     member _.VectorizePdf
         (
@@ -196,25 +188,25 @@ type MemoryService
         ) =
         valueTask {
             use pdf = PdfDocument.Open(file)
-            let paragraphs = pdf.GetPages() |> Seq.collect (fun x -> this.GetPdfPageParagraphs(x, tokensPerChunk, tokensOfChunkOverlap))
-
-            for (pageNumber, indexOnPage, text) in paragraphs do
-                let! vector = embeddingService.GenerateVectorAsync(text)
-                let embedding = {
-                    Source = MemoryEmbeddingSource.File fileName
-                    SourceDetail = ""
-                    Reference =
-                        match loopContentId with
-                        | Some id -> MemoryEmbeddingReference.LoopContent id |> ValueSome
-                        | _ -> ValueNone
-                    CreatedAt = DateTimeOffset.UtcNow
-                    ChunkReferenceId = string pageNumber
-                    ChunkIndex = indexOnPage
-                    ChunkText = text
-                    ChunkEmbedding = ValueSome vector
-                }
-                do! this.UpsertMemory(collection, embedding.ToVectorDictionary(createNewKey ()))
-                logger.LogInformation("Memory is added for {sourceId} pdf page {page} chunk {index}", fileName, pageNumber, indexOnPage)
+            let chunker = SemanticChunker(embeddingService, tokenLimit = tokensPerChunk)
+            for page in pdf.GetPages() do
+                let! chunks = chunker.CreateChunksAsync(this.GetPdfPageParagraphs(page))
+                for indexOnPage, chunk in Seq.indexed chunks do
+                    let embedding = {
+                        Source = MemoryEmbeddingSource.File fileName
+                        SourceDetail = ""
+                        Reference =
+                            match loopContentId with
+                            | Some id -> MemoryEmbeddingReference.LoopContent id |> ValueSome
+                            | _ -> ValueNone
+                        CreatedAt = DateTimeOffset.UtcNow
+                        ChunkReferenceId = string page.Number
+                        ChunkIndex = indexOnPage
+                        ChunkText = chunk.Text
+                        ChunkEmbedding = ValueSome chunk.Embedding.Vector
+                    }
+                    do! this.UpsertMemory(collection, embedding.ToVectorDictionary(createNewKey ()))
+                    logger.LogInformation("Memory is added for {sourceId} pdf page {page} chunk {index}", fileName, page.Number, indexOnPage)
         }
 
     member _.VectorizeTextFile
@@ -231,10 +223,9 @@ type MemoryService
             if String.IsNullOrWhiteSpace text then
                 logger.LogWarning("File is empty {file}", fileName)
             else
-                let chunks =
-                    TextChunker.SplitPlainTextParagraphs([ text ], tokensPerChunk, overlapTokens = tokensOfChunkOverlap, tokenCounter = tokenCounter)
+                let chunker = SemanticChunker(embeddingService, tokenLimit = tokensPerChunk)
+                let! chunks = chunker.CreateChunksAsync(text)
                 for index, chunk in Seq.indexed chunks do
-                    let! vector = embeddingService.GenerateVectorAsync(chunk)
                     let embedding = {
                         Source = MemoryEmbeddingSource.File fileName
                         SourceDetail = ""
@@ -245,8 +236,8 @@ type MemoryService
                         CreatedAt = DateTimeOffset.UtcNow
                         ChunkReferenceId = ""
                         ChunkIndex = index
-                        ChunkText = chunk
-                        ChunkEmbedding = ValueSome vector
+                        ChunkText = chunk.Text
+                        ChunkEmbedding = ValueSome chunk.Embedding.Vector
                     }
                     do! this.UpsertMemory(collection, embedding.ToVectorDictionary(createNewKey ()))
                     logger.LogInformation("Memory is added for {sourceId} chunk {index}", fileName, index)
@@ -327,15 +318,9 @@ type MemoryService
             else
 
                 do! this.DeleteMemory(MemoryEmbeddingSource.Loop id, collection)
-                let chunks =
-                    TextChunker.SplitPlainTextParagraphs(
-                        [ summary ],
-                        settings.TokensOfChunk,
-                        overlapTokens = settings.TokensOfChunkOverlap,
-                        tokenCounter = tokenCounter
-                    )
-                for index, text in Seq.indexed chunks do
-                    let! vector = embeddingService.GenerateVectorAsync(text)
+                let chunker = SemanticChunker(embeddingService, tokenLimit = settings.TokensOfChunk)
+                let! chunks = chunker.CreateChunksAsync(summary)
+                for index, chunk in Seq.indexed chunks do
                     let embedding = {
                         Source = MemoryEmbeddingSource.Loop id
                         SourceDetail = ""
@@ -343,8 +328,8 @@ type MemoryService
                         CreatedAt = DateTimeOffset.UtcNow
                         ChunkReferenceId = ""
                         ChunkIndex = index
-                        ChunkText = text
-                        ChunkEmbedding = ValueSome vector
+                        ChunkText = chunk.Text
+                        ChunkEmbedding = ValueSome chunk.Embedding.Vector
                     }
                     do! this.UpsertMemory(collection, embedding.ToVectorDictionary(createNewKey ()))
 
@@ -362,15 +347,9 @@ type MemoryService
                 logger.LogWarning("Loop content is empty for {id}", id)
             else
                 do! this.DeleteMemory(MemoryEmbeddingSource.LoopContent id, collection)
-                let chunks =
-                    TextChunker.SplitPlainTextParagraphs(
-                        [ content ],
-                        settings.TokensOfChunk,
-                        overlapTokens = settings.TokensOfChunkOverlap,
-                        tokenCounter = tokenCounter
-                    )
+                let chunker = SemanticChunker(embeddingService, tokenLimit = settings.TokensOfChunk)
+                let! chunks = chunker.CreateChunksAsync(content)
                 for index, chunk in Seq.indexed chunks do
-                    let! vector = embeddingService.GenerateVectorAsync(chunk)
                     let embedding = {
                         Source = MemoryEmbeddingSource.LoopContent id
                         SourceDetail = ""
@@ -378,8 +357,8 @@ type MemoryService
                         CreatedAt = DateTimeOffset.UtcNow
                         ChunkReferenceId = ""
                         ChunkIndex = index
-                        ChunkText = chunk
-                        ChunkEmbedding = ValueSome vector
+                        ChunkText = chunk.Text
+                        ChunkEmbedding = ValueSome chunk.Embedding.Vector
                     }
                     do! this.UpsertMemory(collection, embedding.ToVectorDictionary(createNewKey ()))
 

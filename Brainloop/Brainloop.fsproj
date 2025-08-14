@@ -126,31 +126,33 @@
 		<PackageReference Include="Fun.Blazor.MudBlazor" Version="8.11.0" />
 		<PackageReference Include="IcedTasks" Version="0.11.8" />
 		<PackageReference Include="Markdig" Version="0.41.3" />
-		<PackageReference Include="Microsoft.SemanticKernel" Version="1.61.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.61.0" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.61.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.61.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.61.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.61.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Milvus" Version="1.61.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Chroma" Version="1.61.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.61.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.61.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.61.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.61.0-preview" />
-		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.61.0-alpha" />
-		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.61.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel" Version="1.62.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Agents.A2A" Version="1.62.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.62.0" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.62.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.62.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.MistralAI" Version="1.62.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.62.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Milvus" Version="1.62.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Chroma" Version="1.62.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.PgVector" Version="1.62.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.62.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqliteVec" Version="1.62.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" Version="1.62.0-preview" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.62.0-alpha" />
+		<PackageReference Include="Microsoft.SemanticKernel.Plugins.OpenApi.Extensions" Version="1.62.0-alpha" />
 		<PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.3" />
 		<PackageReference Include="OllamaSharp" Version="5.3.4" />
 		<PackageReference Include="PdfPig" Version="0.1.10" />
 		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.15.0" />
 		<PackageReference Include="Quartz.Serialization.SystemTextJson" Version="3.15.0" />
 		<PackageReference Include="ReverseMarkdown" Version="4.7.0" />
+		<PackageReference Include="SemanticChunker.NET" Version="1.0.1" />
 		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 		<PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
 		<PackageReference Include="SharpToken" Version="2.0.3" />
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
-		<PackageReference Include="System.CommandLine" Version="2.0.0-beta6.25358.103" />
+		<PackageReference Include="System.CommandLine" Version="2.0.0-beta7.25380.108" />
 	</ItemGroup>
 
 	<ItemGroup>
