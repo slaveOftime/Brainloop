@@ -660,23 +660,14 @@ type LoopView =
                     let! cancellationTokenSource = contentWrapper.CancellationTokenSource
                     let! agent = agentService.TryGetAgentWithCache(agentId) |> AVal.ofValueTask ValueNone
 
-                    MudButtonGroup'' {
+                    MudIconButton'' {
+                        Icon Icons.Material.Filled.Repeat
                         Size Size.Small
-                        Variant(
-                            if agent.IsSome && agent.Value.AgentModels.Count > 1 then
-                                Variant.Outlined
-                            else
-                                Variant.Text
+                        Disabled(isSending || cancellationTokenSource.IsSome)
+                        OnClick(fun _ ->
+                            onClicked |> Option.iter (fun fn -> fn ())
+                            resend (contentWrapper.ModelId.Value |> ValueOption.toOption)
                         )
-                        MudIconButton'' {
-                            Icon Icons.Material.Filled.Repeat
-                            Size Size.Small
-                            Disabled(isSending || cancellationTokenSource.IsSome)
-                            OnClick(fun _ ->
-                                onClicked |> Option.iter (fun fn -> fn ())
-                                resend (contentWrapper.ModelId.Value |> ValueOption.toOption)
-                            )
-                        }
                     }
                     ModelSelector.CreateMenu(selectedModel)
                   }
