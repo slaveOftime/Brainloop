@@ -18,11 +18,8 @@ open Brainloop.Db
 type IComponentHook with
 
     member hook.RegisterAutoCompleteForAddFunction
-        (
-            getInputRef: unit -> (StandaloneCodeEditor | null),
-            ?startLoading: unit -> unit,
-            ?loadingFinished: unit -> unit
-        ) =
+        (getInputRef: unit -> (StandaloneCodeEditor | null), ?startLoading: unit -> unit, ?loadingFinished: unit -> unit)
+        =
         hook.AddFirstAfterRenderTask(fun _ -> task {
             let js = hook.ServiceProvider.GetRequiredService<IJSRuntime>()
             let functionService = hook.ServiceProvider.GetRequiredService<IFunctionService>()
@@ -60,7 +57,7 @@ type IComponentHook with
                                     return
                                         CompletionList(
                                             Suggestions =
-                                                System.Collections.Generic.List [
+                                                (seq {
                                                     for plugin in plugins do
                                                         for fn in plugin do
                                                             let label = $"[{plugin.Name.ToAscii()} -> {fn.Name.ToAscii()}]"
@@ -70,7 +67,9 @@ type IComponentHook with
                                                                 Command = Command(),
                                                                 InsertText = label
                                                             )
-                                                ]
+                                                 }
+                                                 |> Seq.distinctBy _.LabelAsString
+                                                 |> System.Collections.Generic.List)
                                         )
                             | _ -> return CompletionList()
                         })

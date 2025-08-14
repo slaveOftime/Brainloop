@@ -231,9 +231,9 @@ pre[class*="language-"] {
     margin-bottom: 0;
 }
 
-.markdown-body img
+.markdown-body img,
 .markdown-body video {
-    width: 100%;
+    width: 100% !important;
 }
 
 .highlight-fst-menu-item .mud-menu-item:first-child {

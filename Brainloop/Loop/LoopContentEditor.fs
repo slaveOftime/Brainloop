@@ -12,6 +12,7 @@ open Fun.Blazor
 open BlazorMonaco
 open BlazorMonaco.Editor
 open Brainloop.Share
+open Brainloop.Function
 
 
 type LoopContentEditor =
@@ -181,7 +182,10 @@ type LoopContentEditor =
                                         )
                                     )
                                     OnDidChangeModelContent(fun _ -> hasChanges.Publish true)
-                                    ref (fun x -> editorRefs[index] <- x)
+                                    ref (fun x ->
+                                        hook.RegisterAutoCompleteForAddFunction(fun _ -> x)
+                                        editorRefs[index] <- x
+                                    )
                                 }
                             }
                         | LoopContentItem.ToolCall _ -> MudAlert'' {
