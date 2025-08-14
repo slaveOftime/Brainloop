@@ -376,6 +376,7 @@ type LoopToolCallView =
                     style {
                         displayFlex
                         alignItemsCenter
+                        wordbreakBreakWord
                         gap 4
                     }
                     MudIcon'' {
