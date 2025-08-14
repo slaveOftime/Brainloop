@@ -213,7 +213,9 @@ type LoopContentService
                     match Path.GetExtension(file) with
                     | null -> "*"
                     | x -> x.Substring(1)
-                let addFileNameOnly () = items.Add(TextContent $"File: \"{Strings.DocumentApi}{fileName}\"")
+
+                items.Add(TextContent $"File: \"{Strings.DocumentApi}{fileName}\"")
+
                 match file with
                 | IMAGE ->
                     match model with
@@ -221,24 +223,23 @@ type LoopContentService
                     | Some { CanHandleImage = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(ImageContent(bytes, mimeType = $"image/{ext}"))
-                    | _ -> addFileNameOnly ()
+                    | _ -> ()
                 | AUDIO ->
                     match model with
                     | None
                     | Some { CanHandleAudio = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(AudioContent(bytes, mimeType = $"audio/{ext}"))
-                    | _ -> addFileNameOnly ()
+                    | _ -> ()
                 | VIDEO ->
                     match model with
                     | None
                     | Some { CanHandleVideo = true } ->
                         let! bytes = File.ReadAllBytesAsync(file)
                         items.Add(BinaryContent(bytes, mimeType = $"video/{ext}"))
-                    | _ -> addFileNameOnly ()
+                    | _ -> ()
                 | _ ->
                     let! text = documentService.ReadAsText(file)
-                    addFileNameOnly ()
                     items.Add(TextContent(text))
             }
 
