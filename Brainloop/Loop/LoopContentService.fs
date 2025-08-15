@@ -214,7 +214,7 @@ type LoopContentService
                     | null -> "*"
                     | x -> x.Substring(1)
 
-                items.Add(TextContent $"File: \"{Strings.DocumentApi}{fileName}\"")
+                items.Add(TextContent $"FileName: \"{fileName}\"")
 
                 match file with
                 | IMAGE ->

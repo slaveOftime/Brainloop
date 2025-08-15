@@ -43,6 +43,7 @@ type KeyValueField =
             region {
                 for KeyValue(k, v) in kvs do
                     MudItem'' {
+                        key (struct (k, "key"))
                         xs 4
                         MudTextField'' {
                             Label "Key"
@@ -69,10 +70,11 @@ type KeyValueField =
                         }
                     }
                     MudItem'' {
+                        key (struct (k, "value"))
                         xs 7
                         let textFieldAttrs = MudTextField'' {
                             Label "Value"
-                            AutoFocus
+                            AutoFocus false
                             Value v
                             ValueChanged(fun v -> kvs |> Map.add k v |> setKvs)
                             asAttrRenderFragment
