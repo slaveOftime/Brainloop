@@ -33,7 +33,7 @@ type DocumentService(logger: ILogger<DocumentService>) =
                 | Some loopContentId -> $"LC-{loopContentId}-"
                 | None -> ""
                 + Path.GetFileNameWithoutExtension name
-                + (if makeUnique then "-" + Guid.CreateVersion7().ToString("N") else "")
+                + (if makeUnique then DateTime.Now.ToString("-yyyy-MM-dd-HH-mm-ss") else "")
                 + Path.GetExtension(name)
 
             let filePath = Path.Combine(documentDir, fileName)
