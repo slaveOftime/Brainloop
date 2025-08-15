@@ -246,13 +246,14 @@ type LoopView =
 
                 let contentDetail = adaptiview (key = "content") {
                     let! isEditing' = isEditing
+                    let isUserContent = contentWrapper.AuthorRole = LoopContentAuthorRole.User
                     div {
                         style {
                             padding 0 8
                             textAlignLeft
-                            width (if isEditing' then "100%" else "fit-content")
+                            width (if isEditing' || not isUserContent then "100%" else "fit-content")
                             maxWidth "100%"
-                            if contentWrapper.AuthorRole = LoopContentAuthorRole.User then
+                            if isUserContent then
                                 css {
                                     marginLeft "auto"
                                     marginRight 0

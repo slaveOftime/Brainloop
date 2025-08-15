@@ -165,6 +165,7 @@ type LoopToolCallView =
         html.inject (fun (JS: IJSRuntime) -> region {
             if toolCall.Arguments.Count > 0 then
                 let codeId = $"{Strings.ToolCallPrefix}args-{contentWrapper.Id}-{index}"
+                let argKeys = toolCall.Arguments |> Seq.map _.Key |> Seq.sort |> Seq.toList
                 p {
                     style {
                         marginTop "1rem"
@@ -172,19 +173,19 @@ type LoopToolCallView =
                     }
                     "arguments:"
                 }
-                for index, KeyValue(argKey, argValue) in Seq.indexed toolCall.Arguments do
+                for argKey in argKeys do
                     adapt {
-                        let! isExpanded, setIsExpanded = cval((index = 0)).WithSetter()
-                        let! isReadonly =
-                            toolCall.UserAction
-                            |> ValueOption.map (
-                                AVal.map (
-                                    function
-                                    | ToolCallUserAction.Pending -> false
-                                    | _ -> true
-                                )
-                            )
-                            |> ValueOption.defaultValue (AVal.constant true)
+                        let! isExpanded, setIsExpanded = cval((argKey = argKeys[0])).WithSetter()
+                        let! isReadonly = adaptive {
+                            match toolCall.UserAction with
+                            | ValueNone -> return true
+                            | ValueSome userAction ->
+                                match! userAction with
+                                | ToolCallUserAction.Pending -> return false
+                                | ToolCallUserAction.Accepted
+                                | ToolCallUserAction.Declined -> return true
+                        }
+                        let argValue = toolCall.Arguments[argKey] // so we can always fetch the edited latest value
                         MudExpansionPanel'' {
                             Dense
                             Expanded isExpanded

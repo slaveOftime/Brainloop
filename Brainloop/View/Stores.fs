@@ -22,8 +22,8 @@ type IGlobalStore with
         store.CreateCVal(
             nameof store.Theme,
             MudTheme(
-                PaletteDark = PaletteDark(Primary = "#1c6a5e", Secondary = "#477a49", Surface = "#0c0f14", Background = "#0a0b0e"),
-                PaletteLight = PaletteLight(Primary = "#1c6a5e", Secondary = "#477a49")
+                PaletteDark = PaletteDark(Primary = "#1c6a5e", Secondary = "#477a49", Surface = "#0c0f14", Background = "#0a0b0e", HoverOpacity = 0.3),
+                PaletteLight = PaletteLight(Primary = "#1c6a5e", Secondary = "#477a49", HoverOpacity = 0.4)
             )
         )
 
