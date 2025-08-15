@@ -75,7 +75,7 @@ type LoopContentExcalidrawer =
                       }
 
                 let! fileName = documentService.SaveFile("exalidraw.png", processedStream, loopContentId = contentWrapper.Id)
-                let! fileNameDark = documentService.SaveFile("exalidraw.png", processedStreamDark, loopContentId = contentWrapper.Id)
+                let! fileNameDark = documentService.SaveFile("exalidraw-dark.png", processedStreamDark, loopContentId = contentWrapper.Id)
 
                 let newContent =
                     LoopContentItem.Excalidraw {
