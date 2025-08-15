@@ -171,7 +171,7 @@ html {
 }
 
 .mud-expand-panel {
-    border: 1px solid var(--mud-palette-action-default-hover) !important;
+    border: 1px solid var(--mud-palette-lines-inputs) !important;
 }
 
 .mud-alert-message {
