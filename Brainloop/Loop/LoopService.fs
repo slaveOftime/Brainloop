@@ -254,7 +254,11 @@ type LoopService
                         chatMessages.Add(ChatMessageContent(AuthorRole.User, agent.Prompt))
 
                         let! result = buildTitleHandler.Handle(agent.Id, chatMessages)
-                        do! updateTitle result
+                        do! updateTitle result.Title
+
+                        match result.LoopCategoryId with
+                        | ValueSome categoryId -> do! (this :> ILoopService).SetCategory(loopId, categoryId)
+                        | ValueNone -> ()
 
                     else
                         failwith "Contents are not enough for summarizing"
@@ -285,3 +289,17 @@ type LoopService
             dbService.DbContext.Update<Loop>().Where(fun x -> x.Id = loopId).Set((fun x -> x.LoopCategoryId), categoryId).ExecuteAffrowsAsync()
             |> ValueTask.ofTask
             |> ValueTask.map ignore
+
+
+        member _.RebuildAllTitles() = valueTask {
+            try
+                let! loops = dbService.DbContext.Select<Loop>().ToListAsync(fun x -> x.Id)
+                for loopId in loops do
+                    try
+                        logger.LogInformation("Rebuilding title for loop {loopId}", loopId)
+                        do! (this :> ILoopService).BuildTitle(loopId)
+                    with ex ->
+                        logger.LogError(ex, "Failed to rebuild title for loop {loopId}", loopId)
+            with ex ->
+                logger.LogError(ex, "Failed to get loops for rebuilding titles")
+        }

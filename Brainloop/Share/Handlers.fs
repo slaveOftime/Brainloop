@@ -9,7 +9,9 @@ open Brainloop.Db
 
 type ICreateTitleHandler =
     abstract member Handle:
-        agentId: int * chatMessages: IReadOnlyList<ChatMessageContent> * ?cancellationToken: CancellationToken -> ValueTask<string>
+        agentId: int * chatMessages: IReadOnlyList<ChatMessageContent> * ?cancellationToken: CancellationToken -> ValueTask<CreateTitleHandlerResult>
+
+and CreateTitleHandlerResult = { Title: string; LoopCategoryId: int voption }
 
 
 type IGetTextFromImageHandler =

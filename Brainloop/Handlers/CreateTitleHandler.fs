@@ -7,14 +7,15 @@ open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.ChatCompletion
 open Microsoft.SemanticKernel.Connectors
 open IcedTasks
+open Fun.Result
 open Brainloop.Db
 open Brainloop.Model
 open Brainloop.Agent
 open Brainloop.Share
-open Brainloop.Loop
 
 
-type CreateTitleHandler(modelService: IModelService, agentService: IAgentService, logger: ILogger<CreateTitleHandler>) as this =
+type CreateTitleHandler(modelService: IModelService, agentService: IAgentService, dbService: IDbService, logger: ILogger<CreateTitleHandler>) as this
+    =
 
     member private _.GetPromptExecutionSettings(agent: Agent, model: Model, enableFunctions: bool) : PromptExecutionSettings =
         match model.Provider with
@@ -38,6 +39,20 @@ type CreateTitleHandler(modelService: IModelService, agentService: IAgentService
         | ModelProvider.MistralAI -> MistralAI.MistralAIPromptExecutionSettings(Temperature = agent.Temperature, TopP = agent.TopP)
 
 
+    member private _.GetLoopCategoryTreePrompt() = valueTask {
+        let! loopCategoryTree = dbService.DbContext.Select<LoopCategory>().ToListAsync(fun x -> x.Id, x.Name, x.ParentId)
+        let sb = StringBuilder()
+        let rec buildTree (parentId: int Nullable) (path: string) =
+            let children = loopCategoryTree |> Seq.filter (fun (_, _, p) -> p = parentId) |> Seq.sortBy (fun (_, name, _) -> name)
+            for id, name, _ in children do
+                let path = $"{path}/{name}"
+                sb.Append(path).Append(" [Id:").Append(id).Append("]").AppendLine() |> ignore
+                buildTree (Nullable id) ("  " + path)
+        buildTree (Nullable()) ""
+        return sb.ToString()
+    }
+
+
     interface ICreateTitleHandler with
         member _.Handle(agentId, chatMessages, ?cancellationToken) = valueTask {
             let! agent =
@@ -49,6 +64,7 @@ type CreateTitleHandler(modelService: IModelService, agentService: IAgentService
                 )
 
             let summaryBuilder = StringBuilder()
+            let mutable loopCategoryId: int voption = ValueNone
 
             let mutable modelIndex = 0
             let mutable shouldContinue = true
@@ -85,6 +101,34 @@ type CreateTitleHandler(modelService: IModelService, agentService: IAgentService
                     shouldContinue <- false
 
                     try
+                        let! categoryPrompts = this.GetLoopCategoryTreePrompt()
+                        let items = ChatMessageContentItemCollection()
+                        items.Add(TextContent("Here is all the categories with their `Id` append to every category's end:"))
+                        items.Add(TextContent(categoryPrompts))
+                        items.Add(TextContent("Please tell me which category should belong for below content:"))
+                        items.Add(TextContent(summaryBuilder.ToString()))
+                        items.Add(TextContent("You should analysis and only return the `Id` for me"))
+
+                        let chatHistory = ChatHistory()
+                        chatHistory.AddUserMessage(items)
+
+                        let! result =
+                            chatClient.GetChatMessageContentAsync(
+                                chatHistory,
+                                executionSettings = chatOptions,
+                                ?cancellationToken = cancellationToken
+                            )
+                        loopCategoryId <-
+                            match string result with
+                            | INT32 id -> ValueSome id
+                            | x ->
+                                logger.LogWarning("Classify failed with {result}", x)
+                                ValueNone
+
+                    with ex ->
+                        logger.LogError(ex, "Failed to classify title")
+
+                    try
                         do! modelService.UpdateUsedTime(model.Id)
                     with ex ->
                         logger.LogError(ex, "Update used time failed for {model}", model.Name)
@@ -102,9 +146,13 @@ type CreateTitleHandler(modelService: IModelService, agentService: IAgentService
             with ex ->
                 logger.LogError(ex, "Update used time failed for {agent}", agent.Name)
 
-            let result = summaryBuilder.ToString()
-            if result.StartsWith("<think>") && result.Contains("</think>") then
-                return result.Substring(result.IndexOf("</think>") + 8)
-            else
-                return result
+            return {
+                Title =
+                    let result = summaryBuilder.ToString()
+                    if result.StartsWith("<think>") && result.Contains("</think>") then
+                        result.Substring(result.IndexOf("</think>") + 8)
+                    else
+                        result
+                LoopCategoryId = loopCategoryId
+            }
         }

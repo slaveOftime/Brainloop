@@ -108,7 +108,7 @@ type LoopCategoryTree =
                                 LoopCategoryTree.CategoryDialog(LoopCategory.Default, ctx.Close, onUpdated = (fun _ -> refreshCount.Publish((+) 1)))
                         )
                     )
-                    "Add Category"
+                    "Add Root Category"
                 }
                 MudTreeView'' {
                     Items items

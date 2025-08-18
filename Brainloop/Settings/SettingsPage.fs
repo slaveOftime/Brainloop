@@ -4,7 +4,6 @@ open System
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Components
 open Microsoft.AspNetCore.Components.Web
-open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open MudBlazor
 open IcedTasks
@@ -17,7 +16,7 @@ open Brainloop.Share
 
 
 [<Route "/settings">]
-type SettingsPage(settingsService: ISettingsService, shareStore: IShareStore) as this =
+type SettingsPage(settingsService: ISettingsService, shareStore: IShareStore, loopService: ILoopService) as this =
     inherit FunComponent()
 
     member _.Header = fragment {
@@ -175,6 +174,34 @@ type SettingsPage(settingsService: ISettingsService, shareStore: IShareStore) as
                         Indeterminate
                         Color Color.Primary
                       }
+                }
+                MudItem'' {
+                    xs 12
+                    html.inject (fun (globalStore: IGlobalStore, dialog: IDialogService) ->
+                        let isRebuilding = globalStore.CreateCVal("RebuildAllTitles", false)
+                        adapt {
+                            let! isRebuilding, setIsBuilding = isRebuilding.WithSetter()
+                            MudButton'' {
+                                Color Color.Warning
+                                Variant Variant.Filled
+                                Disabled isRebuilding
+                                OnClick(fun _ -> task {
+                                    setIsBuilding true
+                                    try
+                                        do! loopService.RebuildAllTitles()
+                                    with ex ->
+                                        dialog.ShowMessage("Rebuild all titles failed", ex.Message, severity = Severity.Error)
+                                        setIsBuilding false
+                                })
+                                "Rebuild all title and auto classify"
+                            }
+                            if isRebuilding then
+                                MudProgressLinear'' {
+                                    Indeterminate
+                                    Color Color.Primary
+                                }
+                        }
+                    )
                 }
             }
         }

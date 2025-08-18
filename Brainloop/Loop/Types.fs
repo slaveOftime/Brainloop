@@ -48,3 +48,5 @@ type ILoopService =
     abstract member IsStreaming: loopId: int64 -> aval<bool>
 
     abstract member SetCategory: loopId: int64 * categoryId: int -> ValueTask<unit>
+
+    abstract member RebuildAllTitles: unit -> ValueTask<unit>
