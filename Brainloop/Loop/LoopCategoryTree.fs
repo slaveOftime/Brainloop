@@ -63,9 +63,10 @@ type LoopCategoryTree =
         )
 
 
-    static member Create(?onCategorySelected: LoopCategory -> unit) =
+    static member Create(?onItemSelected: LoopCategoryTreeItem -> unit, ?ignoreLoops: bool) =
         html.inject (fun (dbService: IDbService, dialogService: IDialogService) ->
             let refreshCount = cval 0
+            let ignoreLoops = defaultArg ignoreLoops false
 
             let loadCategories (parentId) = task {
                 let! categories =
@@ -75,12 +76,12 @@ type LoopCategoryTree =
                     )
 
                 let! loops =
-                    if parentId.HasValue then
+                    if not ignoreLoops && parentId.HasValue then
                         dbService.DbContext.Select<Loop>().Where((fun (x: Loop) -> x.LoopCategoryId = parentId)).ToListAsync()
                         |> Task.map (
                             Seq.sortBy _.Description
                             >> Seq.map (fun x ->
-                                TreeItemData(Value = LoopCategoryTreeItem.Loop x, Expandable = false, Icon = Icons.Material.Outlined.Notes)
+                                TreeItemData(Value = LoopCategoryTreeItem.Loop x, Expandable = false)
                             )
                         )
                     else
@@ -119,8 +120,8 @@ type LoopCategoryTree =
                     })
                     SelectionMode SelectionMode.SingleSelection
                     SelectedValueChanged(fun item ->
-                        match item, onCategorySelected with
-                        | LoopCategoryTreeItem.LoopCategory c, Some fn -> fn c
+                        match onItemSelected with
+                        | Some fn -> fn item
                         | _ -> ()
                     )
                     ItemTemplate(fun item ->
@@ -142,6 +143,11 @@ type LoopCategoryTree =
                                     }
                                     MudText'' {
                                         style { textOverflowWithMaxLines 1 }
+                                        Color(
+                                            match itemValue' with
+                                            | LoopCategoryTreeItem.LoopCategory _ -> Color.Default
+                                            | LoopCategoryTreeItem.Loop _ -> Color.Info
+                                        )
                                         match itemValue' with
                                         | LoopCategoryTreeItem.LoopCategory x -> x.Name
                                         | LoopCategoryTreeItem.Loop x -> x.Description
@@ -190,7 +196,8 @@ type LoopCategoryTree =
         )
 
 
-    static member DialogBtn(?onCategorySelected, ?btnSize) =
+
+    static member DialogBtn(?onSelectAndClose, ?ignoreLoops, ?btnSize) =
         html.inject (fun (dialogService: IDialogService) -> MudIconButton'' {
             Size(defaultArg btnSize Size.Medium)
             Icon Icons.Material.Outlined.AccountTree
@@ -207,9 +214,10 @@ type LoopCategoryTree =
                                     overflowYAuto
                                 }
                                 LoopCategoryTree.Create(
-                                    onCategorySelected =
+                                    ?ignoreLoops = ignoreLoops,
+                                    onItemSelected =
                                         fun x ->
-                                            match onCategorySelected with
+                                            match onSelectAndClose with
                                             | Some fn ->
                                                 fn x
                                                 ctx.Close()

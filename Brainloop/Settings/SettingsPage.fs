@@ -191,7 +191,7 @@ type SettingsPage(settingsService: ISettingsService, shareStore: IShareStore, lo
                                         do! loopService.RebuildAllTitles()
                                     with ex ->
                                         dialog.ShowMessage("Rebuild all titles failed", ex.Message, severity = Severity.Error)
-                                        setIsBuilding false
+                                    setIsBuilding false
                                 })
                                 "Rebuild all title and auto classify"
                             }

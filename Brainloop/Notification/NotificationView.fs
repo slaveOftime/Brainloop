@@ -13,7 +13,7 @@ open Brainloop.Loop
 
 type NotificationView =
 
-    static member private Item(notification: Notification) =
+    static member private Item(notification: Notification) : NodeRenderFragment =
         html.inject (
             notification,
             fun (hook: IComponentHook, serviceProvider: IServiceProvider) ->
@@ -112,8 +112,10 @@ type NotificationView =
                                     "There is no notifications so far"
                                 }
                         }
-                        for notification in notifications |> Seq.sortByDescending _.CreatedAt do
-                            NotificationView.Item notification
+                        region {
+                            for notification in notifications |> Seq.sortByDescending _.CreatedAt do
+                                NotificationView.Item notification
+                        }
                     }
                 }
             )

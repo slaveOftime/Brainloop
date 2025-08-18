@@ -44,12 +44,22 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
             }
         })
 
+    let treeBtn =
+        html.inject (fun (hook: IComponentHook) ->
+            LoopCategoryTree.DialogBtn(
+                onSelectAndClose =
+                    function
+                    | LoopCategoryTreeItem.Loop l -> hook.ToggleLoop(l.Id, false) |> ignore
+                    | _ -> ()
+            )
+        )
+
     override _.Render() = fragment {
         PageTitle'' { "Brainloop" }
         SectionContent'' {
             SectionName Strings.NavActionsSectionName
             LoopSearcher.Create()
-            LoopCategoryTree.DialogBtn()
+            treeBtn
             MudSpacer''
         }
         SectionContent'' {
@@ -59,7 +69,7 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
         SectionContent'' {
             SectionName Strings.NavQuickActionsSectionName
             LoopSearcher.Create(iconOnly = true)
-            LoopCategoryTree.DialogBtn()
+            treeBtn
             MudTooltip'' {
                 Arrow
                 Placement Placement.Right

@@ -139,7 +139,11 @@ type LoopsView =
                         }
                         LoopCategoryTree.DialogBtn(
                             btnSize = Size.Medium,
-                            onCategorySelected = fun category -> loopService.SetCategory(activeLoop.Id, category.Id) |> ignore
+                            ignoreLoops = true,
+                            onSelectAndClose =
+                                (function
+                                | LoopCategoryTreeItem.LoopCategory category -> loopService.SetCategory(activeLoop.Id, category.Id) |> ignore
+                                | _ -> ())
                         )
                         LoopsView.SourceBtn(activeLoop)
                         MudIconButton'' {
