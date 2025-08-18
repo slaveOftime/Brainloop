@@ -11,6 +11,7 @@ type Loop = {
     LoopContents: ICollection<LoopContent>
     Closed: bool
     SourceLoopContentId: int64 Nullable
+    LoopCategoryId: int Nullable
     CreatedAt: DateTime
     UpdatedAt: DateTime
 } with
@@ -21,6 +22,7 @@ type Loop = {
         LoopContents = [||]
         Closed = false
         SourceLoopContentId = Nullable()
+        LoopCategoryId = Nullable()
         CreatedAt = DateTime.Now
         UpdatedAt = DateTime.Now
     }
@@ -55,3 +57,23 @@ type LoopContentAuthorRole =
     | Tool
     | Agent
     | System
+
+
+[<CLIMutable>]
+type LoopCategory = {
+    Id: int
+    Name: string
+    ParentId: int Nullable
+    CreatedAt: DateTime
+    UpdatedAt: DateTime
+    Loops: ICollection<Loop>
+} with
+
+    static member Default = {
+        Id = 0
+        Name = ""
+        ParentId = Nullable()
+        CreatedAt = DateTime.Now
+        UpdatedAt = DateTime.Now
+        Loops = [||]
+    }

@@ -64,7 +64,6 @@ type LoopsView =
                             justifyContentCenter
                             alignItemsCenter
                             paddingRight 8
-                            gap 4
                         }
                         div {
                             style {
@@ -103,7 +102,7 @@ type LoopsView =
                             MudIconButton'' {
                                 class' (if isLoading then "pulse" else "")
                                 Disabled isLoading
-                                Size Size.Small
+                                Size Size.Medium
                                 Icon Icons.Material.Filled.AutoFixHigh
                                 OnClick(fun _ -> task {
                                     try
@@ -121,7 +120,7 @@ type LoopsView =
                                 let! isSharing = shareStore.LoopsSharing |> AMap.tryFind activeLoop.Id |> AVal.map (Option.defaultValue false)
                                 MudIconButton'' {
                                     class' (if isSharing then "pulse" else "")
-                                    Size Size.Small
+                                    Size Size.Medium
                                     Icon Icons.Material.Outlined.Share
                                     Disabled isSharing
                                     OnClick(fun _ -> task {
@@ -138,9 +137,13 @@ type LoopsView =
                                 }
                             }
                         }
+                        LoopCategoryTree.DialogBtn(
+                            btnSize = Size.Medium,
+                            onCategorySelected = fun category -> loopService.SetCategory(activeLoop.Id, category.Id) |> ignore
+                        )
                         LoopsView.SourceBtn(activeLoop)
                         MudIconButton'' {
-                            Size Size.Small
+                            Size Size.Medium
                             Icon Icons.Material.Outlined.DisabledByDefault
                             OnClick(fun _ -> hook.ToggleLoop(activeLoop.Id, true))
                         }
@@ -351,7 +354,7 @@ type LoopsView =
                     if sourceLoopId > 0L then
                         return fragment {
                             MudIconButton'' {
-                                Size Size.Small
+                                Size Size.Medium
                                 Icon Icons.Material.Filled.AdsClick
                                 OnClick(fun _ ->
                                     transact (fun _ -> shareStore.LoopContentsFocusing[sourceLoopId] <- sourceLoopContentId)

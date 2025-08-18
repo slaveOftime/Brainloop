@@ -122,6 +122,13 @@ type DbService(appOptions: IOptions<AppOptions>, logger: ILogger<DbService>) =
                      e.Property(fun x -> x.DirectPrompt).StringLength(-1)
                      ()
                  )
+                 .ConfigEntity<LoopCategory>(fun e ->
+                     e.Property(fun x -> x.Id).IsPrimary(true).IsIdentity(true)
+                     e.Property(fun x -> x.Name).StringLength(255)
+                     e.Navigate((fun x -> x.Loops), null)
+                     e.Index("Name", "Name", true)
+                     ()
+                 )
                  .ConfigEntity<Notification>(fun e ->
                      e.Property(fun x -> x.Id).IsPrimary(true).IsIdentity(true)
                      ()

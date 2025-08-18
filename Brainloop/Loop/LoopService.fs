@@ -279,3 +279,9 @@ type LoopService
             match loopContentService.GetContentsCache(loopId) with
             | null -> AVal.constant false
             | x -> x |> AList.exists (fun x -> x.IsStreaming.Value)
+
+
+        member _.SetCategory(loopId, categoryId) =
+            dbService.DbContext.Update<Loop>().Where(fun x -> x.Id = loopId).Set((fun x -> x.LoopCategoryId), categoryId).ExecuteAffrowsAsync()
+            |> ValueTask.ofTask
+            |> ValueTask.map ignore

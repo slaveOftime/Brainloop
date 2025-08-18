@@ -85,6 +85,7 @@
 		<Compile Include="Loop\LoopContentView.fs" />
 		<Compile Include="Loop\LoopUserInput.fs" />
 		<Compile Include="Loop\LoopSearcher.fs" />
+		<Compile Include="Loop\LoopCategoryTree.fs" />
 		<Compile Include="Loop\LoopView.fs" />
 		<Compile Include="Loop\LoopsView.fs" />
 		<Compile Include="Loop\LoopsPage.fs" />

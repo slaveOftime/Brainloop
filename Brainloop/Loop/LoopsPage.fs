@@ -49,6 +49,7 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
         SectionContent'' {
             SectionName Strings.NavActionsSectionName
             LoopSearcher.Create()
+            LoopCategoryTree.DialogBtn()
             MudSpacer''
         }
         SectionContent'' {
@@ -58,6 +59,7 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
         SectionContent'' {
             SectionName Strings.NavQuickActionsSectionName
             LoopSearcher.Create(iconOnly = true)
+            LoopCategoryTree.DialogBtn()
             MudTooltip'' {
                 Arrow
                 Placement Placement.Right
@@ -65,5 +67,5 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
                 createBtn
             }
         }
-        // The main content is always display in MainLayout to avoid rerender when page switch
+    // The main content is always display in MainLayout to avoid rerender when page switch
     }
