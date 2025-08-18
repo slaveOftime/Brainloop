@@ -79,10 +79,7 @@ type LoopCategoryTree =
                     if not ignoreLoops && parentId.HasValue then
                         dbService.DbContext.Select<Loop>().Where((fun (x: Loop) -> x.LoopCategoryId = parentId)).ToListAsync()
                         |> Task.map (
-                            Seq.sortBy _.Description
-                            >> Seq.map (fun x ->
-                                TreeItemData(Value = LoopCategoryTreeItem.Loop x, Expandable = false)
-                            )
+                            Seq.sortBy _.Description >> Seq.map (fun x -> TreeItemData(Value = LoopCategoryTreeItem.Loop x, Expandable = false))
                         )
                     else
                         Task.retn Seq.empty
@@ -143,6 +140,7 @@ type LoopCategoryTree =
                                     }
                                     MudText'' {
                                         style { textOverflowWithMaxLines 1 }
+                                        Typo Typo.body2
                                         Color(
                                             match itemValue' with
                                             | LoopCategoryTreeItem.LoopCategory _ -> Color.Default
@@ -197,7 +195,7 @@ type LoopCategoryTree =
 
 
 
-    static member DialogBtn(?onSelectAndClose, ?ignoreLoops, ?btnSize) =
+    static member DialogBtn(?onCategorySelected, ?onLoopSelected, ?ignoreLoops, ?btnSize) =
         html.inject (fun (dialogService: IDialogService) -> MudIconButton'' {
             Size(defaultArg btnSize Size.Medium)
             Icon Icons.Material.Outlined.AccountTree
@@ -216,8 +214,15 @@ type LoopCategoryTree =
                                 LoopCategoryTree.Create(
                                     ?ignoreLoops = ignoreLoops,
                                     onItemSelected =
-                                        fun x ->
-                                            match onSelectAndClose with
+                                        function
+                                        | LoopCategoryTreeItem.LoopCategory x ->
+                                            match onCategorySelected with
+                                            | Some fn ->
+                                                fn x
+                                                ctx.Close()
+                                            | _ -> ()
+                                        | LoopCategoryTreeItem.Loop x ->
+                                            match onLoopSelected with
                                             | Some fn ->
                                                 fn x
                                                 ctx.Close()

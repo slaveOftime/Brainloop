@@ -112,6 +112,7 @@ type LoopsView =
                                 })
                             }
                         })
+                        LoopsView.SourceBtn(activeLoop)
                         MudTooltip'' {
                             Arrow
                             Placement Placement.Top
@@ -140,12 +141,8 @@ type LoopsView =
                         LoopCategoryTree.DialogBtn(
                             btnSize = Size.Medium,
                             ignoreLoops = true,
-                            onSelectAndClose =
-                                (function
-                                | LoopCategoryTreeItem.LoopCategory category -> loopService.SetCategory(activeLoop.Id, category.Id) |> ignore
-                                | _ -> ())
+                            onCategorySelected = (fun category -> loopService.SetCategory(activeLoop.Id, category.Id) |> ignore)
                         )
-                        LoopsView.SourceBtn(activeLoop)
                         MudIconButton'' {
                             Size Size.Medium
                             Icon Icons.Material.Outlined.DisabledByDefault

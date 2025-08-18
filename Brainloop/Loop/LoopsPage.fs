@@ -45,14 +45,7 @@ type LoopsPage(dbService: IDbService, shareStore: IShareStore) =
         })
 
     let treeBtn =
-        html.inject (fun (hook: IComponentHook) ->
-            LoopCategoryTree.DialogBtn(
-                onSelectAndClose =
-                    function
-                    | LoopCategoryTreeItem.Loop l -> hook.ToggleLoop(l.Id, false) |> ignore
-                    | _ -> ()
-            )
-        )
+        html.inject (fun (hook: IComponentHook) -> LoopCategoryTree.DialogBtn(onLoopSelected = fun l -> hook.ToggleLoop(l.Id, false) |> ignore))
 
     override _.Render() = fragment {
         PageTitle'' { "Brainloop" }
