@@ -87,7 +87,7 @@ type LoopSearcher =
                             .Queryable<Loop>()
                             .Where(fun (x: Loop) -> String.IsNullOrEmpty query || x.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
                             .OrderByDescending(fun x -> x.UpdatedAt)
-                            .Take(15)
+                            .Take(if String.IsNullOrEmpty query then 1000 else 25)
                             .ToListAsync(cancellationToken = source.Token)
 
                     transact (fun _ ->
@@ -107,7 +107,7 @@ type LoopSearcher =
                         let results =
                             memoryService.VectorSearch(
                                 query,
-                                top = 8,
+                                top = 25,
                                 options = loopOptions,
                                 distinguishBySource = false,
                                 cancellationToken = source.Token
