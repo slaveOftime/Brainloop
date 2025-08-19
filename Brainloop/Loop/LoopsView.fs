@@ -45,7 +45,7 @@ type LoopsView =
                     if delta > 10 then splittedWidth.Publish(delta) else splittedWidth.Publish(0)
                 }
 
-                let loopTitle (activeLoop: Loop) = adaptiview (key = $"loop-title-{activeLoop.Id}") {
+                let loopTitle (activeLoop: Loop) = adapt {
                     let oldSummary =
                         match activeLoop.Description with
                         | SafeString x -> x
@@ -112,7 +112,7 @@ type LoopsView =
                                 (fun category ->
                                     valueTask {
                                         do! loopService.SetCategory(activeLoop.Id, category.Id)
-                                        hook.UpdateLoop { activeLoop with LoopCategoryId = Nullable category.Id }
+                                        hook.UpdateLoopInStore { activeLoop with LoopCategoryId = Nullable category.Id }
                                     }
                                     |> ignore
                                 )
@@ -480,7 +480,7 @@ type LoopsView =
                             OnClick(fun _ -> task {
                                 onClose ()
                                 do! loopService.BuildTitle(lp.Id, title = description)
-                                hook.UpdateLoop { lp with Description = description }
+                                hook.UpdateLoopInStore { lp with Description = description }
                             })
                             "Save"
                         }

@@ -111,10 +111,15 @@ type IComponentHook with
     }
 
 
-    member hook.UpdateLoop(loop: Loop) =
+    member hook.UpdateLoopInStore(loop: Loop) =
+        let shareStore = hook.ServiceProvider.GetRequiredService<IShareStore>()
         let globalStore = hook.ServiceProvider.GetRequiredService<IGlobalStore>()
         transact (fun _ ->
-            match globalStore.ActiveLoops |> Seq.tryFind (fun x -> x.Id = loop.Id) with
+            match globalStore.ActiveLoops |> Seq.tryFindIndex (fun x -> x.Id = loop.Id) with
             | None -> ()
-            | Some loop -> globalStore.ActiveLoops[0] <- loop
+            | Some i -> globalStore.ActiveLoops[i] <- loop
+
+            match shareStore.CurrentLoop.Value with
+            | ValueSome cl when cl.Id = loop.Id -> shareStore.CurrentLoop.Value <- ValueSome loop
+            | _ -> ()
         )
