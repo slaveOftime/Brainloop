@@ -4,6 +4,7 @@ open System
 open System.Collections
 open FSharp.Data.Adaptive
 open MudBlazor
+open IcedTasks
 open Fun.Result
 open Fun.Blazor
 open Brainloop.Db
@@ -63,7 +64,7 @@ type LoopCategoryTree =
         )
 
 
-    static member Create(?onItemSelected: LoopCategoryTreeItem -> unit, ?ignoreLoops: bool) =
+    static member Create(?rootCategoryId: int, ?onItemSelected: LoopCategoryTreeItem -> unit, ?ignoreLoops: bool) =
         html.inject (fun (dbService: IDbService, dialogService: IDialogService) ->
             let refreshCount = cval 0
             let ignoreLoops = defaultArg ignoreLoops false
@@ -95,19 +96,24 @@ type LoopCategoryTree =
 
             adapt {
                 let! _ = refreshCount
-                let! items = loadCategories (Nullable()) |> AVal.ofTask [||]
-                MudButton'' {
-                    FullWidth
-                    StartIcon Icons.Material.Filled.Add
-                    OnClick(fun _ ->
-                        dialogService.Show(
-                            DialogOptions(MaxWidth = MaxWidth.ExtraSmall, FullWidth = true),
-                            fun ctx ->
-                                LoopCategoryTree.CategoryDialog(LoopCategory.Default, ctx.Close, onUpdated = (fun _ -> refreshCount.Publish((+) 1)))
+                let! items = loadCategories (Option.toNullable rootCategoryId) |> AVal.ofTask [||]
+                if rootCategoryId.IsNone then
+                    MudButton'' {
+                        FullWidth
+                        StartIcon Icons.Material.Filled.Add
+                        OnClick(fun _ ->
+                            dialogService.Show(
+                                DialogOptions(MaxWidth = MaxWidth.ExtraSmall, FullWidth = true),
+                                fun ctx ->
+                                    LoopCategoryTree.CategoryDialog(
+                                        LoopCategory.Default,
+                                        ctx.Close,
+                                        onUpdated = (fun _ -> refreshCount.Publish((+) 1))
+                                    )
+                            )
                         )
-                    )
-                    "Add Root Category"
-                }
+                        "Add Root Category"
+                    }
                 MudTreeView'' {
                     Items items
                     ServerData(fun root -> task {
@@ -140,7 +146,6 @@ type LoopCategoryTree =
                                     }
                                     MudText'' {
                                         style { textOverflowWithMaxLines 1 }
-                                        Typo Typo.body2
                                         Color(
                                             match itemValue' with
                                             | LoopCategoryTreeItem.LoopCategory _ -> Color.Default
@@ -148,7 +153,9 @@ type LoopCategoryTree =
                                         )
                                         match itemValue' with
                                         | LoopCategoryTreeItem.LoopCategory x -> x.Name
-                                        | LoopCategoryTreeItem.Loop x -> x.Description
+                                        | LoopCategoryTreeItem.Loop x ->
+                                            "- "
+                                            x.Description
                                     }
                                     MudSpacer''
                                     match itemValue' with
@@ -195,42 +202,101 @@ type LoopCategoryTree =
 
 
 
-    static member DialogBtn(?onCategorySelected, ?onLoopSelected, ?ignoreLoops, ?btnSize) =
+    static member Dialog(onClose, ?rootCategoryId, ?ignoreLoops, ?onCategorySelected, ?onLoopSelected) = MudDialog'' {
+        Header "Categories" onClose
+        DialogContent(
+            div {
+                style {
+                    height 720
+                    maxHeight "calc(100vh - 200px)"
+                    overflowXHidden
+                    overflowYAuto
+                }
+                LoopCategoryTree.Create(
+                    ?rootCategoryId = rootCategoryId,
+                    ?ignoreLoops = ignoreLoops,
+                    onItemSelected =
+                        function
+                        | LoopCategoryTreeItem.LoopCategory x ->
+                            match onCategorySelected with
+                            | Some fn ->
+                                fn x
+                                onClose ()
+                            | _ -> ()
+                        | LoopCategoryTreeItem.Loop x ->
+                            match onLoopSelected with
+                            | Some fn ->
+                                fn x
+                                onClose ()
+                            | _ -> ()
+                )
+            }
+        )
+    }
+
+    static member DialogBtn(?rootCategoryId, ?onCategorySelected, ?onLoopSelected, ?ignoreLoops, ?btnSize) =
         html.inject (fun (dialogService: IDialogService) -> MudIconButton'' {
             Size(defaultArg btnSize Size.Medium)
             Icon Icons.Material.Outlined.AccountTree
             OnClick(fun _ ->
                 dialogService.Show(
                     DialogOptions(MaxWidth = MaxWidth.Small, FullWidth = true),
-                    fun ctx -> MudDialog'' {
-                        Header "Loop Categories" ctx.Close
-                        DialogContent(
-                            div {
-                                style {
-                                    height "calc(100vh - 200px)"
-                                    overflowXHidden
-                                    overflowYAuto
-                                }
-                                LoopCategoryTree.Create(
-                                    ?ignoreLoops = ignoreLoops,
-                                    onItemSelected =
-                                        function
-                                        | LoopCategoryTreeItem.LoopCategory x ->
-                                            match onCategorySelected with
-                                            | Some fn ->
-                                                fn x
-                                                ctx.Close()
-                                            | _ -> ()
-                                        | LoopCategoryTreeItem.Loop x ->
-                                            match onLoopSelected with
-                                            | Some fn ->
-                                                fn x
-                                                ctx.Close()
-                                            | _ -> ()
-                                )
-                            }
+                    fun ctx ->
+                        LoopCategoryTree.Dialog(
+                            ctx.Close,
+                            ?rootCategoryId = rootCategoryId,
+                            ?ignoreLoops = ignoreLoops,
+                            ?onCategorySelected = onCategorySelected,
+                            ?onLoopSelected = onLoopSelected
                         )
-                    }
                 )
             )
         })
+
+
+    static member Breadcrumbs(categoryId: int) =
+        html.inject (fun (hook: IComponentHook, dbService: IDbService, dialogService: IDialogService) ->
+            let rec getItems (categoryId: int) = valueTask {
+                match!
+                    dbService.DbContext.Select<LoopCategory>().Where(fun (x: LoopCategory) -> x.Id = categoryId).FirstAsync<LoopCategory | null>()
+                with
+                | null -> return []
+                | category ->
+                    let! parentItems =
+                        if category.ParentId.HasValue then
+                            getItems category.ParentId.Value
+                        else
+                            ValueTask.singleton []
+                    return [ yield! parentItems; category ]
+            }
+
+            adapt {
+                let! items = getItems categoryId |> AVal.ofValueTask []
+                div {
+                    style {
+                        displayFlex
+                        gap 4
+                        alignItemsCenter
+                        flexWrapWrap
+                    }
+                    for item in items do
+                        MudLink'' {
+                            style { textTransformNone }
+                            Color Color.Default
+                            OnClick(fun _ ->
+                                dialogService.Show(
+                                    DialogOptions(MaxWidth = MaxWidth.Small, FullWidth = true),
+                                    fun ctx ->
+                                        LoopCategoryTree.Dialog(
+                                            ctx.Close,
+                                            rootCategoryId = item.Id,
+                                            onLoopSelected = (fun loop -> hook.ToggleLoop(loop.Id, false) |> ignore)
+                                        )
+                                )
+                            )
+                            item.Name
+                        }
+                        "/"
+                }
+            }
+        )

@@ -7,6 +7,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.AspNetCore.Components.Web
 open Microsoft.JSInterop
 open FSharp.Data.Adaptive
+open IcedTasks
 open MudBlazor
 open MudBlazor.Services
 open Fun.Result
@@ -52,7 +53,14 @@ type LoopsView =
                     let! summaryState =
                         globalStore.LoopTitles |> AMap.tryFind activeLoop.Id |> AVal.map (Option.defaultValue LoadingState.NotStartYet)
                     span {
+                        style { cursorPointer }
                         class' (if summaryState.IsLoadingNow then "loading-shimmer" else "")
+                        onclick (fun _ ->
+                            dialog.Show(
+                                DialogOptions(MaxWidth = MaxWidth.Small, FullWidth = true),
+                                fun ctx -> LoopsView.LoopTitleDetailDialog(activeLoop, ctx.Close)
+                            )
+                        )
                         summaryState.Value |> Option.defaultValue oldSummary
                     }
                 }
@@ -72,26 +80,11 @@ type LoopsView =
                                 textOverflowWithMaxLines 1
                                 flexGrow 1
                             }
-                            adapt {
-                                let isEditing = cval false
-                                match! isEditing with
-                                | true -> MudTextField'' {
-                                    Value activeLoop.Description
-                                    ValueChanged(fun v ->
-                                        loopService.BuildTitle(activeLoop.Id, title = v) |> ignore
-                                        isEditing.Publish(false)
-                                    )
-                                    AutoFocus
-                                    FullWidth
-                                    OnKeyUp(fun e -> if e.Key = "Escape" then isEditing.Publish(false))
-                                  }
-                                | false -> MudText'' {
-                                    style { backgroundColor "transparent" }
-                                    ondblclick (fun _ -> isEditing.Publish(true))
-                                    Typo Typo.h6
-                                    Color Color.Primary
-                                    loopTitle activeLoop
-                                  }
+                            MudText'' {
+                                style { backgroundColor "transparent" }
+                                Typo Typo.h6
+                                Color Color.Primary
+                                loopTitle activeLoop
                             }
                         }
                         html.inject (fun () -> adapt {
@@ -112,6 +105,18 @@ type LoopsView =
                                 })
                             }
                         })
+                        LoopCategoryTree.DialogBtn(
+                            btnSize = Size.Medium,
+                            ignoreLoops = true,
+                            onCategorySelected =
+                                (fun category ->
+                                    valueTask {
+                                        do! loopService.SetCategory(activeLoop.Id, category.Id)
+                                        hook.UpdateLoop { activeLoop with LoopCategoryId = Nullable category.Id }
+                                    }
+                                    |> ignore
+                                )
+                        )
                         LoopsView.SourceBtn(activeLoop)
                         MudTooltip'' {
                             Arrow
@@ -138,11 +143,6 @@ type LoopsView =
                                 }
                             }
                         }
-                        LoopCategoryTree.DialogBtn(
-                            btnSize = Size.Medium,
-                            ignoreLoops = true,
-                            onCategorySelected = (fun category -> loopService.SetCategory(activeLoop.Id, category.Id) |> ignore)
-                        )
                         MudIconButton'' {
                             Size Size.Medium
                             Icon Icons.Material.Outlined.DisabledByDefault
@@ -309,6 +309,14 @@ type LoopsView =
                                                         activeLoop.Description
                                                 }
                                                 selectedLoopTitle activeLoop
+                                                adapt {
+                                                    let! windowWidth = windowWidth
+                                                    if windowWidth >= 400 && activeLoop.LoopCategoryId.HasValue then
+                                                        div {
+                                                            style { margin 0 12 12 12 }
+                                                            LoopCategoryTree.Breadcrumbs(activeLoop.LoopCategoryId.Value)
+                                                        }
+                                                }
                                             | ValueSome isLeft -> loopTitle activeLoop isLeft
                                         }
                                         ErrorBoundary'' {
@@ -428,5 +436,55 @@ type LoopsView =
                         return html.none
                 else
                     return html.none
+            }
+        )
+
+
+    static member private LoopTitleDetailDialog(lp: Loop, onClose) =
+        html.inject (fun (hook: IComponentHook, loopService: ILoopService) ->
+            let description = cval lp.Description
+            MudDialog'' {
+                Header "Loop" onClose
+                DialogContent(
+                    div {
+                        style {
+                            overflowYAuto
+                            maxHeight 720
+                        }
+                        div {
+                            style { marginBottom 20 }
+                            if lp.LoopCategoryId.HasValue then
+                                LoopCategoryTree.Breadcrumbs(lp.LoopCategoryId.Value)
+                        }
+                        adapt {
+                            let! binding = description.WithSetter()
+                            MudTextField'' {
+                                Label "Title"
+                                Value' binding
+                                AutoFocus
+                                FullWidth
+                                AutoGrow
+                                MaxLines 30
+                                Variant Variant.Outlined
+                            }
+                        }
+                    }
+                )
+                DialogActions [|
+                    adapt {
+                        let! description = description
+                        MudButton'' {
+                            Color Color.Primary
+                            Variant Variant.Filled
+                            Disabled(description = lp.Description)
+                            OnClick(fun _ -> task {
+                                onClose ()
+                                do! loopService.BuildTitle(lp.Id, title = description)
+                                hook.UpdateLoop { lp with Description = description }
+                            })
+                            "Save"
+                        }
+                    }
+                |]
             }
         )

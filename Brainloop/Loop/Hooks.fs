@@ -109,3 +109,12 @@ type IComponentHook with
         let localStorageService = hook.ServiceProvider.GetRequiredService<ILocalStorageService>()
         do! localStorageService.SetItemAsync("max-active-loops", x)
     }
+
+
+    member hook.UpdateLoop(loop: Loop) =
+        let globalStore = hook.ServiceProvider.GetRequiredService<IGlobalStore>()
+        transact (fun _ ->
+            match globalStore.ActiveLoops |> Seq.tryFind (fun x -> x.Id = loop.Id) with
+            | None -> ()
+            | Some loop -> globalStore.ActiveLoops[0] <- loop
+        )
