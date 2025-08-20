@@ -25,6 +25,7 @@ type LoopService
         memoryService: IMemoryService,
         agentService: IAgentService,
         loopContentService: ILoopContentService,
+        shareStore: IShareStore,
         globalStore: IGlobalStore,
         logger: ILogger<LoopService>
     ) as this =
@@ -49,6 +50,24 @@ type LoopService
                     for item in sourceContents do
                         chatMessages.Insert(0, LoopContentWrapper.FromLoopContent(item))
                     this.AddSourceLoopContents(chatMessages, sourceLoopId, historyToInclude)
+
+
+    member _.UpdateLoopInStore(loopId: int64) = valueTask {
+        let! loop = dbService.DbContext.Select<Loop>().Where(fun (x: Loop) -> x.Id = loopId).FirstAsync<Loop | null>()
+        match loop with
+        | null -> logger.LogWarning("Loop with id {loopId} not found", loopId)
+        | loop ->
+            transact (fun _ ->
+                match globalStore.ActiveLoops |> Seq.tryFindIndex (fun x -> x.Id = loopId) with
+                | None -> ()
+                | Some i -> globalStore.ActiveLoops[i] <- loop
+
+                match shareStore.CurrentLoop.Value with
+                | ValueSome cl when cl.Id = loopId -> shareStore.CurrentLoop.Value <- ValueSome loop
+                | _ -> ()
+            )
+    }
+
 
     interface ILoopService with
         member _.Send
@@ -208,6 +227,8 @@ type LoopService
 
                 transact (fun _ -> globalStore.LoopTitles.Add(loopId, LoadingState.Loaded title) |> ignore)
 
+                do! this.UpdateLoopInStore(loopId)
+
                 valueTask {
                     try
                         do! memoryService.VectorizeLoop(loopId, title)
@@ -285,10 +306,15 @@ type LoopService
             | x -> x |> AList.exists (fun x -> x.IsStreaming.Value)
 
 
-        member _.SetCategory(loopId, categoryId) =
-            dbService.DbContext.Update<Loop>().Where(fun x -> x.Id = loopId).Set((fun x -> x.LoopCategoryId), categoryId).ExecuteAffrowsAsync()
-            |> ValueTask.ofTask
-            |> ValueTask.map ignore
+        member _.SetCategory(loopId, categoryId) = valueTask {
+            let! _ =
+                dbService.DbContext
+                    .Update<Loop>()
+                    .Where(fun (x: Loop) -> x.Id = loopId)
+                    .Set((fun x -> x.LoopCategoryId), categoryId)
+                    .ExecuteAffrowsAsync()
+            do! this.UpdateLoopInStore(loopId)
+        }
 
 
         member _.RebuildAllTitles() = valueTask {

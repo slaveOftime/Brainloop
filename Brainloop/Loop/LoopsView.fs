@@ -108,14 +108,7 @@ type LoopsView =
                         LoopCategoryTree.DialogBtn(
                             btnSize = Size.Medium,
                             ignoreLoops = true,
-                            onCategorySelected =
-                                (fun category ->
-                                    valueTask {
-                                        do! loopService.SetCategory(activeLoop.Id, category.Id)
-                                        hook.UpdateLoopInStore { activeLoop with LoopCategoryId = Nullable category.Id }
-                                    }
-                                    |> ignore
-                                )
+                            onCategorySelected = (fun category -> valueTask { do! loopService.SetCategory(activeLoop.Id, category.Id) } |> ignore)
                         )
                         LoopsView.SourceBtn(activeLoop)
                         MudTooltip'' {
@@ -480,7 +473,6 @@ type LoopsView =
                             OnClick(fun _ -> task {
                                 onClose ()
                                 do! loopService.BuildTitle(lp.Id, title = description)
-                                hook.UpdateLoopInStore { lp with Description = description }
                             })
                             "Save"
                         }
